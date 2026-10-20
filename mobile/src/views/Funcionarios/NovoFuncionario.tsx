@@ -173,7 +173,7 @@ export default function NovoFuncionario() {
                     cpf: onlyNumbers(funcionario.cpf ?? "", 11),
                     data_nascimento: dateFromApi(funcionario.data_nascimento?.slice(0, 10)) ?? "",
                     role: normalizarPapel(funcionario.role),
-                    permissions: [], 
+                    permissions: funcionario.permissions ?? [],
                 });
 
                 const avatarUrl = funcionario.avatar_url ?? null;
