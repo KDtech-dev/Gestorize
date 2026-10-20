@@ -16,20 +16,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme, useThemeToggle } from '@context/ThemeContext';
 
 type Props = {
-  nome?: string;
-  email?: string;
-  role: 'Gestor' | 'Funcionario';
+  nome: string | null;
+  email: string | null;
+  role: 'Gestor' | 'Funcionario' | 'Administrador';
   avatar?: string | null;
   onPress?: () => void;
 };
 
-export type FuncionarioType = {
-  id: string;
-  nome?: string ;
-  email?: string;
-  role: 'Gestor' | 'Funcionario';
-  avatar?: string | null;
-};
 
 const Funcionario = ({
   nome,

@@ -37,18 +37,6 @@ type Navigation = NativeStackNavigationProp<RootStackParamList>;
 
 type PerfilFuncionario = 'gestor' | 'funcionario';
 
-type FuncionarioItem = {
-    id: string;
-    user_id: string;
-    name: string;
-    email: string;
-    avatar_url: string | null;
-    role: {
-        id: string;
-        nome: string;
-        descricao: string | null;
-    } | null;
-};
 
 const perfisFuncionario = [
     {
@@ -103,26 +91,14 @@ const Funcionarios = () => {
         const normalizedSearch = search.trim().toLowerCase();
 
         return funcionarios.filter((item) => {
-            const roles = Array.isArray(item.user?.roles)
-                ? item.user.roles
-                : [];
+            const nomePerfil = item.role?.toLowerCase() ?? '';
 
             const matchPerfil = selectedPerfil
-                ? roles.some((role) => {
-                    const nomePerfil =
-                        typeof role === 'string'
-                            ? role
-                            : role?.nome;
-
-                    return (
-                        typeof nomePerfil === 'string' &&
-                        nomePerfil.toLowerCase() === selectedPerfil
-                    );
-                })
+                ? nomePerfil === selectedPerfil
                 : true;
 
-            const nome = item.user?.nome ?? '';
-            const email = item.user?.email ?? '';
+            const nome = item.nome ?? '';
+            const email = item.email ?? '';
             const cpf = item.cpf ?? '';
 
             const matchSearch =
@@ -236,27 +212,22 @@ const Funcionarios = () => {
                 refreshing={loading}
                 onRefresh={carregarFuncionarios}
                 renderItem={({ item }) => {
-                    const roles = Array.isArray(item.user?.roles)
-                        ? item.user.roles
-                        : [];
+                    const role = item.role?.toLowerCase();
 
-                    const isGestor = roles.some((role) => {
-                        const nomePerfil =
-                            typeof role === 'string'
-                                ? role
-                                : role?.nome;
+                    const isGestor = role === 'gestor';
 
-                        return (
-                            typeof nomePerfil === 'string' &&
-                            nomePerfil.toLowerCase() === 'gestor'
-                        );
-                    });
+                    const roleLabel =
+                        role === 'admin' || role === 'administrador'
+                            ? 'Administrador'
+                            : isGestor
+                                ? 'Gestor'
+                                : 'Funcionario';
 
                     return (
                         <Funcionario
-                            nome={item.user?.nome ?? ''}
-                            email={item.user?.email ?? ''}
-                            role={isGestor ? 'Gestor' : 'Funcionario'}
+                            nome={item.nome}
+                            email={item.email}
+                            role={roleLabel}
                             avatar={item.avatar_url}
                             onPress={() =>
                                 navigation.navigate('NovoFuncionario', {

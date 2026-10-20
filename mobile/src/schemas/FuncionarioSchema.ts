@@ -32,29 +32,40 @@ const cpfSchema = z.preprocess(
 
 const dataNascimentoSchema = z
     .string()
+    .trim()
     .refine(
         (value) => {
             if (value === "") {
                 return true;
             }
 
-            if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+            const correspondencia = value.match(
+                /^(\d{4})-(\d{2})-(\d{2})$/
+            );
+
+            if (!correspondencia) {
                 return false;
             }
 
-            const [ano, mes, dia] = value.split("-").map(Number);
-            const data = new Date(ano, mes - 1, dia);
+            const ano = Number(correspondencia[1]);
+            const mes = Number(correspondencia[2]);
+            const dia = Number(correspondencia[3]);
+
+            const data = new Date(
+                Date.UTC(ano, mes - 1, dia)
+            );
 
             return (
-                data.getFullYear() === ano &&
-                data.getMonth() === mes - 1 &&
-                data.getDate() === dia
+                data.getUTCFullYear() === ano &&
+                data.getUTCMonth() === mes - 1 &&
+                data.getUTCDate() === dia
             );
         },
-        "Informe uma data válida."
+        {
+            message: "Informe uma data válida no formato AAAA-MM-DD.",
+        }
     )
     .nullable();
-
 export const funcionarioSchema = z
     .object({
         name: z

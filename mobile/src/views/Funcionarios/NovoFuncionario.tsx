@@ -8,7 +8,7 @@ import { InputError } from "@components/InputError";
 import DialogConfirmarAcao from "@components/dialogs/DialogConfirmarAcao";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { NativeStackNavigationProp, NativeStackScreenProps } from "@react-navigation/native-stack";
-import { FuncionarioType, RoleName, RootStackParamList, Opcao } from "@context/types";
+import { RoleName, RootStackParamList, Opcao } from "@context/types";
 import { useTheme } from "@context/ThemeContext";
 
 import {
@@ -145,21 +145,6 @@ export default function NovoFuncionario() {
             setLoadingPerfis(false);
         }
     };
-    const comoLista = (valor: unknown): unknown[] =>
-        Array.isArray(valor) ? valor : valor != null ? [valor] : [];
-
-    const extrairNome = (item: unknown): string | null => {
-        if (typeof item === "string") return item;
-
-        if (typeof item === "object" && item !== null) {
-            const { name, nome } = item as { name?: unknown; nome?: unknown };
-            if (typeof name === "string") return name;
-            if (typeof nome === "string") return nome;
-        }
-
-        return null;
-    };
-
 
     useEffect(() => {
         if (isCriar) return;
@@ -188,7 +173,7 @@ export default function NovoFuncionario() {
                     cpf: onlyNumbers(funcionario.cpf ?? "", 11),
                     data_nascimento: dateFromApi(funcionario.data_nascimento?.slice(0, 10)) ?? "",
                     role: normalizarPapel(funcionario.role),
-                    permissions: [], // ver ponto de atenção
+                    permissions: [], 
                 });
 
                 const avatarUrl = funcionario.avatar_url ?? null;
