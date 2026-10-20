@@ -39,33 +39,26 @@ const dataNascimentoSchema = z
                 return true;
             }
 
-            const correspondencia = value.match(
-                /^(\d{4})-(\d{2})-(\d{2})$/
-            );
-
-            if (!correspondencia) {
+            if (!/^\d{2}\/\d{2}\/\d{4}$/.test(value)) {
                 return false;
             }
 
-            const ano = Number(correspondencia[1]);
-            const mes = Number(correspondencia[2]);
-            const dia = Number(correspondencia[3]);
-
-            const data = new Date(
-                Date.UTC(ano, mes - 1, dia)
-            );
+            const [dia, mes, ano] = value.split("/").map(Number);
+            const data = new Date(ano, mes - 1, dia);
 
             return (
-                data.getUTCFullYear() === ano &&
-                data.getUTCMonth() === mes - 1 &&
-                data.getUTCDate() === dia
+                data.getFullYear() === ano &&
+                data.getMonth() === mes - 1 &&
+                data.getDate() === dia
             );
         },
         {
-            message: "Informe uma data válida no formato AAAA-MM-DD.",
+            message: "Informe uma data válida no formato DD/MM/AAAA.",
         }
     )
     .nullable();
+
+
 export const funcionarioSchema = z
     .object({
         name: z
