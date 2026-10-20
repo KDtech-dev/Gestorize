@@ -69,17 +69,40 @@ export const onlyLettersAndNumbers = (
 export const dateToApi = (
   value: string | null | undefined
 ): string | null => {
-  if (!value) {
+  if (!value?.trim()) {
     return null;
   }
 
-  const [dia, mes, ano] = value.split("/");
+  const data = value.trim();
 
-  if (!dia || !mes || !ano) {
-    return value;
+  const correspondencia = data.match(
+    /^(\d{2})\/(\d{2})\/(\d{4})$/
+  );
+
+  if (!correspondencia) {
+    throw new Error(
+      "Data inválida. Utilize o formato DD/MM/AAAA."
+    );
   }
 
-  return `${ano}-${mes.padStart(2, "0")}-${dia.padStart(2, "0")}`;
+  const [, diaTexto, mesTexto, anoTexto] = correspondencia;
+
+  const dia = Number(diaTexto);
+  const mes = Number(mesTexto);
+  const ano = Number(anoTexto);
+
+  const dataValidacao = new Date(ano, mes - 1, dia);
+
+  const dataValida =
+    dataValidacao.getFullYear() === ano &&
+    dataValidacao.getMonth() === mes - 1 &&
+    dataValidacao.getDate() === dia;
+
+  if (!dataValida) {
+    throw new Error("Informe uma data existente.");
+  }
+
+  return `${anoTexto}-${mesTexto}-${diaTexto}`;
 };
 
 export const dateFromApi = (value: string | null | undefined
