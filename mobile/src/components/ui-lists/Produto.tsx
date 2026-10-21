@@ -208,7 +208,6 @@ const Produto = ({
         </View>
       </TouchableOpacity>
 
-      {/* Modal para ampliar a imagem */}
       <Modal
         visible={imagemVisivel}
         transparent
