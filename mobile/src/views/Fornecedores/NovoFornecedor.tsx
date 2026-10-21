@@ -22,6 +22,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 
 import { useCallback, useEffect, useState } from "react";
 import { z } from "zod";
+import { useUnsavedChangesGuard } from "../../hooks/useUnsavedChangesGuard";
 
 import { RootStackParamList } from "@context/types";
 import { useTheme } from "@context/ThemeContext";
@@ -77,7 +78,6 @@ export default function NovoFornecedor() {
     const isCriar = modo === "criar";
     const isEditar = modo === "editar";
     const avatarAlterado = avatar !== avatarOriginal;
-
     const {
         control,
         handleSubmit,
@@ -109,6 +109,12 @@ export default function NovoFornecedor() {
             },
         },
     });
+    const unsavedGuard = useUnsavedChangesGuard({
+        hasUnsavedChanges: isDirty || avatarAlterado,
+        message: isCriar
+            ? "O cadastro do fornecedor não foi concluído. Deseja sair e descartar os dados preenchidos?"
+            : "A atualização do fornecedor não foi concluída. Deseja sair e descartar as alterações?",
+    });
 
     const nomeFornecedor = watch("nome");
 
@@ -136,6 +142,7 @@ export default function NovoFornecedor() {
                 text2: "O fornecedor foi removido com sucesso.",
             });
 
+            unsavedGuard.permitirProximaSaida();
             navigation.goBack();
         } catch (error: any) {
             Toast.show({
@@ -315,6 +322,7 @@ export default function NovoFornecedor() {
                     text2: "O fornecedor foi cadastrado com sucesso.",
                 });
 
+                unsavedGuard.permitirProximaSaida();
                 navigation.goBack();
                 return;
             }
@@ -881,6 +889,7 @@ export default function NovoFornecedor() {
                 titulo="Tem certeza que deseja excluir este fornecedor?"
                 onSuccess={confirmarExclusao}
             />
+            {unsavedGuard.dialog}
         </View>
     );
 }

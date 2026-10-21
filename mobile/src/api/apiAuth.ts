@@ -3,6 +3,8 @@ import auth from '@configs/auth';
 import { LoginData, RefreshData } from '@context/requestTypes';
 import { ResponseType } from '@context/types';
 import { secureStore } from '@utils/secureStore';
+import { getAxios } from '@configs/axios';
+import type { UserType } from '@context/types';
 
 const unwrap = (responseData: any) => responseData?.data ?? responseData;
 
@@ -50,6 +52,18 @@ export async function postLogin(
 
   return normalizeAuthPayload(unwrap(data));
 }
+
+export const getCurrentUser = async (): Promise<ResponseType<UserType>> => {
+  const response = await getAxios().get('/me');
+  const payload = response.data;
+  return {
+    ...payload,
+    data: {
+      ...payload.data,
+      nome: payload.data?.nome ?? payload.data?.name ?? '',
+    },
+  };
+};
 
 export const postRefreshToken = async (): Promise<RefreshData> => {
   const { data } = await api.post<ResponseType<RefreshData>>(

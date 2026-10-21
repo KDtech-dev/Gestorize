@@ -55,9 +55,17 @@ export type ResponseMetaType = {
 export type UserType = {
   id: string;
   nome: string;
+  name?: string;
   email: string;
   role: string;
   permissions?: string[];
+  avatar_url?: string | null;
+  funcionario?: {
+    telefone?: string | null;
+    cpf?: string | null;
+    data_nascimento?: StringfiedDate | null;
+    endereco?: EnderecoType | null;
+  } | null;
 };
 
 export type StringfiedDate = string;

@@ -29,6 +29,7 @@ import { InputError } from "@components/InputError";
 import GeneroSelector from "@components/GeneroSelector";
 import { getCep } from "@api/apiCep";
 import DateField from "@components/DateField";
+import { useUnsavedChangesGuard } from "../../hooks/useUnsavedChangesGuard";
 import OrcamentoClienteResumo from "@components/orcamentos/OrcamentoClienteResumo";
 import { OrcamentoResumoType } from "@context/types";
 
@@ -94,6 +95,12 @@ export default function NovoCliente() {
             },
         },
     });
+    const unsavedGuard = useUnsavedChangesGuard({
+        hasUnsavedChanges: isDirty || avatarAlterado,
+        message: isCriar
+            ? "O cadastro do cliente não foi concluído. Deseja sair e descartar os dados preenchidos?"
+            : "A atualização do cliente não foi concluída. Deseja sair e descartar as alterações?",
+    });
 
 
     const handleDelete = () => {
@@ -113,6 +120,7 @@ export default function NovoCliente() {
                 text2: "O cliente foi removido com sucesso.",
             });
 
+            unsavedGuard.permitirProximaSaida();
             navigation.goBack();
         } catch (error) {
             Toast.show({
@@ -263,6 +271,7 @@ export default function NovoCliente() {
                     text2: "O cliente foi cadastrado com sucesso.",
                 });
 
+                unsavedGuard.permitirProximaSaida();
                 navigation.goBack();
                 return;
             }
@@ -984,6 +993,7 @@ export default function NovoCliente() {
                 titulo="Tem certeza que deseja excluir este cliente?"
                 onSuccess={confirmarExclusao}
             />
+            {unsavedGuard.dialog}
         </View >
     );
 }

@@ -50,6 +50,7 @@ import { produtoSchema } from "@schemas/ProdutoSchema";
 import { getFornecedores } from "@api/apiFornecedores";
 import { useAuth } from "@context/AuthContext";
 import { can } from "@utils/permissions";
+import { useUnsavedChangesGuard } from "../../hooks/useUnsavedChangesGuard";
 type Navigation =
     NativeStackNavigationProp<RootStackParamList>;
 
@@ -132,6 +133,12 @@ export default function NovoProduto() {
         },
     });
     const nomeProduto = watch("nome");
+    const unsavedGuard = useUnsavedChangesGuard({
+        hasUnsavedChanges: isDirty || imagensAlteradas,
+        message: isCriar
+            ? "O cadastro do produto não foi concluído. Deseja sair e descartar os dados preenchidos?"
+            : "A atualização do produto não foi concluída. Deseja sair e descartar as alterações?",
+    });
 
     const carregarFornecedores = useCallback(async () => {
         try {
@@ -409,6 +416,7 @@ export default function NovoProduto() {
                 text1: "Produto excluído",
                 text2: "O produto foi removido com sucesso.",
             });
+            unsavedGuard.permitirProximaSaida();
             navigation.goBack();
         } catch (error: any) {
             Toast.show({
@@ -565,6 +573,7 @@ export default function NovoProduto() {
                     text2: "Produto e galeria salvos com sucesso.",
                 });
 
+                unsavedGuard.permitirProximaSaida();
                 navigation.goBack();
                 return;
             }
@@ -963,6 +972,7 @@ export default function NovoProduto() {
                 titulo="Tem certeza que deseja excluir este produto?"
                 onSuccess={confirmarExclusao}
             />
+            {unsavedGuard.dialog}
             <Modal
                 visible={showCategoriaModal}
                 transparent

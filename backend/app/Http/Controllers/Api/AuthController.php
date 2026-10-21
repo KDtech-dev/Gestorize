@@ -6,9 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\AuthLoginRequest;
 use App\Http\Requests\AuthLogoutRequest;
 use App\Http\Requests\AuthRefreshRequest;
+use App\Http\Resources\UserResource;
 use App\Services\IAuthService;
 use App\Services\ResponseService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class AuthController extends Controller
 {
@@ -34,5 +36,16 @@ class AuthController extends Controller
             $this->service->refresh(),
             'Token atualizado.'
         );
+    }
+
+    public function me(Request $request): JsonResponse
+    {
+        $usuario = $request->user()->load([
+            'roles.permissions',
+            'permissions',
+            'funcionario.endereco',
+        ]);
+
+        return ResponseService::success(new UserResource($usuario));
     }
 }

@@ -1,382 +1,135 @@
-import React, { useMemo, useState } from 'react';
-import {
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import InputCard from '@components/InputCard';
-import SidebarAlert from '@components/sidebars/Sidebaralert';
 import Nav from '@components/utilities/Nav';
-import { useAuth } from '@context/AuthContext';
-import { RootStackParamList } from '@context/types';
-import { useTheme } from '@context/ThemeContext';
 import Avatar from '@components/Avatar';
+import { getCurrentUser } from '@api/apiAuth';
+import { useAuth } from '@context/AuthContext';
+import { EnderecoType, RootStackParamList, UserType } from '@context/types';
+import { useTheme } from '@context/ThemeContext';
+import { dateFromApi, formatCpf, formatTelefone } from '@core/utils/format';
+import Toast from 'react-native-toast-message';
 
 type Navigation = NativeStackNavigationProp<RootStackParamList>;
-type UserProfileRoute = RouteProp<RootStackParamList, 'UserPerfil'>;
-type UserProfileParams = Partial<NonNullable<RootStackParamList['UserPerfil']>>;
 
-type ProfileForm = {
-  nome: string;
-  email: string;
-  genero: string;
-  estado_civil: string;
-  telefone: string;
-  data_nascimento: string;
-  cpf: string;
-  estado: string;
-  cidade: string;
-  rua: string;
-  bairro: string;
-  numero: string;
-  cep: string;
+const perfis: Record<string, string> = {
+  admin: 'Administrador',
+  gestor: 'Gestor',
+  funcionario: 'Funcionário',
+  cliente: 'Cliente',
 };
 
-const fallbackForm: ProfileForm = {
-  nome: 'Kennedy Pinheiro',
-  email: 'kennedy@email.com',
-  genero: '',
-  estado_civil: '',
-  telefone: '(00) 00000 - 0000',
-  data_nascimento: '0000 - 00 - 00',
-  cpf: '000.000.000 - 00',
-  estado: '',
-  cidade: 'Example',
-  rua: 'Example',
-  bairro: 'Example',
-  numero: '000',
-  cep: '00000 - 000',
-};
+const nomePerfil = (role?: string | null) => perfis[role?.toLowerCase() ?? ''] ?? 'Usuário';
 
 const UserPerfil = () => {
   const navigation = useNavigation<Navigation>();
-  const route = useRoute<UserProfileRoute>();
   const { user } = useAuth();
-  const { colors, isDark } = useTheme();
-  const [alertVisible, setAlertVisible] = useState(false);
-  const [avatar, setAvatar] = useState<string | null>(null);
+  const { colors } = useTheme();
+  const [perfil, setPerfil] = useState<UserType | null>(user ?? null);
+  const [loading, setLoading] = useState(true);
 
-  const initialForm = useMemo<ProfileForm>(() => {
-    const params = (route.params ?? {}) as UserProfileParams;
-    return {
-      nome: params.nome ?? user?.nome ?? user?.name ?? fallbackForm.nome,
-      email: params.email ?? user?.email ?? fallbackForm.email,
-      genero: params.genero ?? user?.genero ?? fallbackForm.genero,
-      estado_civil:
-        params.estado_civil ?? user?.estado_civil ?? fallbackForm.estado_civil,
-      telefone: params.telefone ?? user?.telefone ?? fallbackForm.telefone,
-      data_nascimento:
-        params.data_nascimento ??
-        user?.data_nascimento ??
-        fallbackForm.data_nascimento,
-      cpf: params.cpf ?? user?.cpf ?? fallbackForm.cpf,
-      estado: params.estado ?? user?.estado ?? fallbackForm.estado,
-      cidade: params.cidade ?? user?.cidade ?? fallbackForm.cidade,
-      rua: params.rua ?? user?.rua ?? fallbackForm.rua,
-      bairro: params.bairro ?? user?.bairro ?? fallbackForm.bairro,
-      numero: params.numero ?? user?.numero ?? fallbackForm.numero,
-      cep: params.cep ?? user?.cep ?? fallbackForm.cep,
-    };
-  }, [route.params, user]);
+  useEffect(() => {
+    let ativo = true;
 
-  const [formData, setFormData] = useState(initialForm);
+    getCurrentUser()
+      .then((response) => {
+        if (ativo) setPerfil(response.data);
+      })
+      .catch((error: any) => {
+        Toast.show({
+          type: 'error',
+          text1: 'Não foi possível atualizar os dados do perfil',
+          text2: error?.response?.data?.message ?? 'Exibindo os dados disponíveis da conta.',
+        });
+      })
+      .finally(() => {
+        if (ativo) setLoading(false);
+      });
 
-  const hasChanges = useMemo(
-    () =>
-      Object.entries(formData).some(
-        ([field, value]) => value !== initialForm[field as keyof ProfileForm],
-      ),
-    [formData, initialForm],
-  );
+    return () => { ativo = false; };
+  }, []);
 
-  const theme = useMemo(
-    () => ({
-      background: isDark ? '#062046' : '#f4f7fb',
-      fieldBg: isDark ? '#1f3e68' : '#ffffff',
-      fieldBorder: isDark ? '#315982' : '#d9e2ef',
-      fieldLabel: isDark ? '#b5c7df' : '#64748b',
-      fieldText: isDark ? '#ffffff' : '#0f172a',
-      divider: isDark ? '#6f86a6' : '#cad6e7',
-      saveBg: hasChanges ? colors.primary : '#8f8f8f',
-      saveText: isDark && hasChanges ? '#062046' : '#ffffff',
-    }),
-    [colors.primary, hasChanges, isDark],
-  );
-
-  const params = (route.params ?? {}) as UserProfileParams;
-  const role = params.funcao ?? user?.funcao ?? user?.role ?? 'Cargo example';
-
-  const updateField = (field: keyof ProfileForm, value: string) => {
-    setFormData((current) => ({ ...current, [field]: value }));
-  };
-
-  const handleSave = () => {
-    setAlertVisible(true);
-  };
+  const endereco = perfil?.funcionario?.endereco;
+  const dadosPessoais = perfil?.funcionario;
 
   return (
-    <KeyboardAvoidingView
-      style={[styles.screen, { backgroundColor: theme.background }]}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <SidebarAlert
-        message="Perfil atualizado com sucesso!"
-        visible={alertVisible}
-        type="success"
-        onClose={() => setAlertVisible(false)}
-      />
-
+    <View style={[styles.screen, { backgroundColor: colors.background }]}>
       <Nav
-        title="Funcionarios"
-        subtitle={role}
+        title="Meu perfil"
+        subtitle={nomePerfil(perfil?.role ?? user?.role)}
         onBackPress={() => navigation.goBack()}
         rightType="menu"
       />
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-        contentContainerStyle={styles.content}
-      >
-        <View style={styles.identity}>
-          <Avatar
-            nome={formData.nome}
-            imageUri={avatar}
-            size={118}
-            onImageSelected={setAvatar}
-          />
-          <Text style={[styles.identityName, { color: theme.fieldText }]}>
-            {formData.nome.toUpperCase()}
-          </Text>
-          <Text style={[styles.identityEmail, { color: theme.fieldLabel }]}>
-            {formData.email}
-          </Text>
+      {loading ? (
+        <View style={styles.loading}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={{ color: colors.muted, marginTop: 10 }}>Carregando seus dados...</Text>
         </View>
+      ) : (
+        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+          <View style={styles.identity}>
+            <Avatar
+              nome={perfil?.nome ?? perfil?.name ?? user?.nome ?? 'Usuário'}
+              imageUri={perfil?.avatar_url ?? null}
+              size={118}
+              editable={false}
+            />
+            <Text style={[styles.name, { color: colors.text }]}>
+              {perfil?.nome ?? perfil?.name ?? user?.nome ?? 'Usuário'}
+            </Text>
+            <Text style={[styles.email, { color: colors.muted }]}>
+              {perfil?.email ?? user?.email ?? 'E-mail não informado'}
+            </Text>
+          </View>
 
-        <View style={[styles.divider, { backgroundColor: theme.divider }]} />
-
-        <ProfileField
-          label="Nome Completo"
-          value={formData.nome}
-          onChangeText={(value) => updateField('nome', value)}
-          theme={theme}
-        />
-        <ProfileField
-          label="Email"
-          value={formData.email}
-          onChangeText={(value) => updateField('email', value)}
-          keyboardType="email-address"
-          theme={theme}
-        />
-
-        <View style={styles.row}>
-          <ProfileField
-            label="Gênero"
-            value={formData.genero}
-            onChangeText={(value) => updateField('genero', value)}
-            theme={theme}
-            width="49%"
-          />
-          <ProfileField
-            label="Estado Civil"
-            value={formData.estado_civil}
-            onChangeText={(value) => updateField('estado_civil', value)}
-            theme={theme}
-            width="49%"
-          />
-        </View>
-
-        <ProfileField
-          label="Telefone"
-          value={formData.telefone}
-          onChangeText={(value) => updateField('telefone', value)}
-          keyboardType="phone-pad"
-          theme={theme}
-        />
-        <ProfileField
-          label="Data de nascimento"
-          value={formData.data_nascimento}
-          onChangeText={(value) => updateField('data_nascimento', value)}
-          theme={theme}
-        />
-        <ProfileField
-          label="CPF"
-          value={formData.cpf}
-          onChangeText={(value) => updateField('cpf', value)}
-          keyboardType="number-pad"
-          theme={theme}
-        />
-        <ProfileField
-          label="ESTADO"
-          value={formData.estado}
-          onChangeText={(value) => updateField('estado', value)}
-          theme={theme}
-          uppercaseLabel
-        />
-        <ProfileField
-          label="Cidade"
-          value={formData.cidade}
-          onChangeText={(value) => updateField('cidade', value)}
-          theme={theme}
-        />
-        <ProfileField
-          label="Logradouro"
-          value={formData.rua}
-          onChangeText={(value) => updateField('rua', value)}
-          theme={theme}
-        />
-        <ProfileField
-          label="Bairro"
-          value={formData.bairro}
-          onChangeText={(value) => updateField('bairro', value)}
-          theme={theme}
-        />
-
-        <View style={styles.row}>
-          <ProfileField
-            label="Número"
-            value={formData.numero}
-            onChangeText={(value) => updateField('numero', value)}
-            keyboardType="number-pad"
-            theme={theme}
-            width="49%"
-          />
-          <ProfileField
-            label="Cep"
-            value={formData.cep}
-            onChangeText={(value) => updateField('cep', value)}
-            keyboardType="number-pad"
-            theme={theme}
-            width="49%"
-          />
-        </View>
-
-        <Pressable
-          onPress={handleSave}
-          disabled={!hasChanges}
-          style={[styles.saveButton, { backgroundColor: theme.saveBg }]}
-        >
-          <Text style={[styles.saveText, { color: theme.saveText }]}>
-            Salvar
-          </Text>
-        </Pressable>
-      </ScrollView>
-    </KeyboardAvoidingView>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Dados cadastrados</Text>
+          <Info label="Telefone" value={dadosPessoais?.telefone ? formatTelefone(dadosPessoais.telefone) : null} />
+          <Info label="CPF" value={dadosPessoais?.cpf ? formatCpf(dadosPessoais.cpf) : null} />
+          <Info label="Data de nascimento" value={dadosPessoais?.data_nascimento ? dateFromApi(dadosPessoais.data_nascimento.slice(0, 10)) : null} />
+          <Address address={endereco} />
+        </ScrollView>
+      )}
+    </View>
   );
 };
 
-type ProfileFieldProps = {
-  label: string;
-  value: string;
-  onChangeText: (value: string) => void;
-  theme: {
-    fieldBg: string;
-    fieldBorder: string;
-    fieldLabel: string;
-    fieldText: string;
-  };
-  keyboardType?: 'default' | 'email-address' | 'number-pad' | 'phone-pad';
-  uppercaseLabel?: boolean;
-  width?: `${number}%`;
-};
-
-const ProfileField = ({
-  label,
-  value,
-  onChangeText,
-  theme,
-  keyboardType = 'default',
-  uppercaseLabel,
-  width = '100%',
-}: ProfileFieldProps) => {
+const Info = ({ label, value }: { label: string; value?: string | null }) => {
+  const { colors } = useTheme();
   return (
-    <InputCard
-      label={uppercaseLabel ? label.toUpperCase() : label}
-      value={value}
-      onChangeText={onChangeText}
-      keyboardType={keyboardType}
-      width={width}
-      placeholder={label}
-      placeholderTextColor={theme.fieldLabel}
-      containerStyle={[
-        styles.inputCard,
-        {
-          backgroundColor: theme.fieldBg,
-          borderColor: theme.fieldBorder,
-        },
-      ]}
-      labelStyle={[styles.inputLabel, { color: theme.fieldLabel }]}
-      inputStyle={[styles.inputValue, { color: theme.fieldText }]}
-    />
+    <View style={[styles.infoCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+      <Text style={[styles.label, { color: colors.muted }]}>{label}</Text>
+      <Text style={[styles.value, { color: colors.text }]}>{value || 'Não informado'}</Text>
+    </View>
   );
+};
+
+const Address = ({ address }: { address?: EnderecoType | null }) => {
+  if (!address) return <Info label="Endereço" value={null} />;
+  const linha = [
+    address.logradouro,
+    address.numero,
+    address.complemento,
+    address.bairro,
+    address.cidade,
+    address.estado,
+    address.cep,
+  ].filter(Boolean).join(', ');
+  return <Info label="Endereço" value={linha || null} />;
 };
 
 const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-  },
-  content: {
-    paddingHorizontal: 14,
-    paddingTop: 32,
-    paddingBottom: 28,
-  },
-  identity: {
-    alignItems: 'center',
-  },
-  
-  identityName: {
-    fontSize: 17,
-    fontWeight: '900',
-  },
-  identityEmail: {
-    fontSize: 14,
-    fontWeight: '700',
-    marginTop: 4,
-  },
-  divider: {
-    height: 2,
-    marginTop: 30,
-    marginBottom: 18,
-  },
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 8,
-  },
-  inputCard: {
-    minHeight: 74,
-    borderWidth: 1,
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    marginBottom: 12,
-  },
-  inputLabel: {
-    fontSize: 14,
-    fontWeight: '800',
-  },
-  inputValue: {
-    fontSize: 19,
-    fontWeight: '900',
-  },
-  saveButton: {
-    height: 48,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginHorizontal: 16,
-    marginTop: 6,
-  },
-  saveText: {
-    fontSize: 16,
-    fontWeight: '900',
-  },
+  screen: { flex: 1 },
+  loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  content: { padding: 18, paddingBottom: 32 },
+  identity: { alignItems: 'center', paddingVertical: 18, marginBottom: 12 },
+  name: { fontSize: 20, fontWeight: '900', marginTop: 12 },
+  email: { fontSize: 14, fontWeight: '600', marginTop: 4 },
+  sectionTitle: { fontSize: 18, fontWeight: '800', marginBottom: 4 },
+  infoCard: { borderWidth: 1, borderRadius: 14, padding: 14, marginTop: 10 },
+  label: { fontSize: 12, fontWeight: '700', marginBottom: 5 },
+  value: { fontSize: 16, fontWeight: '700' },
 });
 
 export default UserPerfil;

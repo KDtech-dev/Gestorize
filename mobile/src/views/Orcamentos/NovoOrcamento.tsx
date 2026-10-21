@@ -38,6 +38,7 @@ import {
 } from '@context/types';
 import { useTheme } from '@context/ThemeContext';
 import { useAuth } from '@context/AuthContext';
+import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
 import Toast from 'react-native-toast-message';
 
 type Navigation = NativeStackNavigationProp<RootStackParamList>;
@@ -113,6 +114,14 @@ export default function NovoOrcamento() {
     if (!editando || snapshotOriginal === null) return false;
     return snapshotOrcamento(titulo, clienteId, itens) !== snapshotOriginal;
   }, [clienteId, editando, itens, snapshotOriginal, titulo]);
+  const guardOrcamento = useUnsavedChangesGuard({
+    hasUnsavedChanges: editando
+      ? houveAlteracaoReal
+      : Boolean(titulo.trim() || clienteId || itens.length),
+    message: editando
+      ? 'A atualização do orçamento não foi concluída. Deseja sair e descartar as alterações?'
+      : 'O cadastro do orçamento não foi concluído. Deseja sair e descartar os dados preenchidos?',
+  });
 
   const carregarDados = useCallback(async () => {
     try {
@@ -219,6 +228,7 @@ export default function NovoOrcamento() {
         await createOrcamento(payload);
       }
       Toast.show({ type: 'success', text1: editando ? 'Orçamento atualizado' : 'Orçamento criado' });
+      guardOrcamento.permitirProximaSaida();
       navigation.goBack();
     } catch (error: any) {
       Toast.show({
@@ -237,6 +247,7 @@ export default function NovoOrcamento() {
       setSalvando(true);
       await deleteOrcamento(orcamentoId);
       Toast.show({ type: 'success', text1: 'Orçamento removido' });
+      guardOrcamento.permitirProximaSaida();
       navigation.goBack();
     } catch (error: any) {
       Toast.show({ type: 'error', text1: 'Não foi possível excluir', text2: error?.response?.data?.message });
@@ -382,6 +393,7 @@ export default function NovoOrcamento() {
         titulo="Confirmar aprovação deste orçamento?"
         onSuccess={confirmarAprovacao}
       />
+      {guardOrcamento.dialog}
     </View>
   );
 }

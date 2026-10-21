@@ -38,6 +38,7 @@ import ModalPermissoes from "@components/ModalPermissoes";
 import { useAuth } from "@context/AuthContext";
 import { getPapeis } from "@api/apiAcessos";
 import { formatErrorMessage } from "@core/utils/format";
+import { useUnsavedChangesGuard } from "../../hooks/useUnsavedChangesGuard";
 
 type Navigation = NativeStackNavigationProp<RootStackParamList>;
 
@@ -101,6 +102,12 @@ export default function NovoFuncionario() {
                 permissions: [],
             },
         });
+    const unsavedGuard = useUnsavedChangesGuard({
+        hasUnsavedChanges: isDirty || avatarAlterado,
+        message: isCriar
+            ? "O cadastro do funcionário não foi concluído. Deseja sair e descartar os dados preenchidos?"
+            : "A atualização do funcionário não foi concluída. Deseja sair e descartar as alterações?",
+    });
 
 
 
@@ -261,6 +268,7 @@ export default function NovoFuncionario() {
                 text2: "O funcionário foi removido com sucesso.",
             });
 
+            unsavedGuard.permitirProximaSaida();
             navigation.goBack();
         } catch (error: any) {
             Toast.show({
@@ -296,8 +304,10 @@ export default function NovoFuncionario() {
             telefone: telefone || null,
             cpf,
             data_nascimento: dateToApi(data.data_nascimento),
-            role: data.role,
-            permissions: data.permissions ?? [],
+            ...(!isProprioUsuario ? {
+                role: data.role,
+                permissions: data.permissions ?? [],
+            } : {}),
         };
 
         const senha = {
@@ -330,6 +340,7 @@ export default function NovoFuncionario() {
                         : "O funcionário foi cadastrado com sucesso.",
                 });
 
+                unsavedGuard.permitirProximaSaida();
                 navigation.goBack();
                 return;
             }
@@ -420,8 +431,10 @@ export default function NovoFuncionario() {
             ]}
         >
             <Nav
-                title={isCriar ? "Novo Funcionário" : "Editar Funcionário"}
-                subtitle="Dados e acessos"
+                title={isProprioUsuario ? "Meu perfil" : isCriar ? "Novo Funcionário" : "Editar Funcionário"}
+                subtitle={isProprioUsuario
+                    ? (perfis.find((perfil) => perfil.id === watch("role"))?.nome ?? "Perfil de acesso")
+                    : "Dados e acessos"}
                 onBackPress={() => navigation.goBack()}
                 rightType="menu"
             />
@@ -610,7 +623,7 @@ export default function NovoFuncionario() {
                     />
                 </View>
 
-                <View style={styles.section}>
+                {!isProprioUsuario && <View style={styles.section}>
                     <Text
                         style={[
                             styles.sectionTitle,
@@ -651,9 +664,10 @@ export default function NovoFuncionario() {
                         funcionário. Você também pode atribuir permissões
                         individuais abaixo.
                     </Text>
-                </View>
+                </View>}
 
                 <View style={styles.section}>
+                    {!isProprioUsuario && <>
                     <Text
                         style={[
                             styles.sectionTitle,
@@ -696,6 +710,7 @@ export default function NovoFuncionario() {
                             );
                         }}
                     />
+                    </>}
 
                     <View style={styles.actionsContainer}>
                         <Button
@@ -726,7 +741,7 @@ export default function NovoFuncionario() {
                     </View>
                 </View>
             </KeyboardAwareScrollView>
-            <Controller
+            {!isProprioUsuario && <Controller
                 control={control}
                 name="permissions"
                 render={({ field: { value, onChange } }) => (
@@ -738,13 +753,14 @@ export default function NovoFuncionario() {
                         onClose={() => setShowPermissionsModal(false)}
                     />
                 )}
-            />
+            />}
             <DialogConfirmarAcao
                 show={showDeleteDialog}
                 setShow={setShowDeleteDialog}
                 titulo="Tem certeza que deseja excluir este funcionário?"
                 onSuccess={confirmarExclusao}
             />
+            {unsavedGuard.dialog}
         </View>
     );
 }

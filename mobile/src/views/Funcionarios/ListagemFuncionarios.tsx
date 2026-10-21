@@ -27,6 +27,7 @@ import TooltipChip from '@components/botoes/TooltipChip';
 import Funcionario from '@components/ui-lists/Funcionario';
 
 import { useTheme } from '@context/ThemeContext';
+import { useAuth } from '@context/AuthContext';
 import { FuncionarioType, RootStackParamList } from '@context/types';
 
 import { getFuncionarios } from '@api/apiFuncionario';
@@ -53,6 +54,7 @@ const Funcionarios = () => {
     const navigation = useNavigation<Navigation>();
 
     const { colors } = useTheme();
+    const { user } = useAuth();
 
     const [funcionarios, setFuncionarios] = useState<FuncionarioType[]>([]);
 
@@ -67,7 +69,9 @@ const Funcionarios = () => {
 
             const response = await getFuncionarios();
 
-            setFuncionarios(response.data);
+            setFuncionarios(response.data.filter((funcionario) =>
+                String(funcionario.id) !== String(user?.id)
+            ));
         } catch (error: any) {
             Toast.show({
                 type: 'error',
@@ -79,7 +83,7 @@ const Funcionarios = () => {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [user?.id]);
 
     useFocusEffect(
         useCallback(() => {
