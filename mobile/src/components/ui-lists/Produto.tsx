@@ -122,7 +122,6 @@ const Produto = ({
               </View>
             </TouchableOpacity>
 
-            {/* Informações do produto */}
             <View style={styles.info}>
               {/* Nome e categoria */}
               <View style={styles.header}>
