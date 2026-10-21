@@ -33,6 +33,7 @@ export default function ModalPermissoes({
 
     const [loading, setLoading] = useState(false);
 
+
     useEffect(() => {
         if (!visible) {
             return;
@@ -132,7 +133,9 @@ export default function ModalPermissoes({
             ];
 
         onChange(novasPermissoes);
+
     };
+
 
     return (
         <Modal

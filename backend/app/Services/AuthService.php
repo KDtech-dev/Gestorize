@@ -23,6 +23,8 @@ class AuthService implements IAuthService
             ]);
         }
 
+        $user->load(['roles.permissions', 'permissions']);
+
         $token = $user->createToken('api-token')->plainTextToken;
 
         return [

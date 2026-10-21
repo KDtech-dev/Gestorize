@@ -109,6 +109,42 @@ export default function NovoFuncionario() {
         return (PAPEIS_FUNCIONARIO.find((p) => p === papel) ?? "funcionario") as RoleForm;
     };
 
+    const normalizarPermissoes = (
+        permissoes: unknown
+    ): string[] => {
+        if (!Array.isArray(permissoes)) {
+            return [];
+        }
+
+        return permissoes
+            .map((permissao) => {
+                if (typeof permissao === "string") {
+                    return permissao;
+                }
+
+                if (
+                    typeof permissao === "object" &&
+                    permissao !== null &&
+                    "id" in permissao &&
+                    typeof permissao.id === "string"
+                ) {
+                    return permissao.id;
+                }
+
+                if (
+                    typeof permissao === "object" &&
+                    permissao !== null &&
+                    "name" in permissao &&
+                    typeof permissao.name === "string"
+                ) {
+                    return permissao.name;
+                }
+
+                return null;
+            })
+            .filter((permissao): permissao is string => permissao !== null);
+    };
+
     const carregarPerfis = async () => {
         if (perfisCarregados.current || carregandoPerfis.current) {
             return;
@@ -173,7 +209,7 @@ export default function NovoFuncionario() {
                     cpf: onlyNumbers(funcionario.cpf ?? "", 11),
                     data_nascimento: dateFromApi(funcionario.data_nascimento?.slice(0, 10)) ?? "",
                     role: normalizarPapel(funcionario.role),
-                    permissions: funcionario.permissions ?? [],
+                    permissions: normalizarPermissoes(funcionario.permissions),
                 });
 
                 const avatarUrl = funcionario.avatar_url ?? null;
