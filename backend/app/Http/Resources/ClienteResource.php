@@ -31,6 +31,16 @@ class ClienteResource extends JsonResource
                 'dadosPj',
                 fn() => $this->dadosPj
             ),
+            'orcamentos' => $this->whenLoaded(
+                'orcamentos',
+                fn() => $this->orcamentos->map(fn ($orcamento) => [
+                    'id' => $orcamento->id,
+                    'titulo' => $orcamento->titulo,
+                    'status' => $orcamento->status,
+                    'valor_total' => $orcamento->valor_total,
+                    'data_orcamento' => $orcamento->data_orcamento,
+                ])->values()
+            ),
         ];
     }
 }

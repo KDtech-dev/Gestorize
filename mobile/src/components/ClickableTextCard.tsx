@@ -15,6 +15,7 @@ type Props = {
   width?: DimensionValue;
   onPress?: (event: GestureResponderEvent) => void;
   placeholder?: string;
+  disabled?: boolean;
 };
 
 const ClickableTextCard = ({
@@ -23,12 +24,13 @@ const ClickableTextCard = ({
   width = '100%',
   onPress,
   placeholder = 'Selecionar...',
+  disabled = false,
 }: Props) => {
   const isEmpty = !value;
 
   return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
-      <View style={[styles.container, { width }]}>
+    <TouchableOpacity onPress={disabled ? undefined : onPress} activeOpacity={0.7} disabled={disabled}>
+      <View style={[styles.container, disabled && styles.containerDisabled, { width }]}>
         <View style={styles.textContainer}>
           <View>
             <Text style={styles.label}>{label}</Text>
@@ -36,7 +38,7 @@ const ClickableTextCard = ({
               {value || placeholder}
             </Text>
           </View>
-          <MaterialIcons name="arrow-drop-down" size={28} color="#666" />
+          {!disabled && <MaterialIcons name="arrow-drop-down" size={28} color="#666" />}
         </View>
       </View>
     </TouchableOpacity>
@@ -55,6 +57,7 @@ const styles = StyleSheet.create({
     marginVertical: 10,
     backgroundColor: '#fff',
   },
+  containerDisabled: { backgroundColor: '#f1f5f9', borderColor: '#cbd5e1' },
   label: {
     fontSize: 13,
     color: '#6e6e6e',

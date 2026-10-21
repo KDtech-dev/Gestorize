@@ -76,6 +76,7 @@ export default function NovoOrcamento() {
   const [statusOrcamento, setStatusOrcamento] = useState<'pendente' | 'aprovado'>('pendente');
   const [aprovadorNome, setAprovadorNome] = useState('');
   const [aprovadoEm, setAprovadoEm] = useState('');
+  const bloqueado = editando && statusOrcamento === 'aprovado';
   const [modalProdutosVisivel, setModalProdutosVisivel] = useState(false);
   const [modalClientesVisivel, setModalClientesVisivel] = useState(false);
   const [carregando, setCarregando] = useState(true);
@@ -251,14 +252,15 @@ export default function NovoOrcamento() {
           label="Título do orçamento"
           value={titulo}
           placeholder="Ex.: Reforma da cozinha"
-          editable={!salvando}
+          editable={!salvando && !bloqueado}
           onChangeText={setTitulo}
         />
         <ClickableTextCard
           label="Cliente"
           value={opcoesClientes.find((cliente) => cliente.id === clienteId)?.nome ?? ''}
           placeholder={carregando ? 'Carregando clientes...' : 'Selecione um cliente'}
-          onPress={!carregando && !salvando ? () => setModalClientesVisivel(true) : undefined}
+          disabled={bloqueado}
+          onPress={!carregando && !salvando && !bloqueado ? () => setModalClientesVisivel(true) : undefined}
         />
         <EditableTextCard label="Criado em" value={criadoEm || 'Automático ao salvar'} editable={false} />
         {editando && <EditableTextCard label="Atualizado em" value={atualizadoEm} editable={false} />}
@@ -287,7 +289,8 @@ export default function NovoOrcamento() {
           label="Produtos"
           value=""
           placeholder={carregando ? 'Carregando produtos...' : 'Toque para adicionar um produto'}
-          onPress={!carregando && !salvando ? () => setModalProdutosVisivel(true) : undefined}
+          disabled={bloqueado}
+          onPress={!carregando && !salvando && !bloqueado ? () => setModalProdutosVisivel(true) : undefined}
         />
         {itens.map((item, index) => {
           const produto = produtos.find((opcao) => opcao.id === item.produto_id);
@@ -297,7 +300,7 @@ export default function NovoOrcamento() {
             item={item}
             produto={produto}
             index={index}
-            disabled={salvando}
+            disabled={salvando || bloqueado}
             onChangeQuantidade={(quantidade) => atualizarQuantidade(item.key, quantidade)}
             onRemove={() => setItens((atuais) => atuais.filter((atual) => atual.key !== item.key))}
           />;
@@ -313,14 +316,14 @@ export default function NovoOrcamento() {
           )}
           <Button
             title={salvando ? 'Salvando...' : editando ? 'Salvar alterações' : 'Criar orçamento'}
-            disabled={salvando || carregando || !clientes.length || !produtos.length}
+            disabled={salvando || bloqueado || carregando || !clientes.length || !produtos.length}
             onPress={salvar}
           />
           {editando && (
             <Button
               title="Excluir orçamento"
               variant="delete"
-              disabled={salvando}
+              disabled={salvando || bloqueado}
               onPress={() => setShowDeleteDialog(true)}
             />
           )}

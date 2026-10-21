@@ -72,6 +72,15 @@ export type ClienteType = {
   endereco: EnderecoType | null;
   pf: PessoaFisicaType | null;
   pj: PessoaJuridicaType | null;
+  orcamentos?: OrcamentoResumoType[];
+};
+
+export type OrcamentoResumoType = {
+  id: string;
+  titulo: string;
+  status: 'pendente' | 'aprovado';
+  valor_total: number | string;
+  data_orcamento: StringfiedDate;
 };
 
 export type PessoaFisicaType = {

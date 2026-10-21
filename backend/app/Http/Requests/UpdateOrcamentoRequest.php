@@ -2,13 +2,19 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Orcamento;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateOrcamentoRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->can('orcamentos.editar') ?? false;
+        if (!($this->user()?->can('orcamentos.editar') ?? false)) {
+            return false;
+        }
+
+        return Orcamento::whereKey($this->route('id'))
+            ->value('status') !== 'aprovado';
     }
 
     public function rules(): array

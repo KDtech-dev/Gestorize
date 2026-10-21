@@ -68,6 +68,7 @@ class ClienteService
             'endereco',
             'dadosPf',
             'dadosPj',
+            'orcamentos' => fn ($query) => $query->latest('data_orcamento')->latest(),
         ])->findOrFail($id);
     }
 
@@ -118,9 +119,11 @@ class ClienteService
 
     public function deletar(string $id): array
     {
-        $cliente = Cliente::findOrFail($id);
-
-        $cliente->delete();
+        DB::transaction(function () use ($id) {
+            $cliente = Cliente::findOrFail($id);
+            $cliente->orcamentos()->delete();
+            $cliente->delete();
+        });
 
         return [
             'message' => 'Cliente removido',

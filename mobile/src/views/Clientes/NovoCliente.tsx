@@ -29,6 +29,8 @@ import { InputError } from "@components/InputError";
 import GeneroSelector from "@components/GeneroSelector";
 import { getCep } from "@api/apiCep";
 import DateField from "@components/DateField";
+import OrcamentoClienteResumo from "@components/orcamentos/OrcamentoClienteResumo";
+import { OrcamentoResumoType } from "@context/types";
 
 type Navigation = NativeStackNavigationProp<RootStackParamList>;
 
@@ -46,6 +48,7 @@ export default function NovoCliente() {
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [avatar, setAvatar] = useState<string | null>(null);
     const [avatarOriginal, setAvatarOriginal] = useState<string | null>(null);
+    const [orcamentos, setOrcamentos] = useState<OrcamentoResumoType[]>([]);
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const modo = route.params?.modo ?? "criar";
@@ -141,6 +144,7 @@ export default function NovoCliente() {
 
                 const response = await getCliente(clienteId);
                 const cliente = response.data;
+                setOrcamentos(cliente.orcamentos ?? []);
 
                 const dados: FormData =
                     cliente.tipo === "pf"
@@ -937,6 +941,16 @@ export default function NovoCliente() {
                         )}
                     />
                 </View>
+                {isEditar && (
+                    <View style={styles.section}>
+                        <Text style={[styles.sectionTitle, { color: colors.text }]}>Orçamentos do cliente</Text>
+                        {!orcamentos.length ? (
+                            <Text style={[styles.emptyBudgets, { color: colors.muted }]}>Este cliente ainda não possui orçamentos.</Text>
+                        ) : orcamentos.map((orcamento) => (
+                            <OrcamentoClienteResumo key={orcamento.id} orcamento={orcamento} />
+                        ))}
+                    </View>
+                )}
                 <View style={styles.actionsContainer}>
                     <Button
                         title={
@@ -1041,4 +1055,5 @@ const styles = StyleSheet.create({
         gap: 12,
         marginBottom: 5,
     },
+    emptyBudgets: { fontSize: 14, marginTop: 6, paddingVertical: 12 },
 });
