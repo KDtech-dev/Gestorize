@@ -65,6 +65,15 @@ export const getCurrentUser = async (): Promise<ResponseType<UserType>> => {
   };
 };
 
+export const updateCurrentUser = async (data: Record<string, unknown>): Promise<ResponseType<UserType>> => {
+  const response = await getAxios().put('/me', data);
+  const payload = response.data;
+  return {
+    ...payload,
+    data: { ...payload.data, nome: payload.data?.nome ?? payload.data?.name ?? '' },
+  };
+};
+
 export const postRefreshToken = async (): Promise<RefreshData> => {
   const { data } = await api.post<ResponseType<RefreshData>>(
     auth.refreshEndpoint,

@@ -10,6 +10,7 @@ import {
 import DateTimePicker, {
     DateTimePickerEvent,
 } from "@react-native-community/datetimepicker";
+import { useTheme } from "@context/ThemeContext";
 
 type Props = {
     label: string;
@@ -46,6 +47,7 @@ const DateField = ({
     maximumDate,
 }: Props) => {
     const [show, setShow] = useState(false);
+    const { colors } = useTheme();
 
     const handleChange = (
         event: DateTimePickerEvent,
@@ -65,14 +67,14 @@ const DateField = ({
             <TouchableOpacity
                 activeOpacity={0.7}
                 onPress={() => setShow(true)}
-                style={styles.container}
+                style={[styles.container, { backgroundColor: colors.surface, borderColor: colors.border }]}
             >
-                <Text style={styles.label}>{label}</Text>
+                <Text style={[styles.label, { color: colors.muted }]}>{label}</Text>
 
                 <Text
                     style={[
                         styles.value,
-                        !value && styles.placeholder,
+                        { color: value ? colors.text : colors.muted },
                     ]}
                 >
                     {value || placeholder}

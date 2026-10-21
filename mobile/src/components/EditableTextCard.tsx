@@ -10,6 +10,7 @@ import {
 import type { DimensionValue } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { formatMoney, formatMoneyInput } from '@core/utils/format';
+import { useTheme } from '@context/ThemeContext';
 
 type Props = {
   label?: string;
@@ -37,6 +38,7 @@ const EditableTextCard = ({
     money ? formatMoney(value) : value,
   );
   const [secureText, setSecureText] = useState(true);
+  const { colors } = useTheme();
 
   const inputRef = useRef<TextInput>(null);
 
@@ -87,6 +89,7 @@ const EditableTextCard = ({
       style={[
         styles.container,
         !editable && styles.containerDisabled,
+        { backgroundColor: editable ? colors.surface : colors.background, borderColor: colors.border },
         { width },
       ]}
     >
@@ -94,6 +97,7 @@ const EditableTextCard = ({
         style={[
           styles.label,
           !editable && styles.labelDisabled,
+          { color: colors.muted },
         ]}
       >
         {label}
@@ -116,6 +120,7 @@ const EditableTextCard = ({
               styles.input,
               !isEditing && styles.inputReadOnly,
               !editable && styles.inputDisabled,
+              { color: colors.text },
             ]}
             value={internalValue}
             onChangeText={handleChangeText}
@@ -123,7 +128,7 @@ const EditableTextCard = ({
             onBlur={handleBlur}
             keyboardType={keyboardType}
             placeholder={placeholder}
-            placeholderTextColor={editable ? '#999' : '#aaa'}
+            placeholderTextColor={colors.muted}
             secureTextEntry={isPassword && secureText}
             editable={editable}
             autoCapitalize={isPassword ? 'none' : 'sentences'}
@@ -142,7 +147,7 @@ const EditableTextCard = ({
             <Ionicons
               name={secureText ? 'eye-off-outline' : 'eye-outline'}
               size={24}
-              color={editable ? '#000' : '#999'}
+              color={colors.text}
             />
           </TouchableOpacity>
         )}

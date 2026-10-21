@@ -6,9 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\AuthLoginRequest;
 use App\Http\Requests\AuthLogoutRequest;
 use App\Http\Requests\AuthRefreshRequest;
+use App\Http\Requests\UpdateMeuPerfilRequest;
 use App\Http\Resources\UserResource;
 use App\Services\IAuthService;
 use App\Services\ResponseService;
+use App\Services\UserService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -47,5 +49,12 @@ class AuthController extends Controller
         ]);
 
         return ResponseService::success(new UserResource($usuario));
+    }
+
+    public function atualizarMeuPerfil(UpdateMeuPerfilRequest $request, UserService $users): JsonResponse
+    {
+        $usuario = $users->atualizarMeuPerfil($request->user(), $request->validated());
+
+        return ResponseService::success(new UserResource($usuario), 'Perfil atualizado com sucesso.');
     }
 }

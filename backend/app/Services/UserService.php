@@ -10,6 +10,38 @@ use Illuminate\Support\Facades\Hash;
 
 class UserService
 {
+    public function atualizarMeuPerfil(User $user, array $dados): User
+    {
+        return DB::transaction(function () use ($user, $dados) {
+            $user->update([
+                'name' => $dados['name'],
+                'email' => $dados['email'],
+                ...(!empty($dados['password']) ? ['password' => Hash::make($dados['password'])] : []),
+            ]);
+
+            $funcionario = $user->funcionario;
+            if ($funcionario && isset($dados['funcionario'])) {
+                $funcionario->update($dados['funcionario']);
+            }
+
+            if ($funcionario && isset($dados['endereco'])) {
+                $endereco = $funcionario->endereco;
+                $camposEndereco = $dados['endereco'];
+                if (!$endereco && collect($camposEndereco)->contains(fn ($valor) => $valor !== null && $valor !== '')) {
+                    $endereco = Endereco::create(array_merge([
+                        'cep' => '', 'logradouro' => '', 'numero' => '', 'complemento' => null,
+                        'bairro' => '', 'cidade' => '', 'estado' => '',
+                    ], $camposEndereco));
+                    $funcionario->update(['endereco_id' => $endereco->id]);
+                } elseif ($endereco) {
+                    $endereco->update($camposEndereco);
+                }
+            }
+
+            return $user->fresh()->load(['roles.permissions', 'permissions', 'funcionario.endereco']);
+        });
+    }
+
     public function criar(array $dados): User
     {
         return DB::transaction(function () use ($dados) {

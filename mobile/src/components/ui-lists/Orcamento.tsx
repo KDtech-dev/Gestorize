@@ -21,8 +21,12 @@ const Orcamento = ({ title, cliente, valor, status, onPress }: props) => {
 
   const circleColor = isDark ? '#09377B' : 'rgba(6, 32, 70, 0.22)';
   const arrowColor = isDark ? '#ffffff' : '#062046';
-  const statusColor = status === 'aprovado' ? '#15803d' : '#b45309';
-  const statusBg = status === 'aprovado' ? '#dcfce7' : '#fef3c7';
+  const statusColor = isDark
+    ? (status === 'aprovado' ? '#bbf7d0' : '#fde68a')
+    : (status === 'aprovado' ? '#15803d' : '#b45309');
+  const statusBg = isDark
+    ? (status === 'aprovado' ? '#14532d' : '#78350f')
+    : (status === 'aprovado' ? '#dcfce7' : '#fef3c7');
 
   return (
     <TouchableOpacity activeOpacity={0.9} onPress={onPress}>
@@ -64,9 +68,9 @@ const Orcamento = ({ title, cliente, valor, status, onPress }: props) => {
               {title}
             </Text>
 
-            <View style={[styles.statusBadge, { backgroundColor: isDark ? `${statusColor}33` : statusBg }]}>
+            <View style={[styles.statusBadge, { backgroundColor: statusBg }]}>
               <Ionicons name={status === 'aprovado' ? 'checkmark-circle' : 'time-outline'} size={14} color={statusColor} />
-              <Text style={[styles.statusText, { color: isDark ? '#ffffff' : statusColor }]}>
+              <Text style={[styles.statusText, { color: statusColor }]}>
                 {status === 'aprovado' ? 'Aprovado' : 'Pendente'}
               </Text>
             </View>

@@ -30,6 +30,7 @@ import { useCallback, useEffect, useState } from "react";
 import { z } from "zod";
 
 import { Opcao, RootStackParamList } from "@context/types";
+import { FornecedorType } from "@context/types";
 import { useTheme } from "@context/ThemeContext";
 
 import {
@@ -51,6 +52,8 @@ import { getFornecedores } from "@api/apiFornecedores";
 import { useAuth } from "@context/AuthContext";
 import { can } from "@utils/permissions";
 import { useUnsavedChangesGuard } from "../../hooks/useUnsavedChangesGuard";
+import ClickableTextCard from "@components/ClickableTextCard";
+import ProdutoFornecedorPicker from "@components/produtos/ProdutoFornecedorPicker";
 type Navigation =
     NativeStackNavigationProp<RootStackParamList>;
 
@@ -91,7 +94,8 @@ export default function NovoProduto() {
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [imagens, setImagens] = useState<ImagemGaleria[]>([]);
     const [imagensOriginais, setImagensOriginais] = useState<ImagemGaleria[]>([]);
-    const [fornecedores, setFornecedores] = useState<Opcao[]>([]);
+    const [fornecedores, setFornecedores] = useState<FornecedorType[]>([]);
+    const [fornecedorModalVisivel, setFornecedorModalVisivel] = useState(false);
     const [carregandoFornecedores, setCarregandoFornecedores] = useState(false);
     const [categorias, setCategorias] = useState<Opcao[]>([]);
     const [carregandoCategorias, setCarregandoCategorias] = useState(false);
@@ -144,10 +148,7 @@ export default function NovoProduto() {
         try {
             setCarregandoFornecedores(true);
             const response = await getFornecedores();
-            setFornecedores(response.data.map((fornecedor) => ({
-                id: String(fornecedor.id),
-                nome: fornecedor.nome,
-            })));
+            setFornecedores(response.data);
         } catch (error: any) {
             Toast.show({
                 type: "error",
@@ -873,23 +874,22 @@ export default function NovoProduto() {
                             fieldState: { error, },
                         }) => (
                             <>
-                                <Selector
-                                    label="Fornecedor"
-                                    placeholder={carregandoFornecedores
-                                        ? "Carregando fornecedores..."
-                                        : fornecedores.length
-                                            ? "Selecionar fornecedor"
-                                            : "Nenhum fornecedor cadastrado"}
-                                    value={value}
-                                    options={fornecedores}
-                                    loading={carregandoFornecedores}
-                                    onChange={onChange}
-                                    onOpen={carregarFornecedores}
-                                    showAddButton={can(user, "fornecedores.criar")}
-                                    onAdd={can(user, "fornecedores.criar")
-                                        ? () => navigation.navigate("NovoFornecedor", { modo: "criar" })
-                                        : undefined}
-                                />
+                        <ClickableTextCard
+                            label="Fornecedor"
+                            value={fornecedores.find((fornecedor) => fornecedor.id === value)?.nome ?? ""}
+                            placeholder={carregandoFornecedores ? "Carregando fornecedores..." : "Selecionar fornecedor"}
+                            onPress={() => { carregarFornecedores(); setFornecedorModalVisivel(true); }}
+                        />
+                        <ProdutoFornecedorPicker
+                            visible={fornecedorModalVisivel}
+                            suppliers={fornecedores}
+                            selectedId={value}
+                            loading={carregandoFornecedores}
+                            canAdd={can(user, "fornecedores.criar")}
+                            onClose={() => setFornecedorModalVisivel(false)}
+                            onSelect={(fornecedor) => { onChange(String(fornecedor.id)); setFornecedorModalVisivel(false); }}
+                            onAdd={() => { setFornecedorModalVisivel(false); navigation.navigate("NovoFornecedor", { modo: "criar" }); }}
+                        />
                                 <InputError message={error?.message} />
                             </>
                         )}

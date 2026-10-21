@@ -141,7 +141,7 @@ export default function GaleriaImagens({
                     <TouchableOpacity
                         style={[
                             styles.botaoAdicionar,
-                            { backgroundColor: colors.primary },
+                            { backgroundColor: colors.primary === '#ffffff' ? '#005CE4' : colors.primary },
                         ]}
 
                         onPress={selecionarImagens}

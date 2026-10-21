@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import type { DimensionValue } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useTheme } from '@context/ThemeContext';
 
 type Props = {
   label?: string;
@@ -27,18 +28,19 @@ const ClickableTextCard = ({
   disabled = false,
 }: Props) => {
   const isEmpty = !value;
+  const { colors } = useTheme();
 
   return (
     <TouchableOpacity onPress={disabled ? undefined : onPress} activeOpacity={0.7} disabled={disabled}>
-      <View style={[styles.container, disabled && styles.containerDisabled, { width }]}>
+      <View style={[styles.container, disabled && styles.containerDisabled, { width, backgroundColor: colors.surface, borderColor: colors.border }]}>
         <View style={styles.textContainer}>
           <View>
-            <Text style={styles.label}>{label}</Text>
-            <Text style={[styles.valueText, isEmpty && styles.placeholderText]}>
+            <Text style={[styles.label, { color: colors.muted }]}>{label}</Text>
+            <Text style={[styles.valueText, { color: colors.text }, isEmpty && { color: colors.muted, fontWeight: 'normal' }]}>
               {value || placeholder}
             </Text>
           </View>
-          {!disabled && <MaterialIcons name="arrow-drop-down" size={28} color="#666" />}
+          {!disabled && <MaterialIcons name="arrow-drop-down" size={28} color={colors.muted} />}
         </View>
       </View>
     </TouchableOpacity>

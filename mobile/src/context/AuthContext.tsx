@@ -18,6 +18,7 @@ type AuthContextType = {
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
+  updateUser: (user: any) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType>({
@@ -26,6 +27,7 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   signIn: async () => {},
   signOut: async () => {},
+  updateUser: async () => {},
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
@@ -114,8 +116,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  const updateUser = async (updatedUser: any) => {
+    setUser((current: any) => ({ ...current, ...updatedUser }));
+    const storedUser = await secureStore.get(authConfig.userDataKeyName);
+    let current = {};
+    try { current = storedUser ? JSON.parse(storedUser) : {}; } catch { current = {}; }
+    await secureStore.set(authConfig.userDataKeyName, JSON.stringify({ ...current, ...updatedUser }));
+  };
+
   return (
-    <AuthContext.Provider value={{ token, user, loading, signIn, signOut }}>
+    <AuthContext.Provider value={{ token, user, loading, signIn, signOut, updateUser }}>
       {children}
     </AuthContext.Provider>
   );
