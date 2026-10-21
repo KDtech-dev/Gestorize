@@ -112,18 +112,20 @@ export default function ModalPermissoes({
         if (herdadas?.includes(id)) return;
 
         onChange(
-            estaAtiva(id)
+            selecionadas.includes(id)
                 ? selecionadas.filter((item) => item !== id)
                 : [...selecionadas, id]
         );
-    }
+    };
 
     const alternarGrupo = (permissoesGrupo: PermissaoType[]) => {
         const editaveis = permissoesGrupo
             .map((p) => p.id)
             .filter((id) => !herdadas?.includes(id));
 
-        const todasMarcadas = editaveis.every((id) => estaAtiva(id));
+        if (editaveis.length === 0) return;
+
+        const todasMarcadas = editaveis.every((id) => selecionadas.includes(id));
 
         onChange(
             todasMarcadas
@@ -196,13 +198,17 @@ export default function ModalPermissoes({
 
                                 const parcialmenteSelecionadas =
                                     quantidadeSelecionada > 0 && !todasSelecionadas;
+                                const editaveisGrupo = idsGrupo.filter((id) => !herdadas?.includes(id));
+                                const grupoTravado = editaveisGrupo.length === 0;
+                                const todasEditaveisMarcadas =
+                                    !grupoTravado && editaveisGrupo.every((id) => selecionadas.includes(id));
 
                                 return (
                                     <View key={grupo} style={styles.group}>
 
                                         <TouchableOpacity
-                                            activeOpacity={0.7}
-                                            style={styles.groupHeader}
+                                            disabled={grupoTravado}
+                                            style={[styles.groupHeader, grupoTravado && { opacity: 0.7 }]}
                                             onPress={() => alternarGrupo(permissoesGrupo)}
                                         >
                                             <Ionicons
@@ -232,52 +238,57 @@ export default function ModalPermissoes({
                                                     {permissoesGrupo.length} selecionadas
                                                 </Text>
                                             </View>
-
                                             <Text style={styles.groupAction}>
-                                                {todasSelecionadas
-                                                    ? "Desmarcar"
-                                                    : "Selecionar todas"}
+                                                {grupoTravado
+                                                    ? "Herdadas do perfil"
+                                                    : todasEditaveisMarcadas
+                                                        ? "Desmarcar"
+                                                        : "Selecionar todas"}
                                             </Text>
                                         </TouchableOpacity>
 
                                         {permissoesGrupo.map((permissao, index) => {
-                                            const selecionada = estaAtiva(
-                                                permissao.id
-                                            );
+                                            const selecionada = estaAtiva(permissao.id);
+                                            const herdada = !!herdadas?.includes(permissao.id);
 
                                             return (
                                                 <View key={permissao.id}>
                                                     <TouchableOpacity
-                                                        activeOpacity={0.7}
+                                                        activeOpacity={herdada ? 1 : 0.7}
+                                                        disabled={herdada}
                                                         style={[
                                                             styles.option,
-                                                            selecionada &&
-                                                            styles.selectedOption,
+                                                            selecionada && styles.selectedOption,
+                                                            herdada && { opacity: 0.75 },
                                                         ]}
-                                                        onPress={() =>
-                                                            alternarPermissao(permissao.id)
-                                                        }
+                                                        onPress={() => alternarPermissao(permissao.id)}
                                                     >
-                                                        <Text
-                                                            style={[
-                                                                styles.optionText,
-                                                                selecionada &&
-                                                                styles.selectedOptionText,
-                                                            ]}
-                                                        >
-                                                            {permissao.nome}
-                                                        </Text>
+                                                        <View style={{ flex: 1 }}>
+                                                            <Text
+                                                                style={[
+                                                                    styles.optionText,
+                                                                    selecionada && styles.selectedOptionText,
+                                                                ]}
+                                                            >
+                                                                {permissao.nome}
+                                                            </Text>
+
+                                                            {herdada && (
+                                                                <Text
+                                                                    style={[
+                                                                        styles.inheritedText,
+                                                                        selecionada && styles.selectedInheritedText,
+                                                                    ]}
+                                                                >
+                                                                    Herdada do perfil
+                                                                </Text>
+                                                            )}
+                                                        </View>
 
                                                         <Ionicons
-                                                            name={
-                                                                selecionada
-                                                                    ? "checkbox"
-                                                                    : "square-outline"
-                                                            }
+                                                            name={herdada ? "lock-closed" : selecionada ? "checkbox" : "square-outline"}
                                                             size={22}
-                                                            color={
-                                                                selecionada ? "#fff" : "#777"
-                                                            }
+                                                            color={selecionada ? "#fff" : "#777"}
                                                         />
                                                     </TouchableOpacity>
 
@@ -377,18 +388,27 @@ const styles = StyleSheet.create({
     },
 
     option: {
-        minHeight: 52,
+        minHeight: 64,
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
         paddingHorizontal: 20,
+        paddingVertical: 14,
         gap: 12,
     },
 
     selectedOption: {
         backgroundColor: "#062046",
     },
+    inheritedText: {
+        fontSize: 11,
+        color: "#667085",
+        marginTop: 1,
+    },
 
+    selectedInheritedText: {
+        color: "#CDD9F1",
+    },
     optionText: {
         flex: 1,
         fontSize: 15,
