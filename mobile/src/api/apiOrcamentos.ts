@@ -1,0 +1,47 @@
+import { getAxios } from "@configs/axios";
+import { ArrayResponseType, OrcamentoType, ResponseType } from "@context/types";
+
+export type OrcamentoPayload = {
+  cliente_id: string;
+  data_orcamento: string;
+  itens: OrcamentoItemPayload[];
+  valor_total?: number;
+};
+
+export type OrcamentoItemPayload = {
+  produto_id: string;
+  quantidade: number;
+  preco_unitario: number;
+};
+
+const getOrcamentos = async (): Promise<ArrayResponseType<OrcamentoType>> => {
+  const response = await getAxios().get("/orcamentos");
+  return response.data;
+};
+
+const getOrcamento = async (id: string): Promise<ResponseType<OrcamentoType>> => {
+  const response = await getAxios().get(`/orcamentos/${id}`);
+  return response.data;
+};
+
+const createOrcamento = async (
+  data: OrcamentoPayload,
+): Promise<ResponseType<OrcamentoType>> => {
+  const response = await getAxios().post("/orcamentos", data);
+  return response.data;
+};
+
+const updateOrcamento = async (
+  id: string,
+  data: Partial<OrcamentoPayload>,
+): Promise<ResponseType<OrcamentoType>> => {
+  const response = await getAxios().put(`/orcamentos/${id}`, data);
+  return response.data;
+};
+
+const deleteOrcamento = async (id: string): Promise<ResponseType<null>> => {
+  const response = await getAxios().delete(`/orcamentos/${id}`);
+  return response.data;
+};
+
+export { getOrcamentos, getOrcamento, createOrcamento, updateOrcamento, deleteOrcamento };
