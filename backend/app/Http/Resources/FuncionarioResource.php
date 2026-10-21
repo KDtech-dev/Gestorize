@@ -36,12 +36,16 @@ class FuncionarioResource extends JsonResource
                     ? new EnderecoResource($this->endereco)
                     : null
             ),
-            'permissions' => $this->user
-                ?->getDirectPermissions()
-                ->pluck('name')
-                ->values()
-                ->all() ?? [],
-
+            'permissions' => $this->whenLoaded(
+                'user',
+                fn() => $this->user->getDirectPermissions()->pluck('name')->values()->all(),
+                []
+            ),
+            'role_permissions' => $this->whenLoaded(
+                'user',
+                fn() => $this->user->getPermissionsViaRoles()->pluck('name')->unique()->values()->all(),
+                []
+            ),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];
