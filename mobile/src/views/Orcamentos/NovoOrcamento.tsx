@@ -283,7 +283,12 @@ export default function NovoOrcamento() {
         {!itens.length && (
           <Text style={styles.emptyText}>Adicione produtos para compor este orçamento.</Text>
         )}
-
+        <ClickableTextCard
+          label="Produtos"
+          value=""
+          placeholder={carregando ? 'Carregando produtos...' : 'Toque para adicionar um produto'}
+          onPress={() => setModalProdutosVisivel(true)}
+        />
         {itens.map((item, index) => {
           const produto = produtos.find((opcao) => opcao.id === item.produto_id);
           if (!produto) return null;
@@ -329,14 +334,6 @@ export default function NovoOrcamento() {
             </View>
           );
         })}
-
-        <ClickableTextCard
-          label="Produtos"
-          value=""
-          placeholder={carregando ? 'Carregando produtos...' : 'Toque para adicionar um produto'}
-          onPress={() => setModalProdutosVisivel(true)}
-        />
-
         <View style={styles.totalCard}>
           <Text style={styles.totalLabel}>Total do orçamento</Text>
           <Text style={styles.totalValue}>{formatMoney(valorTotal)}</Text>
