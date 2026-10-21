@@ -72,6 +72,7 @@ export default function NovoFuncionario() {
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [showPermissionsModal, setShowPermissionsModal] = useState(false);
     const [perfis, setPerfis] = useState<Opcao[]>(PERFIS_FALLBACK);
+    const [permissoesDoPerfil, setPermissoesDoPerfil] = useState<string[]>([]);
     const [loadingPerfis, setLoadingPerfis] = useState(false);
     const perfisCarregados = useRef(false);
     const carregandoPerfis = useRef(false);
@@ -215,6 +216,7 @@ export default function NovoFuncionario() {
                 const avatarUrl = funcionario.avatar_url ?? null;
                 setAvatar(avatarUrl);
                 setAvatarOriginal(avatarUrl);
+                setPermissoesDoPerfil(normalizarPermissoes(funcionario.role_permissions));
             } catch (error) {
                 if (cancelado) return;
 
@@ -729,6 +731,7 @@ export default function NovoFuncionario() {
                     <ModalPermissoes
                         visible={showPermissionsModal}
                         selecionadas={value ?? []}
+                        herdadas={permissoesDoPerfil}
                         onChange={onChange}
                         onClose={() => setShowPermissionsModal(false)}
                     />

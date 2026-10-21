@@ -18,6 +18,7 @@ import { PermissaoType } from "@context/types";
 type ModalPermissoesProps = {
     visible: boolean;
     selecionadas: string[];
+    herdadas?: string[];
     onChange: (permissoes: string[]) => void;
     onClose: () => void;
 };
@@ -25,11 +26,15 @@ type ModalPermissoesProps = {
 export default function ModalPermissoes({
     visible,
     selecionadas,
+    herdadas,
     onChange,
     onClose,
 }: ModalPermissoesProps) {
     const [permissoesDisponiveis, setPermissoesDisponiveis] =
         useState<PermissaoType[]>([]);
+    const estaAtiva = (id: string) =>
+        herdadas?.includes(id) || selecionadas.includes(id);
+
 
     const [loading, setLoading] = useState(false);
 
@@ -100,41 +105,33 @@ export default function ModalPermissoes({
 
             return acc;
         }, {});
+
     }, [permissoesDisponiveis]);
 
-    const alternarPermissao = (permissaoId: string) => {
-        const existe = selecionadas.includes(permissaoId);
+    const alternarPermissao = (id: string) => {
+        if (herdadas?.includes(id)) return;
 
-        const novasPermissoes = existe
-            ? selecionadas.filter((item) => item !== permissaoId)
-            : [...selecionadas, permissaoId];
+        onChange(
+            estaAtiva(id)
+                ? selecionadas.filter((item) => item !== id)
+                : [...selecionadas, id]
+        );
+    }
 
-        onChange(novasPermissoes);
+    const alternarGrupo = (permissoesGrupo: PermissaoType[]) => {
+        const editaveis = permissoesGrupo
+            .map((p) => p.id)
+            .filter((id) => !herdadas?.includes(id));
+
+        const todasMarcadas = editaveis.every((id) => estaAtiva(id));
+
+        onChange(
+            todasMarcadas
+                ? selecionadas.filter((id) => !editaveis.includes(id))
+                : [...new Set([...selecionadas, ...editaveis])]
+        );
     };
 
-    const alternarGrupo = (
-        permissoesGrupo: PermissaoType[]
-    ) => {
-        const idsGrupo = permissoesGrupo.map(
-            (permissao) => permissao.id
-        );
-
-        const todasSelecionadas = idsGrupo.every((id) =>
-            selecionadas.includes(id)
-        );
-
-        const novasPermissoes = todasSelecionadas
-            ? selecionadas.filter((id) => !idsGrupo.includes(id))
-            : [
-                ...new Set([
-                    ...selecionadas,
-                    ...idsGrupo,
-                ]),
-            ];
-
-        onChange(novasPermissoes);
-
-    };
 
 
     return (
@@ -191,9 +188,7 @@ export default function ModalPermissoes({
                                     (permissao) => permissao.id
                                 );
 
-                                const quantidadeSelecionada = idsGrupo.filter((id) =>
-                                    selecionadas.includes(id)
-                                ).length;
+                                const quantidadeSelecionada = idsGrupo.filter(estaAtiva).length;
 
                                 const todasSelecionadas =
                                     idsGrupo.length > 0 &&
@@ -204,6 +199,7 @@ export default function ModalPermissoes({
 
                                 return (
                                     <View key={grupo} style={styles.group}>
+
                                         <TouchableOpacity
                                             activeOpacity={0.7}
                                             style={styles.groupHeader}
@@ -245,7 +241,7 @@ export default function ModalPermissoes({
                                         </TouchableOpacity>
 
                                         {permissoesGrupo.map((permissao, index) => {
-                                            const selecionada = selecionadas.includes(
+                                            const selecionada = estaAtiva(
                                                 permissao.id
                                             );
 
