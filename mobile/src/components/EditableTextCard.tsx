@@ -22,8 +22,6 @@ type Props = {
   money?: boolean;
 };
 
-
-
 const EditableTextCard = ({
   label = 'Campo',
   value = '',
@@ -42,17 +40,18 @@ const EditableTextCard = ({
 
   const inputRef = useRef<TextInput>(null);
 
+  const isPassword = tipo === 'password';
+
   useEffect(() => {
     if (isEditing) {
       return;
     }
+
     setInternalValue(money ? formatMoney(value) : value);
   }, [value, money, isEditing]);
 
   const keyboardType: KeyboardTypeOptions =
     tipo === 'number' ? 'numeric' : 'default';
-
-  const isPassword = tipo === 'password';
 
   const handleFocus = () => {
     if (editable) {
@@ -62,15 +61,16 @@ const EditableTextCard = ({
 
   const handleBlur = () => {
     setIsEditing(false);
-
     onChangeText?.(internalValue);
   };
 
   const handleChangeText = (text: string) => {
     if (money) {
       const formattedValue = formatMoneyInput(text);
+
       setInternalValue(formattedValue);
       onChangeText?.(formattedValue);
+
       return;
     }
 
@@ -78,10 +78,9 @@ const EditableTextCard = ({
     onChangeText?.(text);
   };
 
-  const displayValue =
-    isPassword && secureText
-      ? '\u2022'.repeat(internalValue.length)
-      : internalValue;
+  const toggleSecureText = () => {
+    setSecureText((previous) => !previous);
+  };
 
   return (
     <View
@@ -103,14 +102,13 @@ const EditableTextCard = ({
       <View style={styles.inputWrapper}>
         <TouchableOpacity
           activeOpacity={1}
-          style={styles.flex}
+          style={styles.inputContainer}
           onPress={() => {
-            if (!editable) {
-              return;
+            if (editable) {
+              inputRef.current?.focus();
             }
-
-            inputRef.current?.focus();
           }}
+          disabled={!editable}
         >
           <TextInput
             ref={inputRef}
@@ -118,9 +116,8 @@ const EditableTextCard = ({
               styles.input,
               !isEditing && styles.inputReadOnly,
               !editable && styles.inputDisabled,
-              isPassword && { flex: 1 },
             ]}
-            value={displayValue}
+            value={internalValue}
             onChangeText={handleChangeText}
             onFocus={handleFocus}
             onBlur={handleBlur}
@@ -129,22 +126,21 @@ const EditableTextCard = ({
             placeholderTextColor={editable ? '#999' : '#aaa'}
             secureTextEntry={isPassword && secureText}
             editable={editable}
-            pointerEvents={isEditing ? 'auto' : 'none'}
+            autoCapitalize={isPassword ? 'none' : 'sentences'}
+            autoCorrect={!isPassword}
           />
         </TouchableOpacity>
 
         {isPassword && (
           <TouchableOpacity
-            onPress={() => setSecureText(!secureText)}
+            onPress={toggleSecureText}
             style={styles.iconWrapper}
             disabled={!editable}
+            activeOpacity={0.7}
+            hitSlop={8}
           >
             <Ionicons
-              name={
-                secureText
-                  ? 'eye-off-outline'
-                  : 'eye-outline'
-              }
+              name={secureText ? 'eye-off-outline' : 'eye-outline'}
               size={24}
               color={editable ? '#000' : '#999'}
             />
@@ -187,14 +183,24 @@ const styles = StyleSheet.create({
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
+    minHeight: 30,
+  },
+
+  inputContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    minHeight: 30,
   },
 
   input: {
+    width: '100%',
     fontSize: 20,
     fontWeight: 'bold',
     color: '#111',
     padding: 0,
-    minHeight: 25,
+    margin: 0,
+    minHeight: 30,
+    textAlignVertical: 'center',
   },
 
   inputReadOnly: {},
@@ -203,11 +209,11 @@ const styles = StyleSheet.create({
     color: '#666B73',
   },
 
-  flex: {
-    flex: 1,
-  },
-
   iconWrapper: {
-    paddingLeft: 10,
+    width: 34,
+    height: 34,
+    marginLeft: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
