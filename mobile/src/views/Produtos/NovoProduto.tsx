@@ -10,6 +10,7 @@ import { InputError } from "@components/InputError";
 import {
     useNavigation,
     useRoute,
+    useFocusEffect,
 } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
@@ -25,7 +26,7 @@ import {
 } from "react-native";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { z } from "zod";
 
 import { Opcao, RootStackParamList } from "@context/types";
@@ -46,6 +47,9 @@ import Selector from "@components/Selector";
 import { dateFromApi, dateToApi, formatDate, onlyLettersAndNumbers, onlyNumbers, parsePercent, parseReal } from "@core/utils/format";
 import { createCategoria, getCategorias, getUnidadesMedida } from "@api/apiCategoria";
 import { produtoSchema } from "@schemas/ProdutoSchema";
+import { getFornecedores } from "@api/apiFornecedores";
+import { useAuth } from "@context/AuthContext";
+import { can } from "@utils/permissions";
 type Navigation =
     NativeStackNavigationProp<RootStackParamList>;
 
@@ -82,10 +86,12 @@ export default function NovoProduto() {
     const navigation = useNavigation<Navigation>();
     const route = useRoute<Route>();
     const { colors } = useTheme();
+    const { user } = useAuth();
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [imagens, setImagens] = useState<ImagemGaleria[]>([]);
     const [imagensOriginais, setImagensOriginais] = useState<ImagemGaleria[]>([]);
-    const [fornecedores] = useState<Opcao[]>([]);
+    const [fornecedores, setFornecedores] = useState<Opcao[]>([]);
+    const [carregandoFornecedores, setCarregandoFornecedores] = useState(false);
     const [categorias, setCategorias] = useState<Opcao[]>([]);
     const [carregandoCategorias, setCarregandoCategorias] = useState(false);
     const [unidadesMedida, setUnidadesMedida] = useState<Opcao[]>([]);
@@ -126,6 +132,29 @@ export default function NovoProduto() {
         },
     });
     const nomeProduto = watch("nome");
+
+    const carregarFornecedores = useCallback(async () => {
+        try {
+            setCarregandoFornecedores(true);
+            const response = await getFornecedores();
+            setFornecedores(response.data.map((fornecedor) => ({
+                id: String(fornecedor.id),
+                nome: fornecedor.nome,
+            })));
+        } catch (error: any) {
+            Toast.show({
+                type: "error",
+                text1: "Erro ao carregar fornecedores",
+                text2: error?.response?.data?.message ?? "Não foi possível carregar a lista de fornecedores.",
+            });
+        } finally {
+            setCarregandoFornecedores(false);
+        }
+    }, []);
+
+    useFocusEffect(useCallback(() => {
+        carregarFornecedores();
+    }, [carregarFornecedores]));
 
     useEffect(() => {
         if (modo === "criar") {
@@ -837,13 +866,20 @@ export default function NovoProduto() {
                             <>
                                 <Selector
                                     label="Fornecedor"
-                                    placeholder="Selecionar fornecedor"
+                                    placeholder={carregandoFornecedores
+                                        ? "Carregando fornecedores..."
+                                        : fornecedores.length
+                                            ? "Selecionar fornecedor"
+                                            : "Nenhum fornecedor cadastrado"}
                                     value={value}
                                     options={fornecedores}
+                                    loading={carregandoFornecedores}
                                     onChange={onChange}
-                                    showAddButton
-                                    onAdd={() => {
-                                    }}
+                                    onOpen={carregarFornecedores}
+                                    showAddButton={can(user, "fornecedores.criar")}
+                                    onAdd={can(user, "fornecedores.criar")
+                                        ? () => navigation.navigate("NovoFornecedor", { modo: "criar" })
+                                        : undefined}
                                 />
                                 <InputError message={error?.message} />
                             </>

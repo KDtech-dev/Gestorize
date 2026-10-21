@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { OrcamentoResumoType } from '@context/types';
-import { formatMoney } from '@core/utils/format';
+import { dateFromApi, formatMoney } from '@core/utils/format';
 import { useTheme } from '@context/ThemeContext';
 
 type Props = { orcamento: OrcamentoResumoType };
@@ -20,7 +20,7 @@ const OrcamentoClienteResumo = ({ orcamento }: Props) => {
         </View>
       </View>
       <Text style={[styles.details, { color: colors.muted }]}>
-        {formatMoney(Number(orcamento.valor_total))} · {new Date(`${orcamento.data_orcamento}T00:00:00`).toLocaleDateString('pt-BR')}
+        {formatMoney(Number(orcamento.valor_total))} · {dateFromApi(orcamento.data_orcamento?.slice(0, 10)) || 'Data indisponível'}
       </Text>
     </View>
   );

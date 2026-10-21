@@ -57,6 +57,19 @@ const dataHora = (valor?: string) => {
     : data.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
 };
 
+const snapshotOrcamento = (
+  titulo: string,
+  clienteId: string,
+  itens: OrcamentoItemForm[],
+) => JSON.stringify({
+  titulo: titulo.trim(),
+  clienteId,
+  itens: itens.map((item) => ({
+    produto_id: item.produto_id,
+    quantidade: Number(item.quantidade) || 0,
+  })),
+});
+
 export default function NovoOrcamento() {
   const navigation = useNavigation<Navigation>();
   const route = useRoute<Route>();
@@ -76,6 +89,7 @@ export default function NovoOrcamento() {
   const [statusOrcamento, setStatusOrcamento] = useState<'pendente' | 'aprovado'>('pendente');
   const [aprovadorNome, setAprovadorNome] = useState('');
   const [aprovadoEm, setAprovadoEm] = useState('');
+  const [snapshotOriginal, setSnapshotOriginal] = useState<string | null>(null);
   const bloqueado = editando && statusOrcamento === 'aprovado';
   const [modalProdutosVisivel, setModalProdutosVisivel] = useState(false);
   const [modalClientesVisivel, setModalClientesVisivel] = useState(false);
@@ -95,6 +109,10 @@ export default function NovoOrcamento() {
     () => itens.reduce((total, item) => total + Number(item.quantidade || 0) * item.preco_unitario, 0),
     [itens],
   );
+  const houveAlteracaoReal = useMemo(() => {
+    if (!editando || snapshotOriginal === null) return false;
+    return snapshotOrcamento(titulo, clienteId, itens) !== snapshotOriginal;
+  }, [clienteId, editando, itens, snapshotOriginal, titulo]);
 
   const carregarDados = useCallback(async () => {
     try {
@@ -130,6 +148,11 @@ export default function NovoOrcamento() {
         });
         setProdutos(produtosComItens);
         setItens(itensCarregados);
+        setSnapshotOriginal(snapshotOrcamento(
+          orcamento.titulo ?? '',
+          orcamento.cliente_id,
+          itensCarregados,
+        ));
       }
     } catch (error: any) {
       Toast.show({
@@ -162,6 +185,7 @@ export default function NovoOrcamento() {
   };
 
   const salvar = async () => {
+    if (editando && !houveAlteracaoReal) return;
     if (!titulo.trim()) {
       Toast.show({ type: 'error', text1: 'Informe um título para o orçamento' });
       return;
@@ -189,7 +213,8 @@ export default function NovoOrcamento() {
     try {
       setSalvando(true);
       if (editando && orcamentoId) {
-        await updateOrcamento(orcamentoId, payload);
+        const response = await updateOrcamento(orcamentoId, payload);
+        setAtualizadoEm(dataHora(response.data.updated_at));
       } else {
         await createOrcamento(payload);
       }
@@ -316,7 +341,7 @@ export default function NovoOrcamento() {
           )}
           <Button
             title={salvando ? 'Salvando...' : editando ? 'Salvar alterações' : 'Criar orçamento'}
-            disabled={salvando || bloqueado || carregando || !clientes.length || !produtos.length}
+            disabled={salvando || bloqueado || carregando || !clientes.length || !produtos.length || (editando && !houveAlteracaoReal)}
             onPress={salvar}
           />
           {editando && (

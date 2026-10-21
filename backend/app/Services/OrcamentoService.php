@@ -51,31 +51,58 @@ class OrcamentoService
     public function atualizar(string $id, array $dados): Orcamento
     {
         return DB::transaction(function () use ($id, $dados) {
-            $orcamento = Orcamento::findOrFail($id);
-            $itens = $dados['itens'] ?? null;
+            $orcamento = Orcamento::with('itens')->findOrFail($id);
+            $campos = Arr::only($dados, ['titulo', 'cliente_id']);
+            $camposAlterados = collect($campos)->contains(
+                fn ($valor, $campo) => $orcamento->{$campo} !== $valor
+            );
+            $itensRecebidos = $dados['itens'] ?? null;
+            $itensAlterados = false;
 
-            $houveAlteracao = array_key_exists('titulo', $dados)
-                || array_key_exists('cliente_id', $dados)
-                || $itens !== null;
+            if ($itensRecebidos !== null) {
+                $normalizarItens = static function (array $itens): array {
+                    $normalizados = collect($itens)
+                        ->mapWithKeys(fn ($item) => [
+                            (string) $item['produto_id'] => (int) $item['quantidade'],
+                        ])
+                        ->all();
+                    ksort($normalizados);
 
-            $orcamento->update(Arr::only($dados, ['titulo', 'cliente_id']));
+                    return $normalizados;
+                };
 
-            if ($itens !== null) {
+                $itensAtuais = $normalizarItens($orcamento->itens
+                    ->map(fn ($item) => [
+                        'produto_id' => $item->produto_id,
+                        'quantidade' => $item->quantidade,
+                    ])
+                    ->all());
+                $itensAlterados = $itensAtuais !== $normalizarItens($itensRecebidos);
+            }
+
+            if ($camposAlterados) {
+                $orcamento->update($campos);
+            }
+
+            if ($itensAlterados) {
                 $precosExistentes = $orcamento->itens()
                     ->pluck('preco_unitario', 'produto_id')
                     ->all();
                 $orcamento->itens()->delete();
-                $this->salvarItens($orcamento, $itens, $precosExistentes);
-                $orcamento->update(['valor_total' => $orcamento->itens()->sum('subtotal')]);
-            } elseif ($orcamento->itens()->exists()) {
+                $this->salvarItens($orcamento, $itensRecebidos, $precosExistentes);
                 $orcamento->update(['valor_total' => $orcamento->itens()->sum('subtotal')]);
             }
+
+            $houveAlteracao = $camposAlterados || $itensAlterados;
 
             if ($houveAlteracao && $orcamento->status === 'aprovado') {
                 $orcamento->status = 'pendente';
                 $orcamento->aprovado_por = null;
                 $orcamento->aprovado_em = null;
-                $orcamento->save();
+            }
+
+            if ($houveAlteracao) {
+                $orcamento->touch();
             }
 
             return $orcamento->fresh(self::RELACOES);
