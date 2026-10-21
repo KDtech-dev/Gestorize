@@ -91,7 +91,7 @@ const EditableTextCard = ({
         !editable && styles.containerDisabled,
         {
           backgroundColor: editable ? colors.surface : colors.background,
-          borderColor: isEditing ? colors.primary : (colors.background === '#ffffff' ? '#D5DCE5' : colors.border),
+          borderColor: isEditing ? colors.primary : (colors.background === '#ffffff' ? '#D5DCE5' : '#8794A7'),
         },
         { width },
       ]}

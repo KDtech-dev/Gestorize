@@ -22,6 +22,7 @@ type Props = {
   unidade?: string | null;
   categoria?: string | null;
   imagem?: string | null;
+  selected?: boolean;
   onPress?: () => void;
 };
 
@@ -32,6 +33,7 @@ const Produto = ({
   unidade,
   categoria,
   imagem,
+  selected = false,
   onPress,
 }: Props) => {
   const [imagemVisivel, setImagemVisivel] = useState(false);
@@ -41,18 +43,18 @@ const Produto = ({
 
   const isDark = colors.background !== '#ffffff';
 
-  const cardBg = isDark ? '#0A4191' : '#ffffff';
+  const cardBg = isDark ? '#325075' : '#ffffff';
   const textColor = isDark ? '#ffffff' : '#0f172a';
   const subText = isDark ? '#cbd5e1' : '#6b7280';
 
   const circleColor = isDark
-    ? '#09377B'
+    ? '#05244d'
     : 'rgba(6, 32, 70, 0.22)';
 
   const arrowColor = isDark ? '#ffffff' : '#062046';
 
   const badgeBg = isDark
-    ? 'rgba(255,255,255,0.2)'
+    ? 'rgba(255,255,255,0.12)'
     : 'rgba(0,104,255,0.2)';
 
   const badgeText = isDark ? '#ffffff' : '#062046';
@@ -86,6 +88,8 @@ const Produto = ({
               backgroundColor: cardBg,
               shadowColor: isDark ? '#ffffff' : '#000000',
               shadowOpacity: isDark ? 0.08 : 0.8,
+              borderWidth: selected ? 3 : 0,
+              borderColor: '#D6AC36',
             },
           ]}
         >

@@ -16,7 +16,7 @@ import { getCurrentUser, updateCurrentUser } from '@api/apiAuth';
 import { useAuth } from '@context/AuthContext';
 import { EnderecoType, RootStackParamList, UserType } from '@context/types';
 import { useTheme } from '@context/ThemeContext';
-import { dateFromApi, dateToApi, formatCpf, formatDate, onlyNumbers, formatErrorMessage } from '@core/utils/format';
+import { dateFromApi, dateToApi, formatCep, formatCpf, formatDate, formatTelefone, onlyNumbers, formatErrorMessage } from '@core/utils/format';
 import Toast from 'react-native-toast-message';
 import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
 
@@ -92,9 +92,9 @@ export default function UserPerfil() {
     } finally { setSaving(false); }
   });
 
-  const campo = (name: keyof FormData, label: string, placeholder = 'Não informado', tipo: 'string' | 'number' | 'password' = 'string', format?: (value: string) => string) => (
+  const campo = (name: keyof FormData, label: string, placeholder = 'Não informado', tipo: 'string' | 'number' | 'password' = 'string', format?: (value: string) => string, displayFormat?: (value: string) => string) => (
     <Controller key={name} control={control} name={name} render={({ field: { value, onChange }, fieldState: { error } }) => <>
-      <EditableTextCard label={label} value={String(value ?? '')} placeholder={placeholder} tipo={tipo} onChangeText={(text) => onChange(format ? format(text) : text)} />
+      <EditableTextCard label={label} value={displayFormat ? displayFormat(String(value ?? '')) : String(value ?? '')} placeholder={placeholder} tipo={tipo} onChangeText={(text) => onChange(format ? format(text) : text)} />
       <InputError message={error?.message} />
     </>} />
   );
@@ -109,10 +109,10 @@ export default function UserPerfil() {
         <Text style={[styles.sectionTitle, { color: colors.text }]}>Dados da conta</Text>
         {campo('name', 'Nome completo', 'Informe seu nome')}{campo('email', 'E-mail', 'Informe seu e-mail')}
         <Text style={[styles.sectionTitle, { color: colors.text }]}>Dados pessoais</Text>
-        {campo('telefone', 'Telefone', 'Não informado', 'number', (v) => onlyNumbers(v, 11))}{campo('cpf', 'CPF', 'Não informado', 'number', (v) => formatCpf(onlyNumbers(v, 11)))}
+        {campo('telefone', 'Telefone', '(00) 00000-0000', 'number', (v) => onlyNumbers(v, 11), formatTelefone)}{campo('cpf', 'CPF', '000.000.000-00', 'number', (v) => onlyNumbers(v, 11), formatCpf)}
         <Controller control={control} name="data_nascimento" render={({ field: { value, onChange }, fieldState: { error } }) => <><DateField label="Data de nascimento" value={value ?? ''} onChange={(text) => onChange(formatDate(text))} /><InputError message={error?.message} /></>} />
         <Text style={[styles.sectionTitle, { color: colors.text }]}>Endereço</Text>
-        {campo('cep', 'CEP', 'Não informado', 'number', (v) => onlyNumbers(v, 8))}{campo('logradouro', 'Logradouro')}{campo('numero', 'Número')}{campo('complemento', 'Complemento')}{campo('bairro', 'Bairro')}{campo('cidade', 'Cidade')}{campo('estado', 'Estado (UF)')}
+        {campo('cep', 'CEP', '00000-000', 'number', (v) => onlyNumbers(v, 8), formatCep)}{campo('logradouro', 'Logradouro')}{campo('numero', 'Número')}{campo('complemento', 'Complemento')}{campo('bairro', 'Bairro')}{campo('cidade', 'Cidade')}{campo('estado', 'Estado (UF)', 'UF', 'string', (v) => v.toUpperCase(), (v) => v.toUpperCase())}
         <Text style={[styles.sectionTitle, { color: colors.text }]}>Alterar senha</Text>
         <Text style={[styles.helper, { color: colors.muted }]}>A senha atual é protegida e não pode ser exibida. Deixe os campos abaixo vazios para mantê-la.</Text>
         {campo('password', 'Nova senha', 'Deixe em branco para manter', 'password')}{campo('password_confirmation', 'Confirme a nova senha', 'Repita a nova senha', 'password')}

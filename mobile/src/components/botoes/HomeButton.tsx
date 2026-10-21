@@ -28,8 +28,10 @@ const HomeButton = ({
   type = 'submit',
 }: HomeButtonProps) => {
   const { isDark } = useTheme();
-  const buttonColor = color === 'primary' ? (isDark ? '#2563EB' : '#0B3A75') : '#F2B705';
-  const buttonTextColor = color === 'primary' ? '#FFFFFF' : '#062046';
+  const buttonColor = color === 'primary'
+    ? (isDark ? '#354252' : '#0B3A75')
+    : (isDark ? '#B28D3B' : '#F2B705');
+  const buttonTextColor = color === 'primary' || isDark ? '#FFFFFF' : '#062046';
   const backgroundColor =
     variant === 'contained'
       ? buttonColor
@@ -50,6 +52,8 @@ const HomeButton = ({
       backgroundColor: disabled ? '#ccc' : backgroundColor,
       borderColor: disabled ? '#AAB4C3' : borderColor,
       borderWidth: variant === 'outlined' ? 2 : 0,
+      borderLeftWidth: isDark ? 4 : (variant === 'outlined' ? 2 : 0),
+      borderLeftColor: isDark ? '#B89A55' : borderColor,
     },
   ];
 

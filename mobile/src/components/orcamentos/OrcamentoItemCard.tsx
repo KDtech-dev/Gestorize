@@ -34,7 +34,7 @@ export default function OrcamentoItemCard({
   const quantidade = Number(item.quantidade) || 0;
 
   return (
-    <View style={[styles.card, { backgroundColor: colors.surface, borderColor: '#F2B705' }]}>
+    <View style={[styles.card, { backgroundColor: colors.surface, borderColor: '#D6AC36' }]}>
       <View style={styles.titleRow}>
         <Text style={[styles.title, { color: colors.text }]} numberOfLines={2}>
           {index + 1}. {produto.nome}

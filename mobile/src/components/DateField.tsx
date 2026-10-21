@@ -67,7 +67,7 @@ const DateField = ({
             <TouchableOpacity
                 activeOpacity={0.7}
                 onPress={() => setShow(true)}
-                style={[styles.container, { backgroundColor: colors.surface, borderColor: colors.background === '#ffffff' ? '#D5DCE5' : colors.border }]}
+                style={[styles.container, { backgroundColor: colors.surface, borderColor: colors.background === '#ffffff' ? '#D5DCE5' : '#8794A7' }]}
             >
                 <Text style={[styles.label, { color: colors.muted }]}>{label}</Text>
 

@@ -6,6 +6,7 @@ import Cliente from '@components/ui-lists/Cliente';
 import SearchBar from '@components/ui/SearchBar';
 import TooltipChip from '@components/botoes/TooltipChip';
 import { ClienteType } from '@context/types';
+import { useTheme } from '@context/ThemeContext';
 
 type TipoFiltro = 'PF' | 'PJ' | null;
 type Props = {
@@ -22,6 +23,7 @@ const tipos: { id: Exclude<TipoFiltro, null>; label: string }[] = [
 ];
 
 export default function OrcamentoClientePicker({ visible, clients, selectedClientId, onSelect, onClose }: Props) {
+  const { colors } = useTheme();
   const [search, setSearch] = useState('');
   const [selectedType, setSelectedType] = useState<TipoFiltro>(null);
 
@@ -45,14 +47,14 @@ export default function OrcamentoClientePicker({ visible, clients, selectedClien
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <Pressable style={styles.overlay} onPress={onClose}>
-        <Pressable style={styles.sheet} onPress={(event) => event.stopPropagation()}>
+        <Pressable style={[styles.sheet, { backgroundColor: colors.background }]} onPress={(event) => event.stopPropagation()}>
           <View style={styles.header}>
             <View style={styles.heading}>
-              <Text style={styles.title}>Selecionar cliente</Text>
-              <Text style={styles.subtitle}>{filteredClients.length} clientes encontrados</Text>
+              <Text style={[styles.title, { color: colors.text }]}>Selecionar cliente</Text>
+              <Text style={[styles.subtitle, { color: colors.muted }]}>{filteredClients.length} clientes encontrados</Text>
             </View>
-            <TouchableOpacity accessibilityRole="button" accessibilityLabel="Fechar" onPress={onClose} style={styles.closeButton}>
-              <Ionicons name="close" size={24} color="#062046" />
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel="Fechar" onPress={onClose} style={[styles.closeButton, { backgroundColor: colors.surface }]}>
+              <Ionicons name="close" size={24} color={colors.text} />
             </TouchableOpacity>
           </View>
 
@@ -76,18 +78,17 @@ export default function OrcamentoClientePicker({ visible, clients, selectedClien
             keyExtractor={(client) => client.id}
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.clients}
-            ListEmptyComponent={<Text style={styles.empty}>Nenhum cliente encontrado.</Text>}
+            ListEmptyComponent={<Text style={[styles.empty, { color: colors.muted }]}>Nenhum cliente encontrado.</Text>}
             renderItem={({ item }) => (
-              <View style={item.id === selectedClientId ? styles.selected : undefined}>
-                <Cliente
+              <Cliente
                   tipo={item.tipo.toUpperCase() as 'PF' | 'PJ'}
                   nome={item.nome}
                   email={item.email}
                   avatar={item.avatar_url}
                   estado={item.endereco?.estado}
+                  selected={item.id === selectedClientId}
                   onPress={() => onSelect(item)}
-                />
-              </View>
+              />
             )}
           />
         </Pressable>
@@ -98,14 +99,13 @@ export default function OrcamentoClientePicker({ visible, clients, selectedClien
 
 const styles = StyleSheet.create({
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.48)', justifyContent: 'flex-end' },
-  sheet: { height: '88%', backgroundColor: '#F6F8FB', borderTopLeftRadius: 26, borderTopRightRadius: 26, paddingTop: 18, overflow: 'hidden' },
+  sheet: { height: '88%', borderTopLeftRadius: 26, borderTopRightRadius: 26, paddingTop: 18, overflow: 'hidden' },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 18, marginBottom: 10 },
   heading: { flex: 1 },
-  title: { color: '#062046', fontSize: 21, fontWeight: '900' },
-  subtitle: { color: '#64748B', fontSize: 13, marginTop: 2 },
-  closeButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#E7EDF5', alignItems: 'center', justifyContent: 'center' },
+  title: { fontSize: 21, fontWeight: '900' },
+  subtitle: { fontSize: 13, marginTop: 2 },
+  closeButton: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   filters: { paddingHorizontal: 12, gap: 8, paddingBottom: 8 },
   clients: { paddingHorizontal: 10, paddingTop: 8, paddingBottom: 28 },
-  selected: { borderWidth: 3, borderColor: '#F2B705', borderRadius: 23, padding: 2, marginBottom: 10 },
-  empty: { color: '#64748B', fontSize: 14, textAlign: 'center', padding: 24 },
+  empty: { fontSize: 14, textAlign: 'center', padding: 24 },
 });

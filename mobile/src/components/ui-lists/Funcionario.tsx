@@ -38,20 +38,21 @@ const Funcionario = ({
 
   const isDark = colors.background !== '#ffffff';
 
-  const cardBg = isDark ? '#0A4191' : '#ffffff';
+  const cardBg = isDark ? '#325075' : '#ffffff';
   const textColor = isDark ? '#ffffff' : '#0f172a';
   const subText = isDark ? '#cbd5e1' : '#6b7280';
 
   const circleColor = isDark
-    ? '#09377B'
+    ? '#05244d'
     : 'rgba(6, 32, 70, 0.22)';
+
 
   const arrowColor = isDark ? '#ffffff' : '#062046';
 
   const badgeBg = isDark
     ? role === 'Gestor'
       ? 'rgba(255,215,0,0.3)'
-      : 'rgba(255,255,255,0.2)'
+      : 'rgba(255,255,255,0.12)'
     : role === 'Gestor'
       ? 'rgba(255,215,0,0.25)'
       : 'rgba(0,104,255,0.2)';
