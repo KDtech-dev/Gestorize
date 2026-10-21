@@ -11,6 +11,7 @@ type TipoFiltro = 'PF' | 'PJ' | null;
 type Props = {
   visible: boolean;
   clients: ClienteType[];
+  selectedClientId?: string | null;
   onSelect: (client: ClienteType) => void;
   onClose: () => void;
 };
@@ -20,7 +21,7 @@ const tipos: { id: Exclude<TipoFiltro, null>; label: string }[] = [
   { id: 'PJ', label: 'Pessoa jurídica' },
 ];
 
-export default function OrcamentoClientePicker({ visible, clients, onSelect, onClose }: Props) {
+export default function OrcamentoClientePicker({ visible, clients, selectedClientId, onSelect, onClose }: Props) {
   const [search, setSearch] = useState('');
   const [selectedType, setSelectedType] = useState<TipoFiltro>(null);
 
@@ -77,14 +78,16 @@ export default function OrcamentoClientePicker({ visible, clients, onSelect, onC
             contentContainerStyle={styles.clients}
             ListEmptyComponent={<Text style={styles.empty}>Nenhum cliente encontrado.</Text>}
             renderItem={({ item }) => (
-              <Cliente
-                tipo={item.tipo.toUpperCase() as 'PF' | 'PJ'}
-                nome={item.nome}
-                email={item.email}
-                avatar={item.avatar_url}
-                estado={item.endereco?.estado}
-                onPress={() => onSelect(item)}
-              />
+              <View style={item.id === selectedClientId ? styles.selected : undefined}>
+                <Cliente
+                  tipo={item.tipo.toUpperCase() as 'PF' | 'PJ'}
+                  nome={item.nome}
+                  email={item.email}
+                  avatar={item.avatar_url}
+                  estado={item.endereco?.estado}
+                  onPress={() => onSelect(item)}
+                />
+              </View>
             )}
           />
         </Pressable>
@@ -103,5 +106,6 @@ const styles = StyleSheet.create({
   closeButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#E7EDF5', alignItems: 'center', justifyContent: 'center' },
   filters: { paddingHorizontal: 12, gap: 8, paddingBottom: 8 },
   clients: { paddingHorizontal: 10, paddingTop: 8, paddingBottom: 28 },
+  selected: { borderWidth: 3, borderColor: '#F2B705', borderRadius: 23, padding: 2, marginBottom: 10 },
   empty: { color: '#64748B', fontSize: 14, textAlign: 'center', padding: 24 },
 });

@@ -89,7 +89,10 @@ const EditableTextCard = ({
       style={[
         styles.container,
         !editable && styles.containerDisabled,
-        { backgroundColor: editable ? colors.surface : colors.background, borderColor: colors.border },
+        {
+          backgroundColor: editable ? colors.surface : colors.background,
+          borderColor: isEditing ? colors.primary : (colors.background === '#ffffff' ? '#D5DCE5' : colors.border),
+        },
         { width },
       ]}
     >
@@ -161,7 +164,7 @@ export default EditableTextCard;
 const styles = StyleSheet.create({
   container: {
     borderWidth: 1,
-    borderColor: '#000',
+    borderColor: '#D5DCE5',
     borderRadius: 15,
     paddingVertical: 10,
     paddingHorizontal: 20,
@@ -199,7 +202,7 @@ const styles = StyleSheet.create({
 
   input: {
     width: '100%',
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#111',
     padding: 0,

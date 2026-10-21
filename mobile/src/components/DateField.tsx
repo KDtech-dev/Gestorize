@@ -67,7 +67,7 @@ const DateField = ({
             <TouchableOpacity
                 activeOpacity={0.7}
                 onPress={() => setShow(true)}
-                style={[styles.container, { backgroundColor: colors.surface, borderColor: colors.border }]}
+                style={[styles.container, { backgroundColor: colors.surface, borderColor: colors.background === '#ffffff' ? '#D5DCE5' : colors.border }]}
             >
                 <Text style={[styles.label, { color: colors.muted }]}>{label}</Text>
 
@@ -116,7 +116,7 @@ export default DateField;
 const styles = StyleSheet.create({
     container: {
         borderWidth: 1,
-        borderColor: "#000",
+        borderColor: "#D5DCE5",
         borderRadius: 15,
         paddingVertical: 10,
         paddingHorizontal: 20,
@@ -132,7 +132,7 @@ const styles = StyleSheet.create({
     },
 
     value: {
-        fontSize: 20,
+        fontSize: 18,
         fontWeight: "bold",
         color: "#111",
     },

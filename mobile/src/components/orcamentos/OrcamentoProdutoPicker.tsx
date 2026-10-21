@@ -41,8 +41,7 @@ export default function OrcamentoProdutoPicker({
     return [...unique].map(([id, label]) => ({ id, label }));
   }, [products]);
 
-  const availableProducts = useMemo(() => {
-    const selectedIds = new Set(selectedProductIds);
+  const matchingProducts = useMemo(() => {
     const term = search.trim().toLocaleLowerCase('pt-BR');
 
     return products.filter((product) => {
@@ -54,9 +53,10 @@ export default function OrcamentoProdutoPicker({
         product.categoria_titulo ?? '',
         product.fornecedor_razao_social ?? '',
       ].some((value) => value.toLocaleLowerCase('pt-BR').includes(term));
-      return !selectedIds.has(product.id) && categoryMatches && searchMatches;
+      return categoryMatches && searchMatches;
     });
   }, [products, search, selectedCategory, selectedProductIds]);
+  const availableCount = matchingProducts.filter((product) => !selectedProductIds.includes(product.id)).length;
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
@@ -65,7 +65,7 @@ export default function OrcamentoProdutoPicker({
           <View style={styles.header}>
             <View style={styles.heading}>
               <Text style={styles.title}>Adicionar produto</Text>
-              <Text style={styles.subtitle}>{availableProducts.length} disponíveis</Text>
+              <Text style={styles.subtitle}>{availableCount} disponíveis · {matchingProducts.length - availableCount} já no orçamento</Text>
             </View>
             <TouchableOpacity accessibilityRole="button" accessibilityLabel="Fechar" onPress={onClose} style={styles.closeButton}>
               <Ionicons name="close" size={24} color="#062046" />
@@ -88,22 +88,25 @@ export default function OrcamentoProdutoPicker({
             )}
           />
           <FlatList
-            data={availableProducts}
+            data={matchingProducts}
             keyExtractor={(product) => product.id}
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.products}
             ListEmptyComponent={<Text style={styles.empty}>Nenhum produto encontrado.</Text>}
-            renderItem={({ item: product }) => (
-              <Produto
-                nome={product.nome}
-                preco={Number(product.preco_venda ?? 0)}
-                estoque={Number(product.estoque)}
-                unidade={product.unidade_medida_sigla}
-                categoria={product.categoria_titulo}
-                imagem={product.imagem_principal?.url ?? null}
-                onPress={() => onSelect(product)}
-              />
-            )}
+            renderItem={({ item: product }) => {
+              const selected = selectedProductIds.includes(product.id);
+              return <View style={selected ? styles.selected : undefined}>
+                <Produto
+                  nome={product.nome}
+                  preco={Number(product.preco_venda ?? 0)}
+                  estoque={Number(product.estoque)}
+                  unidade={product.unidade_medida_sigla}
+                  categoria={product.categoria_titulo}
+                  imagem={product.imagem_principal?.url ?? null}
+                  onPress={() => { if (!selected) onSelect(product); }}
+                />
+              </View>;
+            }}
           />
         </Pressable>
       </Pressable>
@@ -121,5 +124,6 @@ const styles = StyleSheet.create({
   closeButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#E7EDF5', alignItems: 'center', justifyContent: 'center' },
   filters: { paddingHorizontal: 12, gap: 8, paddingBottom: 8 },
   products: { paddingHorizontal: 10, paddingTop: 8, paddingBottom: 28 },
+  selected: { borderWidth: 3, borderColor: '#F2B705', borderRadius: 23, padding: 2, marginBottom: 10 },
   empty: { color: '#64748B', fontSize: 14, textAlign: 'center', padding: 24 },
 });

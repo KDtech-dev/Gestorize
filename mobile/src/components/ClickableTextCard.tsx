@@ -32,7 +32,7 @@ const ClickableTextCard = ({
 
   return (
     <TouchableOpacity onPress={disabled ? undefined : onPress} activeOpacity={0.7} disabled={disabled}>
-      <View style={[styles.container, disabled && styles.containerDisabled, { width, backgroundColor: colors.surface, borderColor: colors.border }]}>
+      <View style={[styles.container, disabled && styles.containerDisabled, { width, backgroundColor: colors.surface, borderColor: colors.background === '#ffffff' ? '#D5DCE5' : colors.border }]}>
         <View style={styles.textContainer}>
           <View>
             <Text style={[styles.label, { color: colors.muted }]}>{label}</Text>
@@ -52,7 +52,7 @@ export default ClickableTextCard;
 const styles = StyleSheet.create({
   container: {
     borderWidth: 1,
-    borderColor: '#000',
+    borderColor: '#D5DCE5',
     borderRadius: 15,
     paddingVertical: 10,
     paddingHorizontal: 20,

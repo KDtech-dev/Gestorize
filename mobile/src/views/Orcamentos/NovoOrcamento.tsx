@@ -377,6 +377,7 @@ export default function NovoOrcamento() {
       <OrcamentoClientePicker
         visible={modalClientesVisivel}
         clients={clientes}
+        selectedClientId={clienteId}
         onSelect={escolherCliente}
         onClose={() => setModalClientesVisivel(false)}
       />

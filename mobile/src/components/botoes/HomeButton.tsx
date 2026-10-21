@@ -6,6 +6,7 @@ import {
   GestureResponderEvent,
   View,
 } from 'react-native';
+import { useTheme } from '@context/ThemeContext';
 
 type HomeButtonProps = {
   title?: string;
@@ -26,29 +27,28 @@ const HomeButton = ({
   disabled = false,
   type = 'submit',
 }: HomeButtonProps) => {
+  const { isDark } = useTheme();
+  const buttonColor = color === 'primary' ? (isDark ? '#2563EB' : '#0B3A75') : '#F2B705';
+  const buttonTextColor = color === 'primary' ? '#FFFFFF' : '#062046';
   const backgroundColor =
     variant === 'contained'
-      ? color === 'primary'
-        ? '#26579E'
-        : '#888'
+      ? buttonColor
       : 'transparent';
 
   const borderColor =
     variant === 'outlined'
-      ? color === 'primary'
-        ? '#26579E'
-        : '#888'
+      ? buttonColor
       : 'transparent';
 
   const textColor =
-    variant === 'contained' ? '#fff' : color === 'primary' ? '#26579E' : '#888';
+    variant === 'contained' ? buttonTextColor : (isDark ? '#FFFFFF' : '#0B3A75');
 
   const containerStyle = [
     styles.base,
     type === 'dialog' && styles.dialogButton,
     {
       backgroundColor: disabled ? '#ccc' : backgroundColor,
-      borderColor,
+      borderColor: disabled ? '#AAB4C3' : borderColor,
       borderWidth: variant === 'outlined' ? 2 : 0,
     },
   ];
@@ -60,9 +60,9 @@ const HomeButton = ({
       disabled={disabled}
     >
       <View style={styles.content}>
-        {icon && <View style={styles.icon}>{icon}</View>}
+        {icon && <View style={[styles.icon, { backgroundColor: variant === 'contained' ? 'rgba(255,255,255,0.16)' : `${buttonColor}1A` }]}>{icon}</View>}
         <View style={styles.textWrapper}>
-          <Text style={[styles.text, { color: disabled ? '#888' : textColor }]}>
+          <Text style={[styles.text, { color: disabled ? '#64748B' : textColor }]}>
             {title}
           </Text>
         </View>
@@ -74,40 +74,49 @@ const HomeButton = ({
 const styles = StyleSheet.create({
   base: {
     width: '95%',
-    maxWidth: '80%',
-    paddingVertical: 12,
+    maxWidth: '90%',
+    paddingVertical: 14,
     paddingHorizontal: 16,
-    borderRadius: 20,
-    elevation: 3,
+    borderRadius: 16,
+    elevation: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.5,
-    shadowRadius: 4,
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
   },
   dialogButton: {
     width: '100%',
     maxWidth: '110%',
     height: 64,
-    borderRadius: 20,
+    borderRadius: 16,
   },
   content: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-start',
     width: '100%',
+    minHeight: 42,
     position: 'relative',
   },
   icon: {
     zIndex: 2,
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   textWrapper: {
     position: 'absolute',
+    top: 0,
+    bottom: 0,
     left: 0,
     right: 0,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   text: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
     fontFamily: 'Inter',
     textAlign: 'center',

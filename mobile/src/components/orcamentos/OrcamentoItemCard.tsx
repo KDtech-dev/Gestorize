@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import EditableTextCard from '@components/EditableTextCard';
 import { formatMoney } from '@core/utils/format';
 import { ProdutoType } from '@context/types';
+import { useTheme } from '@context/ThemeContext';
 
 export type OrcamentoItemForm = {
   key: string;
@@ -29,12 +30,13 @@ export default function OrcamentoItemCard({
   onChangeQuantidade,
   onRemove,
 }: Props) {
+  const { colors } = useTheme();
   const quantidade = Number(item.quantidade) || 0;
 
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, { backgroundColor: colors.surface, borderColor: '#F2B705' }]}>
       <View style={styles.titleRow}>
-        <Text style={styles.title} numberOfLines={2}>
+        <Text style={[styles.title, { color: colors.text }]} numberOfLines={2}>
           {index + 1}. {produto.nome}
         </Text>
         <TouchableOpacity
@@ -48,7 +50,7 @@ export default function OrcamentoItemCard({
         </TouchableOpacity>
       </View>
 
-      <Text style={styles.details}>
+      <Text style={[styles.details, { color: colors.muted }]}>
         {produto.categoria_titulo ?? 'Sem categoria'} · Estoque: {Number(produto.estoque)} {produto.unidade_medida_sigla ?? 'un.'}
       </Text>
 
@@ -72,7 +74,7 @@ export default function OrcamentoItemCard({
         />
       </View>
 
-      <Text style={styles.subtotal}>
+      <Text style={[styles.subtotal, { color: colors.text }]}>
         Subtotal: {formatMoney(quantidade * item.preco_unitario)}
       </Text>
     </View>
