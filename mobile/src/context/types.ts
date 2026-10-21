@@ -190,7 +190,8 @@ export type FuncionarioType = {
   cpf: string | null;
   data_nascimento: StringfiedDate | null;
   avatar_url: string | null;
-  permissions:string[];
+  permissions: string[];
+  role_permissions: string[];
   endereco: EnderecoType | null;
   created_at: StringfiedDate;
   updated_at: StringfiedDate;
