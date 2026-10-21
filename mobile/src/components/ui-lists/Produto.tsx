@@ -90,7 +90,6 @@ const Produto = ({
           ]}
         >
           <View style={styles.left}>
-            {/* Imagem ou ícone do produto */}
             <TouchableOpacity
               activeOpacity={imagem ? 0.75 : 1}
               onPress={abrirImagem}
