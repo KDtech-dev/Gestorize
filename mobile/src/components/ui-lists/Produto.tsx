@@ -186,7 +186,6 @@ const Produto = ({
                 </View>
               )}
 
-              {/* Categoria no modo compacto */}
               {compactLists && categoria ? (
                 <Text
                   numberOfLines={1}
