@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+  FlatList,
+  Modal,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -14,11 +17,14 @@ import {
 } from '@react-navigation/native-stack';
 
 import Button from '@components/botoes/Button';
-import DateField from '@components/DateField';
 import DialogConfirmarAcao from '@components/dialogs/DialogConfirmarAcao';
 import EditableTextCard from '@components/EditableTextCard';
 import Nav from '@components/utilities/Nav';
 import Selector from '@components/Selector';
+import TooltipChip from '@components/botoes/TooltipChip';
+import SearchBar from '@components/ui/SearchBar';
+import Produto from '@components/ui-lists/Produto';
+import ClickableTextCard from '@components/ClickableTextCard';
 import { getClientes } from '@api/apiClientes';
 import {
   createOrcamento,
@@ -28,7 +34,7 @@ import {
   updateOrcamento,
 } from '@api/apiOrcamentos';
 import { getProdutos } from '@api/apiProdutos';
-import { dateFromApi, dateToApi, formatMoney } from '@core/utils/format';
+import { formatMoney } from '@core/utils/format';
 import {
   ClienteType,
   OrcamentoItemType,
@@ -44,33 +50,24 @@ type ItemForm = {
   key: string;
   produto_id: string;
   quantidade: string;
-  preco_unitario: string;
+  preco_unitario: number;
 };
+type CategoriaFiltro = { id: string; label: string };
 
-const dataHoje = () => {
-  const hoje = new Date();
-  return `${String(hoje.getDate()).padStart(2, '0')}/${String(hoje.getMonth() + 1).padStart(2, '0')}/${hoje.getFullYear()}`;
-};
-
-const parseMoney = (value: string) => {
-  const normalized = value.replace(/\./g, '').replace(',', '.').replace(/[^\d.-]/g, '');
-  return Number(normalized);
-};
-
-const novoItem = (): ItemForm => ({
-  key: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
-  produto_id: '',
-  quantidade: '1',
-  preco_unitario: '',
+const novoItem = (produto: ProdutoType, item?: OrcamentoItemType): ItemForm => ({
+  key: item?.id ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+  produto_id: produto.id,
+  quantidade: String(item?.quantidade ?? 1),
+  preco_unitario: Number(item?.preco_unitario ?? produto.preco_venda ?? 0),
 });
 
-const formatarItens = (itens: OrcamentoItemType[]): ItemForm[] =>
-  itens.map((item) => ({
-    key: item.id,
-    produto_id: item.produto_id,
-    quantidade: String(item.quantidade),
-    preco_unitario: formatMoney(item.preco_unitario),
-  }));
+const dataHora = (valor?: string) => {
+  if (!valor) return 'Preenchida automaticamente ao salvar';
+  const data = new Date(valor);
+  return Number.isNaN(data.getTime())
+    ? valor
+    : data.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+};
 
 export default function NovoOrcamento() {
   const navigation = useNavigation<Navigation>();
@@ -83,8 +80,13 @@ export default function NovoOrcamento() {
   const [clientes, setClientes] = useState<ClienteType[]>([]);
   const [produtos, setProdutos] = useState<ProdutoType[]>([]);
   const [clienteId, setClienteId] = useState('');
-  const [data, setData] = useState(dataHoje());
-  const [itens, setItens] = useState<ItemForm[]>([novoItem()]);
+  const [titulo, setTitulo] = useState('');
+  const [itens, setItens] = useState<ItemForm[]>([]);
+  const [criadoEm, setCriadoEm] = useState('');
+  const [atualizadoEm, setAtualizadoEm] = useState('');
+  const [buscaProduto, setBuscaProduto] = useState('');
+  const [categoriaSelecionada, setCategoriaSelecionada] = useState<string | null>(null);
+  const [modalProdutosVisivel, setModalProdutosVisivel] = useState(false);
   const [carregando, setCarregando] = useState(true);
   const [salvando, setSalvando] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -94,12 +96,34 @@ export default function NovoOrcamento() {
     [clientes],
   );
 
+  const categorias = useMemo<CategoriaFiltro[]>(() => {
+    const categoriasUnicas = new Map<string, string>();
+    produtos.forEach((produto) => {
+      const id = produto.categoria_id || 'sem-categoria';
+      const label = produto.categoria_titulo || 'Sem categoria';
+      if (!categoriasUnicas.has(id)) categoriasUnicas.set(id, label);
+    });
+    return [...categoriasUnicas].map(([id, label]) => ({ id, label }));
+  }, [produtos]);
+
+  const produtosDisponiveis = useMemo(() => {
+    const idsSelecionados = new Set(itens.map((item) => item.produto_id));
+    const termo = buscaProduto.trim().toLocaleLowerCase('pt-BR');
+    return produtos.filter((produto) => {
+      const categoriaId = produto.categoria_id || 'sem-categoria';
+      const correspondeCategoria = !categoriaSelecionada || categoriaSelecionada === categoriaId;
+      const correspondeBusca = !termo || [
+        produto.nome,
+        produto.descricao ?? '',
+        produto.categoria_titulo ?? '',
+        produto.fornecedor_razao_social ?? '',
+      ].some((campo) => campo.toLocaleLowerCase('pt-BR').includes(termo));
+      return !idsSelecionados.has(produto.id) && correspondeCategoria && correspondeBusca;
+    });
+  }, [buscaProduto, categoriaSelecionada, itens, produtos]);
+
   const valorTotal = useMemo(
-    () => itens.reduce((total, item) => {
-      const quantidade = Number(item.quantidade);
-      const preco = parseMoney(item.preco_unitario);
-      return total + (Number.isFinite(quantidade) && Number.isFinite(preco) ? quantidade * preco : 0);
-    }, 0),
+    () => itens.reduce((total, item) => total + Number(item.quantidade || 0) * item.preco_unitario, 0),
     [itens],
   );
 
@@ -119,17 +143,21 @@ export default function NovoOrcamento() {
         const response = await getOrcamento(orcamentoId);
         const orcamento = response.data;
         setClienteId(orcamento.cliente_id);
-        setData(dateFromApi(orcamento.data_orcamento) ?? dataHoje());
+        setTitulo(orcamento.titulo ?? '');
+        setCriadoEm(dataHora(orcamento.created_at));
+        setAtualizadoEm(dataHora(orcamento.updated_at));
 
-        const produtosDisponiveis = [...produtosCarregados];
-        const itensDoOrcamento = (orcamento.itens ?? []).map((item) => {
-          if (item.produto && !produtosDisponiveis.some((produto) => produto.id === item.produto_id)) {
-            produtosDisponiveis.push(item.produto);
+        const produtosComItens = [...produtosCarregados];
+        const itensCarregados = (orcamento.itens ?? []).flatMap((item) => {
+          let produto = produtosComItens.find((opcao) => opcao.id === item.produto_id);
+          if (!produto && item.produto) {
+            produto = item.produto;
+            produtosComItens.push(produto);
           }
-          return item;
+          return produto ? [novoItem(produto, item)] : [];
         });
-        setProdutos(produtosDisponiveis);
-        setItens(itensDoOrcamento.length ? formatarItens(itensDoOrcamento) : [novoItem()]);
+        setProdutos(produtosComItens);
+        setItens(itensCarregados);
       }
     } catch (error: any) {
       Toast.show({
@@ -147,65 +175,42 @@ export default function NovoOrcamento() {
     carregarDados();
   }, [carregarDados]);
 
-  const atualizarItem = (key: string, changes: Partial<ItemForm>) => {
-    setItens((atuais) => atuais.map((item) => item.key === key ? { ...item, ...changes } : item));
+  const escolherProduto = (produto: ProdutoType) => {
+    setItens((atuais) => [...atuais, novoItem(produto)]);
+    setModalProdutosVisivel(false);
+    setBuscaProduto('');
+    setCategoriaSelecionada(null);
   };
 
-  const selecionarProduto = (key: string, produtoId: string) => {
-    const produto = produtos.find((item) => item.id === produtoId);
-    atualizarItem(key, {
-      produto_id: produtoId,
-      preco_unitario: formatMoney(produto?.preco_venda ?? 0),
-    });
+  const atualizarQuantidade = (key: string, quantidade: string) => {
+    setItens((atuais) => atuais.map((item) => item.key === key ? { ...item, quantidade } : item));
   };
 
-  const opcoesDeProduto = (itemAtual: ItemForm) => {
-    const idsSelecionados = new Set(
-      itens.filter((item) => item.key !== itemAtual.key).map((item) => item.produto_id),
-    );
-    return produtos
-      .filter((produto) => !idsSelecionados.has(produto.id))
-      .map((produto) => ({ id: produto.id, nome: produto.nome }));
-  };
-
-  const montarPayload = (): { cliente_id: string; data_orcamento: string; itens: OrcamentoItemPayload[] } | null => {
+  const salvar = async () => {
+    if (!titulo.trim()) {
+      Toast.show({ type: 'error', text1: 'Informe um título para o orçamento' });
+      return;
+    }
     if (!clienteId) {
       Toast.show({ type: 'error', text1: 'Selecione um cliente' });
-      return null;
+      return;
     }
-
-    let dataOrcamento: string | null;
-    try {
-      dataOrcamento = dateToApi(data);
-    } catch (error: any) {
-      Toast.show({ type: 'error', text1: 'Data inválida', text2: error.message });
-      return null;
+    if (!itens.length) {
+      Toast.show({ type: 'error', text1: 'Adicione pelo menos um produto' });
+      return;
     }
 
     const itensPayload: OrcamentoItemPayload[] = [];
     for (const item of itens) {
-      if (!item.produto_id) {
-        Toast.show({ type: 'error', text1: 'Selecione um produto em cada item' });
-        return null;
-      }
-
       const quantidade = Number(item.quantidade);
-      const preco = parseMoney(item.preco_unitario);
-      if (!Number.isInteger(quantidade) || quantidade < 1 || !Number.isFinite(preco) || preco < 0) {
-        Toast.show({ type: 'error', text1: 'Confira quantidade e preço dos produtos' });
-        return null;
+      if (!Number.isInteger(quantidade) || quantidade < 1) {
+        Toast.show({ type: 'error', text1: 'Informe quantidades inteiras maiores que zero' });
+        return;
       }
-
-      itensPayload.push({ produto_id: item.produto_id, quantidade, preco_unitario: preco });
+      itensPayload.push({ produto_id: item.produto_id, quantidade });
     }
 
-    return { cliente_id: clienteId, data_orcamento: dataOrcamento ?? '', itens: itensPayload };
-  };
-
-  const salvar = async () => {
-    const payload = montarPayload();
-    if (!payload) return;
-
+    const payload = { titulo: titulo.trim(), cliente_id: clienteId, itens: itensPayload };
     try {
       setSalvando(true);
       if (editando && orcamentoId) {
@@ -244,13 +249,20 @@ export default function NovoOrcamento() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Nav
         title={editando ? 'Editar orçamento' : 'Novo orçamento'}
-        subtitle={editando ? 'Atualize os dados e produtos' : 'Selecione cliente e produtos'}
+        subtitle={editando ? 'Atualize os dados e produtos' : 'Identifique o orçamento e selecione os produtos'}
         onBackPress={() => navigation.goBack()}
         rightType="menu"
       />
 
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Text style={styles.sectionTitle}>Dados do orçamento</Text>
+        <EditableTextCard
+          label="Título do orçamento"
+          value={titulo}
+          placeholder="Ex.: Reforma da cozinha"
+          editable={!salvando}
+          onChangeText={setTitulo}
+        />
         <Selector
           label="Cliente"
           placeholder={carregando ? 'Carregando clientes...' : 'Selecione um cliente'}
@@ -260,48 +272,38 @@ export default function NovoOrcamento() {
           disabled={carregando || salvando}
           onChange={setClienteId}
         />
-        <DateField label="Data do orçamento" value={data} onChange={setData} />
+        <EditableTextCard label="Criado em" value={criadoEm || 'Automático ao salvar'} editable={false} />
+        {editando && <EditableTextCard label="Atualizado em" value={atualizadoEm} editable={false} />}
 
         <View style={styles.itemsHeader}>
           <Text style={styles.sectionTitle}>Produtos</Text>
           <Text style={styles.itemCount}>{itens.length} {itens.length === 1 ? 'item' : 'itens'}</Text>
         </View>
 
+        {!itens.length && (
+          <Text style={styles.emptyText}>Adicione produtos para compor este orçamento.</Text>
+        )}
+
         {itens.map((item, index) => {
           const produto = produtos.find((opcao) => opcao.id === item.produto_id);
+          if (!produto) return null;
           return (
             <View key={item.key} style={styles.itemCard}>
               <View style={styles.itemTitleRow}>
-                <Text style={styles.itemTitle}>Produto {index + 1}</Text>
-                {itens.length > 1 && (
-                  <TouchableOpacity
-                    accessibilityRole="button"
-                    accessibilityLabel={`Remover produto ${index + 1}`}
-                    disabled={salvando}
-                    onPress={() => setItens((atuais) => atuais.filter((atual) => atual.key !== item.key))}
-                    style={styles.removeButton}
-                  >
-                    <Ionicons name="trash-outline" size={20} color="#C62828" />
-                  </TouchableOpacity>
-                )}
+                <Text style={styles.itemTitle}>{index + 1}. {produto.nome}</Text>
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  accessibilityLabel={`Remover ${produto.nome} do orçamento`}
+                  disabled={salvando}
+                  onPress={() => setItens((atuais) => atuais.filter((atual) => atual.key !== item.key))}
+                  style={styles.removeButton}
+                >
+                  <Ionicons name="trash-outline" size={20} color="#C62828" />
+                </TouchableOpacity>
               </View>
-
-              <Selector
-                label="Produto"
-                placeholder={carregando ? 'Carregando produtos...' : 'Selecione um produto'}
-                value={item.produto_id}
-                options={opcoesDeProduto(item)}
-                loading={carregando}
-                disabled={carregando || salvando}
-                onChange={(produtoId) => selecionarProduto(item.key, produtoId)}
-              />
-
-              {produto && (
-                <Text style={styles.stockText}>
-                  Estoque disponível: {Number(produto.estoque)} {produto.unidade_medida_sigla ?? 'un.'}
-                </Text>
-              )}
-
+              <Text style={styles.stockText}>
+                Categoria: {produto.categoria_titulo ?? 'Sem categoria'} · Estoque: {Number(produto.estoque)} {produto.unidade_medida_sigla ?? 'un.'}
+              </Text>
               <View style={styles.itemFields}>
                 <EditableTextCard
                   label="Quantidade"
@@ -309,32 +311,30 @@ export default function NovoOrcamento() {
                   tipo="number"
                   placeholder="1"
                   editable={!salvando}
-                  onChangeText={(quantidade) => atualizarItem(item.key, { quantidade })}
+                  onChangeText={(quantidade) => atualizarQuantidade(item.key, quantidade)}
                   width="48%"
                 />
                 <EditableTextCard
                   label="Preço unitário"
-                  value={item.preco_unitario}
+                  value={String(item.preco_unitario)}
                   tipo="number"
                   money
-                  placeholder="0,00"
-                  editable={!salvando}
-                  onChangeText={(preco_unitario) => atualizarItem(item.key, { preco_unitario })}
+                  editable={false}
                   width="48%"
                 />
               </View>
               <Text style={styles.subtotal}>
-                Subtotal: {formatMoney((Number(item.quantidade) || 0) * (parseMoney(item.preco_unitario) || 0))}
+                Subtotal: {formatMoney((Number(item.quantidade) || 0) * item.preco_unitario)}
               </Text>
             </View>
           );
         })}
 
-        <Button
-          title="Adicionar produto"
-          variant="outlined"
-          disabled={carregando || salvando || produtos.length <= itens.filter((item) => item.produto_id).length}
-          onPress={() => setItens((atuais) => [...atuais, novoItem()])}
+        <ClickableTextCard
+          label="Produtos"
+          value=""
+          placeholder={carregando ? 'Carregando produtos...' : 'Toque para adicionar um produto'}
+          onPress={() => setModalProdutosVisivel(true)}
         />
 
         <View style={styles.totalCard}>
@@ -345,7 +345,7 @@ export default function NovoOrcamento() {
         <View style={styles.actions}>
           <Button
             title={salvando ? 'Salvando...' : editando ? 'Salvar alterações' : 'Criar orçamento'}
-            disabled={salvando || carregando || !itens.length || !produtos.length}
+            disabled={salvando || carregando || !clientes.length || !produtos.length}
             onPress={salvar}
           />
           {editando && (
@@ -358,6 +358,64 @@ export default function NovoOrcamento() {
           )}
         </View>
       </ScrollView>
+
+      <Modal
+        visible={modalProdutosVisivel}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setModalProdutosVisivel(false)}
+      >
+        <Pressable style={styles.modalOverlay} onPress={() => setModalProdutosVisivel(false)}>
+          <Pressable style={styles.productModal} onPress={(event) => event.stopPropagation()}>
+            <View style={styles.modalHeader}>
+              <View>
+                <Text style={styles.modalTitle}>Adicionar produto</Text>
+                <Text style={styles.modalSubtitle}>{produtosDisponiveis.length} disponíveis</Text>
+              </View>
+              <TouchableOpacity onPress={() => setModalProdutosVisivel(false)} style={styles.closeButton}>
+                <Ionicons name="close" size={24} color="#062046" />
+              </TouchableOpacity>
+            </View>
+            <SearchBar
+              placeholder="Busque por nome, categoria ou fornecedor"
+              value={buscaProduto}
+              onChangeText={setBuscaProduto}
+            />
+            <FlatList
+              horizontal
+              data={[{ id: 'todas', label: 'Todas' }, ...categorias]}
+              keyExtractor={(categoria) => categoria.id}
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.categoryFilters}
+              renderItem={({ item: categoria }) => (
+                <TooltipChip
+                  label={categoria.label}
+                  active={categoria.id === 'todas' ? categoriaSelecionada === null : categoriaSelecionada === categoria.id}
+                  onPress={() => setCategoriaSelecionada(categoria.id === 'todas' ? null : categoria.id)}
+                />
+              )}
+            />
+            <FlatList
+              data={produtosDisponiveis}
+              keyExtractor={(produto) => produto.id}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.productList}
+              ListEmptyComponent={<Text style={styles.emptyText}>Nenhum produto encontrado.</Text>}
+              renderItem={({ item: produto }) => (
+                <Produto
+                  nome={produto.nome}
+                  preco={Number(produto.preco_venda ?? 0)}
+                  estoque={Number(produto.estoque)}
+                  unidade={produto.unidade_medida_sigla}
+                  categoria={produto.categoria_titulo}
+                  imagem={produto.imagem_principal?.url ?? null}
+                  onPress={() => escolherProduto(produto)}
+                />
+              )}
+            />
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       <DialogConfirmarAcao
         show={showDeleteDialog}
@@ -377,13 +435,22 @@ const styles = StyleSheet.create({
   itemCount: { color: '#64748B', fontSize: 14, fontWeight: '600' },
   itemCard: { backgroundColor: '#fff', borderRadius: 18, borderWidth: 1, borderColor: '#D5DCE5', padding: 14, marginBottom: 12 },
   itemTitleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  itemTitle: { color: '#062046', fontSize: 16, fontWeight: '800' },
+  itemTitle: { flex: 1, color: '#062046', fontSize: 16, fontWeight: '800' },
   removeButton: { width: 38, height: 38, alignItems: 'center', justifyContent: 'center', borderRadius: 12, backgroundColor: '#FDECEC' },
-  stockText: { color: '#64748B', fontSize: 13, marginTop: -3 },
+  stockText: { color: '#64748B', fontSize: 13, marginTop: 4 },
   itemFields: { flexDirection: 'row', justifyContent: 'space-between', gap: 8 },
   subtotal: { color: '#334155', fontSize: 15, fontWeight: '700', textAlign: 'right', marginTop: 2 },
+  emptyText: { color: '#64748B', fontSize: 14, textAlign: 'center', paddingVertical: 20 },
   totalCard: { marginTop: 18, marginBottom: 16, backgroundColor: '#062046', borderRadius: 18, padding: 18, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   totalLabel: { color: '#DCE8F8', fontSize: 15, fontWeight: '700' },
   totalValue: { color: '#fff', fontSize: 21, fontWeight: '900' },
   actions: { marginTop: 14, gap: 12 },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.48)', justifyContent: 'flex-end' },
+  productModal: { height: '88%', backgroundColor: '#F6F8FB', borderTopLeftRadius: 26, borderTopRightRadius: 26, paddingTop: 18, overflow: 'hidden' },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 18, marginBottom: 10 },
+  modalTitle: { color: '#062046', fontSize: 21, fontWeight: '900' },
+  modalSubtitle: { color: '#64748B', fontSize: 13, marginTop: 2 },
+  closeButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#E7EDF5', alignItems: 'center', justifyContent: 'center' },
+  categoryFilters: { paddingHorizontal: 12, gap: 8, paddingBottom: 8 },
+  productList: { paddingHorizontal: 10, paddingTop: 8, paddingBottom: 28 },
 });

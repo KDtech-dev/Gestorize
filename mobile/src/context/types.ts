@@ -172,6 +172,7 @@ export type OrcamentoItemType = {
 
 export type OrcamentoType = {
   id: string;
+  titulo: string;
   cliente_id: string;
   valor_total: number | string;
   data_orcamento: StringfiedDate;

@@ -2,16 +2,14 @@ import { getAxios } from "@configs/axios";
 import { ArrayResponseType, OrcamentoType, ResponseType } from "@context/types";
 
 export type OrcamentoPayload = {
+  titulo: string;
   cliente_id: string;
-  data_orcamento: string;
   itens: OrcamentoItemPayload[];
-  valor_total?: number;
 };
 
 export type OrcamentoItemPayload = {
   produto_id: string;
   quantidade: number;
-  preco_unitario: number;
 };
 
 const getOrcamentos = async (): Promise<ArrayResponseType<OrcamentoType>> => {

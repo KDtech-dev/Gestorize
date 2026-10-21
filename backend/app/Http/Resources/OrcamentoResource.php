@@ -11,6 +11,7 @@ class OrcamentoResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'titulo' => $this->titulo,
             'cliente_id' => $this->cliente_id,
             'cliente' => $this->whenLoaded(
                 'cliente',

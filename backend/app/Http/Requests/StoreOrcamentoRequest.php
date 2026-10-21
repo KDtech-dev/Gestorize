@@ -14,13 +14,11 @@ class StoreOrcamentoRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'titulo' => ['required', 'string', 'max:120'],
             'cliente_id' => ['required', 'uuid', 'exists:clientes,id'],
-            'data_orcamento' => ['required', 'date'],
-            'valor_total' => ['required_without:itens', 'numeric', 'min:0'],
-            'itens' => ['sometimes', 'array', 'min:1'],
+            'itens' => ['required', 'array', 'min:1'],
             'itens.*.produto_id' => ['required_with:itens', 'uuid', 'distinct', 'exists:produtos,id'],
             'itens.*.quantidade' => ['required_with:itens', 'integer', 'min:1'],
-            'itens.*.preco_unitario' => ['sometimes', 'numeric', 'min:0'],
         ];
     }
 
@@ -28,6 +26,8 @@ class StoreOrcamentoRequest extends FormRequest
     {
         return [
             'cliente_id.exists' => 'O cliente selecionado não existe.',
+            'titulo.required' => 'O título do orçamento é obrigatório.',
+            'titulo.max' => 'O título deve ter no máximo 120 caracteres.',
             'itens.min' => 'Adicione pelo menos um produto ao orçamento.',
             'itens.*.produto_id.exists' => 'Um dos produtos selecionados não existe.',
             'itens.*.produto_id.distinct' => 'Não repita o mesmo produto; ajuste a quantidade do item.',

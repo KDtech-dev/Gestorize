@@ -11,6 +11,7 @@ class Orcamento extends Model
     use HasUuids , HasFactory;
 
     protected $fillable = [
+        'titulo',
         'cliente_id',
         'valor_total',
         'data_orcamento',

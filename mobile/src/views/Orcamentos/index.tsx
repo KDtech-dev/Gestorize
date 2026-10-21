@@ -63,8 +63,9 @@ const Orcamentos = () => {
 
     return orcamentos.filter((item) => {
       const cliente = nomeCliente(item).toLocaleLowerCase('pt-BR');
+      const titulo = item.titulo?.toLocaleLowerCase('pt-BR') ?? '';
       const id = item.id.toLocaleLowerCase('pt-BR');
-      const correspondeBusca = !termo || cliente.includes(termo) || id.includes(termo);
+      const correspondeBusca = !termo || titulo.includes(termo) || cliente.includes(termo) || id.includes(termo);
       const data = new Date(`${item.data_orcamento}T00:00:00`);
       let correspondeFiltro = true;
 
@@ -125,7 +126,7 @@ const Orcamentos = () => {
         onRefresh={carregarOrcamentos}
         renderItem={({ item }) => (
           <Orcamento
-            title={`Orçamento ${item.id.slice(0, 8)}`}
+            title={item.titulo || `Orçamento ${item.id.slice(0, 8)}`}
             cliente={nomeCliente(item)}
             valor={Number(item.valor_total ?? 0)}
             onPress={() => navigation.navigate('NovoOrcamento', { modo: 'editar', orcamentoId: item.id })}

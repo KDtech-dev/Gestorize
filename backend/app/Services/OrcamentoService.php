@@ -29,15 +29,14 @@ class OrcamentoService
     public function criar(array $dados): Orcamento
     {
         return DB::transaction(function () use ($dados) {
-            $itens = $dados['itens'] ?? [];
-            $dadosOrcamento = Arr::except($dados, 'itens');
-            $dadosOrcamento['valor_total'] = $dadosOrcamento['valor_total'] ?? 0;
+            $itens = $dados['itens'];
+            $dadosOrcamento = Arr::only($dados, ['titulo', 'cliente_id']);
+            $dadosOrcamento['data_orcamento'] = now()->toDateString();
+            $dadosOrcamento['valor_total'] = 0;
 
             $orcamento = Orcamento::create($dadosOrcamento);
             $this->salvarItens($orcamento, $itens);
-            if ($itens) {
-                $orcamento->update(['valor_total' => $orcamento->itens()->sum('subtotal')]);
-            }
+            $orcamento->update(['valor_total' => $orcamento->itens()->sum('subtotal')]);
 
             return $orcamento->load(self::RELACOES);
         });
@@ -54,11 +53,14 @@ class OrcamentoService
             $orcamento = Orcamento::findOrFail($id);
             $itens = $dados['itens'] ?? null;
 
-            $orcamento->update(Arr::except($dados, 'itens'));
+            $orcamento->update(Arr::only($dados, ['titulo', 'cliente_id']));
 
             if ($itens !== null) {
+                $precosExistentes = $orcamento->itens()
+                    ->pluck('preco_unitario', 'produto_id')
+                    ->all();
                 $orcamento->itens()->delete();
-                $this->salvarItens($orcamento, $itens);
+                $this->salvarItens($orcamento, $itens, $precosExistentes);
                 $orcamento->update(['valor_total' => $orcamento->itens()->sum('subtotal')]);
             } elseif ($orcamento->itens()->exists()) {
                 $orcamento->update(['valor_total' => $orcamento->itens()->sum('subtotal')]);
@@ -77,11 +79,11 @@ class OrcamentoService
         return ['message' => 'Orçamento removido com sucesso.'];
     }
 
-    private function salvarItens(Orcamento $orcamento, array $itens): void
+    private function salvarItens(Orcamento $orcamento, array $itens, array $precosExistentes = []): void
     {
         foreach ($itens as $item) {
             $produto = Produto::findOrFail($item['produto_id']);
-            $precoUnitario = (float) ($item['preco_unitario'] ?? $produto->preco_venda ?? 0);
+            $precoUnitario = (float) ($precosExistentes[$produto->id] ?? $produto->preco_venda ?? 0);
             $quantidade = (int) $item['quantidade'];
 
             $orcamento->itens()->create([
