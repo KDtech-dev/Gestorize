@@ -123,7 +123,6 @@ const Produto = ({
             </TouchableOpacity>
 
             <View style={styles.info}>
-              {/* Nome e categoria */}
               <View style={styles.header}>
                 <Text
                   numberOfLines={1}
