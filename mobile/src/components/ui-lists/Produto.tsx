@@ -74,7 +74,6 @@ const Produto = ({
 
   return (
     <>
-      {/* Card do produto */}
       <TouchableOpacity
         activeOpacity={0.9}
         onPress={onPress}
