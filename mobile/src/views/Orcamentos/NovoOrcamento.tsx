@@ -1,15 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  FlatList,
-  Modal,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import {
   NativeStackNavigationProp,
@@ -20,11 +15,10 @@ import Button from '@components/botoes/Button';
 import DialogConfirmarAcao from '@components/dialogs/DialogConfirmarAcao';
 import EditableTextCard from '@components/EditableTextCard';
 import Nav from '@components/utilities/Nav';
-import Selector from '@components/Selector';
-import TooltipChip from '@components/botoes/TooltipChip';
-import SearchBar from '@components/ui/SearchBar';
-import Produto from '@components/ui-lists/Produto';
 import ClickableTextCard from '@components/ClickableTextCard';
+import OrcamentoClientePicker from '@components/orcamentos/OrcamentoClientePicker';
+import OrcamentoItemCard, { OrcamentoItemForm } from '@components/orcamentos/OrcamentoItemCard';
+import OrcamentoProdutoPicker from '@components/orcamentos/OrcamentoProdutoPicker';
 import { getClientes } from '@api/apiClientes';
 import {
   createOrcamento,
@@ -46,15 +40,7 @@ import Toast from 'react-native-toast-message';
 
 type Navigation = NativeStackNavigationProp<RootStackParamList>;
 type Route = NativeStackScreenProps<RootStackParamList, 'NovoOrcamento'>['route'];
-type ItemForm = {
-  key: string;
-  produto_id: string;
-  quantidade: string;
-  preco_unitario: number;
-};
-type CategoriaFiltro = { id: string; label: string };
-
-const novoItem = (produto: ProdutoType, item?: OrcamentoItemType): ItemForm => ({
+const novoItem = (produto: ProdutoType, item?: OrcamentoItemType): OrcamentoItemForm => ({
   key: item?.id ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`,
   produto_id: produto.id,
   quantidade: String(item?.quantidade ?? 1),
@@ -81,12 +67,11 @@ export default function NovoOrcamento() {
   const [produtos, setProdutos] = useState<ProdutoType[]>([]);
   const [clienteId, setClienteId] = useState('');
   const [titulo, setTitulo] = useState('');
-  const [itens, setItens] = useState<ItemForm[]>([]);
+  const [itens, setItens] = useState<OrcamentoItemForm[]>([]);
   const [criadoEm, setCriadoEm] = useState('');
   const [atualizadoEm, setAtualizadoEm] = useState('');
-  const [buscaProduto, setBuscaProduto] = useState('');
-  const [categoriaSelecionada, setCategoriaSelecionada] = useState<string | null>(null);
   const [modalProdutosVisivel, setModalProdutosVisivel] = useState(false);
+  const [modalClientesVisivel, setModalClientesVisivel] = useState(false);
   const [carregando, setCarregando] = useState(true);
   const [salvando, setSalvando] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -95,32 +80,6 @@ export default function NovoOrcamento() {
     () => clientes.map((cliente) => ({ id: cliente.id, nome: cliente.nome })),
     [clientes],
   );
-
-  const categorias = useMemo<CategoriaFiltro[]>(() => {
-    const categoriasUnicas = new Map<string, string>();
-    produtos.forEach((produto) => {
-      const id = produto.categoria_id || 'sem-categoria';
-      const label = produto.categoria_titulo || 'Sem categoria';
-      if (!categoriasUnicas.has(id)) categoriasUnicas.set(id, label);
-    });
-    return [...categoriasUnicas].map(([id, label]) => ({ id, label }));
-  }, [produtos]);
-
-  const produtosDisponiveis = useMemo(() => {
-    const idsSelecionados = new Set(itens.map((item) => item.produto_id));
-    const termo = buscaProduto.trim().toLocaleLowerCase('pt-BR');
-    return produtos.filter((produto) => {
-      const categoriaId = produto.categoria_id || 'sem-categoria';
-      const correspondeCategoria = !categoriaSelecionada || categoriaSelecionada === categoriaId;
-      const correspondeBusca = !termo || [
-        produto.nome,
-        produto.descricao ?? '',
-        produto.categoria_titulo ?? '',
-        produto.fornecedor_razao_social ?? '',
-      ].some((campo) => campo.toLocaleLowerCase('pt-BR').includes(termo));
-      return !idsSelecionados.has(produto.id) && correspondeCategoria && correspondeBusca;
-    });
-  }, [buscaProduto, categoriaSelecionada, itens, produtos]);
 
   const valorTotal = useMemo(
     () => itens.reduce((total, item) => total + Number(item.quantidade || 0) * item.preco_unitario, 0),
@@ -178,8 +137,11 @@ export default function NovoOrcamento() {
   const escolherProduto = (produto: ProdutoType) => {
     setItens((atuais) => [...atuais, novoItem(produto)]);
     setModalProdutosVisivel(false);
-    setBuscaProduto('');
-    setCategoriaSelecionada(null);
+  };
+
+  const escolherCliente = (cliente: ClienteType) => {
+    setClienteId(cliente.id);
+    setModalClientesVisivel(false);
   };
 
   const atualizarQuantidade = (key: string, quantidade: string) => {
@@ -263,14 +225,11 @@ export default function NovoOrcamento() {
           editable={!salvando}
           onChangeText={setTitulo}
         />
-        <Selector
+        <ClickableTextCard
           label="Cliente"
+          value={opcoesClientes.find((cliente) => cliente.id === clienteId)?.nome ?? ''}
           placeholder={carregando ? 'Carregando clientes...' : 'Selecione um cliente'}
-          value={clienteId}
-          options={opcoesClientes}
-          loading={carregando}
-          disabled={carregando || salvando}
-          onChange={setClienteId}
+          onPress={!carregando && !salvando ? () => setModalClientesVisivel(true) : undefined}
         />
         <EditableTextCard label="Criado em" value={criadoEm || 'Automático ao salvar'} editable={false} />
         {editando && <EditableTextCard label="Atualizado em" value={atualizadoEm} editable={false} />}
@@ -287,52 +246,20 @@ export default function NovoOrcamento() {
           label="Produtos"
           value=""
           placeholder={carregando ? 'Carregando produtos...' : 'Toque para adicionar um produto'}
-          onPress={() => setModalProdutosVisivel(true)}
+          onPress={!carregando && !salvando ? () => setModalProdutosVisivel(true) : undefined}
         />
         {itens.map((item, index) => {
           const produto = produtos.find((opcao) => opcao.id === item.produto_id);
           if (!produto) return null;
-          return (
-            <View key={item.key} style={styles.itemCard}>
-              <View style={styles.itemTitleRow}>
-                <Text style={styles.itemTitle}>{index + 1}. {produto.nome}</Text>
-                <TouchableOpacity
-                  accessibilityRole="button"
-                  accessibilityLabel={`Remover ${produto.nome} do orçamento`}
-                  disabled={salvando}
-                  onPress={() => setItens((atuais) => atuais.filter((atual) => atual.key !== item.key))}
-                  style={styles.removeButton}
-                >
-                  <Ionicons name="trash-outline" size={20} color="#C62828" />
-                </TouchableOpacity>
-              </View>
-              <Text style={styles.stockText}>
-                Categoria: {produto.categoria_titulo ?? 'Sem categoria'} · Estoque: {Number(produto.estoque)} {produto.unidade_medida_sigla ?? 'un.'}
-              </Text>
-              <View style={styles.itemFields}>
-                <EditableTextCard
-                  label="Quantidade"
-                  value={item.quantidade}
-                  tipo="number"
-                  placeholder="1"
-                  editable={!salvando}
-                  onChangeText={(quantidade) => atualizarQuantidade(item.key, quantidade)}
-                  width="48%"
-                />
-                <EditableTextCard
-                  label="Preço unitário"
-                  value={String(item.preco_unitario)}
-                  tipo="number"
-                  money
-                  editable={false}
-                  width="48%"
-                />
-              </View>
-              <Text style={styles.subtotal}>
-                Subtotal: {formatMoney((Number(item.quantidade) || 0) * item.preco_unitario)}
-              </Text>
-            </View>
-          );
+          return <OrcamentoItemCard
+            key={item.key}
+            item={item}
+            produto={produto}
+            index={index}
+            disabled={salvando}
+            onChangeQuantidade={(quantidade) => atualizarQuantidade(item.key, quantidade)}
+            onRemove={() => setItens((atuais) => atuais.filter((atual) => atual.key !== item.key))}
+          />;
         })}
         <View style={styles.totalCard}>
           <Text style={styles.totalLabel}>Total do orçamento</Text>
@@ -356,63 +283,20 @@ export default function NovoOrcamento() {
         </View>
       </ScrollView>
 
-      <Modal
+      <OrcamentoProdutoPicker
         visible={modalProdutosVisivel}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setModalProdutosVisivel(false)}
-      >
-        <Pressable style={styles.modalOverlay} onPress={() => setModalProdutosVisivel(false)}>
-          <Pressable style={styles.productModal} onPress={(event) => event.stopPropagation()}>
-            <View style={styles.modalHeader}>
-              <View>
-                <Text style={styles.modalTitle}>Adicionar produto</Text>
-                <Text style={styles.modalSubtitle}>{produtosDisponiveis.length} disponíveis</Text>
-              </View>
-              <TouchableOpacity onPress={() => setModalProdutosVisivel(false)} style={styles.closeButton}>
-                <Ionicons name="close" size={24} color="#062046" />
-              </TouchableOpacity>
-            </View>
-            <SearchBar
-              placeholder="Busque por nome, categoria ou fornecedor"
-              value={buscaProduto}
-              onChangeText={setBuscaProduto}
-            />
-            <FlatList
-              horizontal
-              data={[{ id: 'todas', label: 'Todas' }, ...categorias]}
-              keyExtractor={(categoria) => categoria.id}
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.categoryFilters}
-              renderItem={({ item: categoria }) => (
-                <TooltipChip
-                  label={categoria.label}
-                  active={categoria.id === 'todas' ? categoriaSelecionada === null : categoriaSelecionada === categoria.id}
-                  onPress={() => setCategoriaSelecionada(categoria.id === 'todas' ? null : categoria.id)}
-                />
-              )}
-            />
-            <FlatList
-              data={produtosDisponiveis}
-              keyExtractor={(produto) => produto.id}
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={styles.productList}
-              ListEmptyComponent={<Text style={styles.emptyText}>Nenhum produto encontrado.</Text>}
-              renderItem={({ item: produto }) => (
-                <Produto
-                  nome={produto.nome}
-                  preco={Number(produto.preco_venda ?? 0)}
-                  estoque={Number(produto.estoque)}
-                  unidade={produto.unidade_medida_sigla}
-                  categoria={produto.categoria_titulo}
-                  imagem={produto.imagem_principal?.url ?? null}
-                  onPress={() => escolherProduto(produto)}
-                />
-              )}
-            />
-          </Pressable>
-        </Pressable>
-      </Modal>
+        products={produtos}
+        selectedProductIds={itens.map((item) => item.produto_id)}
+        onSelect={escolherProduto}
+        onClose={() => setModalProdutosVisivel(false)}
+      />
+
+      <OrcamentoClientePicker
+        visible={modalClientesVisivel}
+        clients={clientes}
+        onSelect={escolherCliente}
+        onClose={() => setModalClientesVisivel(false)}
+      />
 
       <DialogConfirmarAcao
         show={showDeleteDialog}
@@ -430,24 +314,9 @@ const styles = StyleSheet.create({
   sectionTitle: { color: '#062046', fontSize: 18, fontWeight: '800' },
   itemsHeader: { marginTop: 18, marginBottom: 6, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   itemCount: { color: '#64748B', fontSize: 14, fontWeight: '600' },
-  itemCard: { backgroundColor: '#fff', borderRadius: 18, borderWidth: 1, borderColor: '#D5DCE5', padding: 14, marginBottom: 12 },
-  itemTitleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  itemTitle: { flex: 1, color: '#062046', fontSize: 16, fontWeight: '800' },
-  removeButton: { width: 38, height: 38, alignItems: 'center', justifyContent: 'center', borderRadius: 12, backgroundColor: '#FDECEC' },
-  stockText: { color: '#64748B', fontSize: 13, marginTop: 4 },
-  itemFields: { flexDirection: 'row', justifyContent: 'space-between', gap: 8 },
-  subtotal: { color: '#334155', fontSize: 15, fontWeight: '700', textAlign: 'right', marginTop: 2 },
   emptyText: { color: '#64748B', fontSize: 14, textAlign: 'center', paddingVertical: 20 },
   totalCard: { marginTop: 18, marginBottom: 16, backgroundColor: '#062046', borderRadius: 18, padding: 18, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   totalLabel: { color: '#DCE8F8', fontSize: 15, fontWeight: '700' },
   totalValue: { color: '#fff', fontSize: 21, fontWeight: '900' },
   actions: { marginTop: 14, gap: 12 },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.48)', justifyContent: 'flex-end' },
-  productModal: { height: '88%', backgroundColor: '#F6F8FB', borderTopLeftRadius: 26, borderTopRightRadius: 26, paddingTop: 18, overflow: 'hidden' },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 18, marginBottom: 10 },
-  modalTitle: { color: '#062046', fontSize: 21, fontWeight: '900' },
-  modalSubtitle: { color: '#64748B', fontSize: 13, marginTop: 2 },
-  closeButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#E7EDF5', alignItems: 'center', justifyContent: 'center' },
-  categoryFilters: { paddingHorizontal: 12, gap: 8, paddingBottom: 8 },
-  productList: { paddingHorizontal: 10, paddingTop: 8, paddingBottom: 28 },
 });

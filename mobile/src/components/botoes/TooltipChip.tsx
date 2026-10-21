@@ -46,10 +46,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 20,
     alignSelf: 'flex-start',
+    flexShrink: 0,
+    maxWidth: 280,
   },
 
   text: {
     fontSize: 14,
     fontWeight: '600',
+    flexShrink: 1,
+    maxWidth: 248,
   },
 });

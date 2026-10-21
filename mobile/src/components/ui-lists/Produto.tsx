@@ -143,7 +143,6 @@ const Produto = ({
                     ]}
                   >
                     <Text
-                      numberOfLines={1}
                       style={[
                         styles.badgeText,
                         { color: badgeText },
@@ -188,7 +187,6 @@ const Produto = ({
 
               {compactLists && categoria ? (
                 <Text
-                  numberOfLines={1}
                   style={[
                     styles.compactCategory,
                     { color: subText },
@@ -315,9 +313,9 @@ const styles = StyleSheet.create({
   },
 
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    gap: 4,
     minWidth: 0,
     marginBottom: 3,
   },
@@ -333,8 +331,7 @@ const styles = StyleSheet.create({
   },
 
   badge: {
-    maxWidth: 120,
-    flexShrink: 1,
+    maxWidth: '100%',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
@@ -343,6 +340,7 @@ const styles = StyleSheet.create({
   badgeText: {
     fontSize: 12,
     fontWeight: '700',
+    flexShrink: 1,
   },
 
   subtitle: {
