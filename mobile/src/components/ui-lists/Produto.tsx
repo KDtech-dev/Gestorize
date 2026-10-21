@@ -224,7 +224,6 @@ const Produto = ({
           style={styles.modalOverlay}
           onPress={fecharImagem}
         >
-          {/* Botão de fechar */}
           <TouchableOpacity
             style={styles.closeButton}
             onPress={fecharImagem}
