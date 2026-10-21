@@ -78,11 +78,11 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::prefix('orcamentos')->group(function () {
-        Route::get('/', [OrcamentoController::class, 'index']);
-        Route::post('/', [OrcamentoController::class, 'store']);
-        Route::get('/{id}', [OrcamentoController::class, 'show']);
-        Route::put('/{id}', [OrcamentoController::class, 'update']);
-        Route::delete('/{id}', [OrcamentoController::class, 'destroy']);
+        Route::get('/', [OrcamentoController::class, 'index'])->middleware('permission:orcamentos.ver');
+        Route::post('/', [OrcamentoController::class, 'store'])->middleware('permission:orcamentos.criar');
+        Route::get('/{id}', [OrcamentoController::class, 'show'])->middleware('permission:orcamentos.ver');
+        Route::put('/{id}', [OrcamentoController::class, 'update'])->middleware('permission:orcamentos.editar');
+        Route::delete('/{id}', [OrcamentoController::class, 'destroy'])->middleware('permission:orcamentos.excluir');
     });
 
 

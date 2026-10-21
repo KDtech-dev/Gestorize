@@ -56,4 +56,16 @@ class Produto extends Model
         return $this->hasOne(ProdutoImagem::class)
             ->where('principal', true);
     }
+
+    public function orcamentoItens()
+    {
+        return $this->hasMany(OrcamentoItem::class);
+    }
+
+    public function orcamentos()
+    {
+        return $this->belongsToMany(Orcamento::class, 'orcamento_produtos')
+            ->withPivot(['id', 'quantidade', 'preco_unitario', 'subtotal'])
+            ->withTimestamps();
+    }
 }

@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use App\Models\User;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
@@ -17,18 +16,28 @@ class Orcamento extends Model
         'data_orcamento',
     ];
 
+    protected function casts(): array
+    {
+        return [
+            'valor_total' => 'decimal:2',
+            'data_orcamento' => 'date:Y-m-d',
+        ];
+    }
+
     public function cliente()
     {
         return $this->belongsTo(Cliente::class);
     }
 
-    public function funcionario()
-    {
-        return $this->belongsTo(User::class, 'funcionario_id');
-    }
-
     public function itens()
     {
         return $this->hasMany(OrcamentoItem::class);
+    }
+
+    public function produtos()
+    {
+        return $this->belongsToMany(Produto::class, 'orcamento_produtos')
+            ->withPivot(['id', 'quantidade', 'preco_unitario', 'subtotal'])
+            ->withTimestamps();
     }
 }

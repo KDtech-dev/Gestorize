@@ -20,6 +20,15 @@ class OrcamentoItem extends Model
         'subtotal',
     ];
 
+    protected function casts(): array
+    {
+        return [
+            'quantidade' => 'integer',
+            'preco_unitario' => 'decimal:2',
+            'subtotal' => 'decimal:2',
+        ];
+    }
+
     public function produto()
     {
         return $this->belongsTo(Produto::class);

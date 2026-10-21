@@ -12,7 +12,7 @@ class OrcamentoItemFactory extends Factory
 
     public function definition(): array
     {
-        $produto       = Produto::inRandomOrder()->first();
+        $produto       = Produto::inRandomOrder()->first() ?? Produto::factory()->create();
         $quantidade    = $this->faker->numberBetween(1, 10);
         $precoUnitario = $produto->preco_venda;
         $subtotal      = round($quantidade * $precoUnitario, 2);
