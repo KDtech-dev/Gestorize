@@ -238,7 +238,6 @@ const Produto = ({
             />
           </TouchableOpacity>
 
-          {/* Imagem ampliada e nome do produto */}
           {imagem && (
             <Pressable
               style={styles.imageContainer}
