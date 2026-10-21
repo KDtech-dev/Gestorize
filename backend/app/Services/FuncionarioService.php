@@ -51,10 +51,7 @@ class FuncionarioService
 
     public function buscar(string $id): Funcionario
     {
-        return Funcionario::with([
-            'user',
-            'endereco',
-        ])->findOrFail($id);
+        return Funcionario::with(['user.roles', 'user.permissions', 'endereco'])->findOrFail($id);
     }
 
     public function atualizar(string $id, array $dados): Funcionario
