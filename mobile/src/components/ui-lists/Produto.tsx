@@ -167,7 +167,6 @@ const Produto = ({
                 Valor: R$ {precoFormatado}
               </Text>
 
-              {/* Estoque */}
               {!compactLists && (
                 <View style={styles.detailRow}>
                   <Ionicons
