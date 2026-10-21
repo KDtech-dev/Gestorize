@@ -42,4 +42,9 @@ const deleteOrcamento = async (id: string): Promise<ResponseType<null>> => {
   return response.data;
 };
 
-export { getOrcamentos, getOrcamento, createOrcamento, updateOrcamento, deleteOrcamento };
+const aprovarOrcamento = async (id: string): Promise<ResponseType<OrcamentoType>> => {
+  const response = await getAxios().patch(`/orcamentos/${id}/aprovar`);
+  return response.data;
+};
+
+export { getOrcamentos, getOrcamento, createOrcamento, updateOrcamento, deleteOrcamento, aprovarOrcamento };

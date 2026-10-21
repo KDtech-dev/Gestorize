@@ -20,6 +20,7 @@ import Toast from 'react-native-toast-message';
 
 type Navigation = NativeStackNavigationProp<RootStackParamList>;
 type Filtro = '24h' | '7d' | 'mes' | null;
+type FiltroStatus = 'pendente' | 'aprovado' | null;
 
 const filtros: { id: Exclude<Filtro, null>; label: string }[] = [
   { id: '24h', label: 'Últimas 24h' },
@@ -36,6 +37,7 @@ const Orcamentos = () => {
   const [orcamentos, setOrcamentos] = useState<OrcamentoType[]>([]);
   const [search, setSearch] = useState('');
   const [selectedFiltro, setSelectedFiltro] = useState<Filtro>(null);
+  const [selectedStatus, setSelectedStatus] = useState<FiltroStatus>(null);
   const [loading, setLoading] = useState(true);
   const scrollY = useRef(new Animated.Value(0)).current;
 
@@ -77,9 +79,10 @@ const Orcamentos = () => {
         correspondeFiltro = !Number.isNaN(data.getTime()) && data.getMonth() === agora.getMonth() && data.getFullYear() === agora.getFullYear();
       }
 
-      return correspondeBusca && correspondeFiltro;
+      const correspondeStatus = !selectedStatus || (item.status ?? 'pendente') === selectedStatus;
+      return correspondeBusca && correspondeFiltro && correspondeStatus;
     });
-  }, [orcamentos, search, selectedFiltro]);
+  }, [orcamentos, search, selectedFiltro, selectedStatus]);
 
   const opacity = scrollY.interpolate({ inputRange: [0, 100], outputRange: [1, 0], extrapolate: 'clamp' });
   const headerTranslate = scrollY.interpolate({ inputRange: [0, 120], outputRange: [0, -120], extrapolate: 'clamp' });
@@ -115,6 +118,22 @@ const Orcamentos = () => {
             )}
           />
         </View>
+        <View style={styles.filtersContainer}>
+          <FlatList
+            data={[{ id: null, label: 'Todos os status' }, { id: 'pendente', label: 'Pendentes' }, { id: 'aprovado', label: 'Aprovados' }] as { id: FiltroStatus; label: string }[]}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            keyExtractor={(item) => item.id ?? 'todos'}
+            contentContainerStyle={styles.filtersContent}
+            renderItem={({ item }) => (
+              <TooltipChip
+                label={item.label}
+                active={selectedStatus === item.id}
+                onPress={() => setSelectedStatus(item.id)}
+              />
+            )}
+          />
+        </View>
       </Animated.View>
 
       <Animated.FlatList
@@ -129,6 +148,7 @@ const Orcamentos = () => {
             title={item.titulo || `Orçamento ${item.id.slice(0, 8)}`}
             cliente={nomeCliente(item)}
             valor={Number(item.valor_total ?? 0)}
+            status={item.status ?? 'pendente'}
             onPress={() => navigation.navigate('NovoOrcamento', { modo: 'editar', orcamentoId: item.id })}
           />
         )}
@@ -150,5 +170,5 @@ const styles = StyleSheet.create({
   headerFilters: { position: 'absolute', top: 140, left: 0, right: 0, marginTop: 12, zIndex: 10 },
   filtersContainer: { marginTop: 10 },
   filtersContent: { paddingHorizontal: 10, gap: 8 },
-  listContent: { padding: 10, paddingTop: 135 },
+  listContent: { padding: 10, paddingTop: 190 },
 });

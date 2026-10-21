@@ -22,12 +22,18 @@ class Orcamento extends Model
         return [
             'valor_total' => 'decimal:2',
             'data_orcamento' => 'date:Y-m-d',
+            'aprovado_em' => 'datetime',
         ];
     }
 
     public function cliente()
     {
         return $this->belongsTo(Cliente::class);
+    }
+
+    public function aprovador()
+    {
+        return $this->belongsTo(User::class, 'aprovado_por');
     }
 
     public function itens()

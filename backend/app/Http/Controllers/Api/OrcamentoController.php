@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreOrcamentoRequest;
+use App\Http\Requests\AprovarOrcamentoRequest;
 use App\Http\Requests\UpdateOrcamentoRequest;
 use App\Http\Resources\OrcamentoResource;
 use App\Services\OrcamentoService;
@@ -46,6 +47,16 @@ class OrcamentoController extends Controller
         return ResponseService::success(
             new OrcamentoResource($orcamento),
             'Orçamento atualizado com sucesso.'
+        );
+    }
+
+    public function aprovar(AprovarOrcamentoRequest $request, string $id): JsonResponse
+    {
+        $orcamento = $this->service->aprovar($id, (string) $request->user()->id);
+
+        return ResponseService::success(
+            new OrcamentoResource($orcamento),
+            'Orçamento aprovado com sucesso.'
         );
     }
 

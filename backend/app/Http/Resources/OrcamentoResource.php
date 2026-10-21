@@ -18,6 +18,10 @@ class OrcamentoResource extends JsonResource
                 fn () => new ClienteResource($this->cliente)
             ),
             'valor_total' => $this->valor_total,
+            'status' => $this->status,
+            'aprovado_por' => $this->aprovado_por,
+            'aprovado_em' => $this->aprovado_em,
+            'aprovador_nome' => $this->aprovador?->name,
             'data_orcamento' => $this->data_orcamento,
             'itens' => OrcamentoItemResource::collection(
                 $this->whenLoaded('itens')

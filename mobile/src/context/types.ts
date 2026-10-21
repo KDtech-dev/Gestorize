@@ -175,6 +175,10 @@ export type OrcamentoType = {
   titulo: string;
   cliente_id: string;
   valor_total: number | string;
+  status: 'pendente' | 'aprovado';
+  aprovado_por?: string | null;
+  aprovado_em?: StringfiedDate | null;
+  aprovador_nome?: string | null;
   data_orcamento: StringfiedDate;
   cliente?: ClienteType | null;
   itens?: OrcamentoItemType[];

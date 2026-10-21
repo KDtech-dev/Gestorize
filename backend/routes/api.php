@@ -82,6 +82,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/', [OrcamentoController::class, 'store'])->middleware('permission:orcamentos.criar');
         Route::get('/{id}', [OrcamentoController::class, 'show'])->middleware('permission:orcamentos.ver');
         Route::put('/{id}', [OrcamentoController::class, 'update'])->middleware('permission:orcamentos.editar');
+        Route::patch('/{id}/aprovar', [OrcamentoController::class, 'aprovar']);
         Route::delete('/{id}', [OrcamentoController::class, 'destroy'])->middleware('permission:orcamentos.excluir');
     });
 

@@ -121,7 +121,7 @@ const Cliente = ({
             <View style={styles.info}>
               <View style={styles.header}>
                 <Text
-                  numberOfLines={1}
+                  numberOfLines={2}
                   style={[
                     styles.title,
                     compactLists && styles.titleCompact,
@@ -139,7 +139,7 @@ const Cliente = ({
                     ]}
                   >
                     <Text
-                      numberOfLines={1}
+                      numberOfLines={2}
                       style={[
                         styles.badgeText,
                         { color: badgeText },
@@ -315,9 +315,9 @@ const styles = StyleSheet.create({
   },
 
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    gap: 4,
     minWidth: 0,
     marginBottom: 3,
   },
@@ -333,8 +333,7 @@ const styles = StyleSheet.create({
   },
 
   badge: {
-    maxWidth: 115,
-    flexShrink: 1,
+    maxWidth: '100%',
     paddingHorizontal: 9,
     paddingVertical: 4,
     borderRadius: 12,
@@ -343,6 +342,9 @@ const styles = StyleSheet.create({
   badgeText: {
     fontSize: 11,
     fontWeight: '700',
+    flexShrink: 1,
+    flexWrap: 'wrap',
+    width: '100%',
   },
 
   subtitle: {

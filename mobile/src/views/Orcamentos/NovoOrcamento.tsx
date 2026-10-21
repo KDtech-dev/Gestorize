@@ -24,6 +24,7 @@ import {
   createOrcamento,
   deleteOrcamento,
   getOrcamento,
+  aprovarOrcamento,
   OrcamentoItemPayload,
   updateOrcamento,
 } from '@api/apiOrcamentos';
@@ -36,6 +37,7 @@ import {
   RootStackParamList,
 } from '@context/types';
 import { useTheme } from '@context/ThemeContext';
+import { useAuth } from '@context/AuthContext';
 import Toast from 'react-native-toast-message';
 
 type Navigation = NativeStackNavigationProp<RootStackParamList>;
@@ -59,6 +61,7 @@ export default function NovoOrcamento() {
   const navigation = useNavigation<Navigation>();
   const route = useRoute<Route>();
   const { colors } = useTheme();
+  const { user } = useAuth();
   const modo = route.params?.modo ?? 'criar';
   const orcamentoId = route.params?.orcamentoId;
   const editando = modo === 'editar';
@@ -70,11 +73,17 @@ export default function NovoOrcamento() {
   const [itens, setItens] = useState<OrcamentoItemForm[]>([]);
   const [criadoEm, setCriadoEm] = useState('');
   const [atualizadoEm, setAtualizadoEm] = useState('');
+  const [statusOrcamento, setStatusOrcamento] = useState<'pendente' | 'aprovado'>('pendente');
+  const [aprovadorNome, setAprovadorNome] = useState('');
+  const [aprovadoEm, setAprovadoEm] = useState('');
   const [modalProdutosVisivel, setModalProdutosVisivel] = useState(false);
   const [modalClientesVisivel, setModalClientesVisivel] = useState(false);
   const [carregando, setCarregando] = useState(true);
   const [salvando, setSalvando] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showApproveDialog, setShowApproveDialog] = useState(false);
+  const podeAprovar = ['admin'].includes(user?.role)
+    || user?.permissions?.some((permission: string) => ['orcamentos.criar', 'orcamentos.editar', 'orcamentos.aprovar'].includes(permission));
 
   const opcoesClientes = useMemo(
     () => clientes.map((cliente) => ({ id: cliente.id, nome: cliente.nome })),
@@ -105,6 +114,9 @@ export default function NovoOrcamento() {
         setTitulo(orcamento.titulo ?? '');
         setCriadoEm(dataHora(orcamento.created_at));
         setAtualizadoEm(dataHora(orcamento.updated_at));
+        setStatusOrcamento(orcamento.status ?? 'pendente');
+        setAprovadorNome(orcamento.aprovador_nome ?? '');
+        setAprovadoEm(orcamento.aprovado_em ? dataHora(orcamento.aprovado_em) : '');
 
         const produtosComItens = [...produtosCarregados];
         const itensCarregados = (orcamento.itens ?? []).flatMap((item) => {
@@ -207,6 +219,23 @@ export default function NovoOrcamento() {
     }
   };
 
+  const confirmarAprovacao = async () => {
+    if (!orcamentoId) return;
+    try {
+      setSalvando(true);
+      const response = await aprovarOrcamento(orcamentoId);
+      const orcamento = response.data;
+      setStatusOrcamento(orcamento.status ?? 'aprovado');
+      setAprovadorNome(orcamento.aprovador_nome ?? '');
+      setAprovadoEm(orcamento.aprovado_em ? dataHora(orcamento.aprovado_em) : dataHora(new Date().toISOString()));
+      Toast.show({ type: 'success', text1: 'Orçamento aprovado' });
+    } catch (error: any) {
+      Toast.show({ type: 'error', text1: 'Não foi possível aprovar', text2: error?.response?.data?.message ?? 'Tente novamente.' });
+    } finally {
+      setSalvando(false);
+    }
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Nav
@@ -233,6 +262,18 @@ export default function NovoOrcamento() {
         />
         <EditableTextCard label="Criado em" value={criadoEm || 'Automático ao salvar'} editable={false} />
         {editando && <EditableTextCard label="Atualizado em" value={atualizadoEm} editable={false} />}
+        {editando && (
+          <View style={[styles.approvalCard, { borderColor: statusOrcamento === 'aprovado' ? '#16a34a' : '#d97706' }]}>
+            <Text style={[styles.approvalTitle, { color: statusOrcamento === 'aprovado' ? '#15803d' : '#b45309' }]}>
+              {statusOrcamento === 'aprovado' ? '✓ Orçamento aprovado' : '◷ Aguardando aprovação'}
+            </Text>
+            {statusOrcamento === 'aprovado' && (
+              <Text style={styles.approvalDetail}>
+                {aprovadorNome ? `Aprovado por ${aprovadorNome}` : 'Aprovação registrada'}{aprovadoEm ? ` · ${aprovadoEm}` : ''}
+              </Text>
+            )}
+          </View>
+        )}
 
         <View style={styles.itemsHeader}>
           <Text style={styles.sectionTitle}>Produtos</Text>
@@ -267,6 +308,9 @@ export default function NovoOrcamento() {
         </View>
 
         <View style={styles.actions}>
+          {editando && statusOrcamento === 'pendente' && podeAprovar && (
+            <Button title="Aprovar orçamento" disabled={salvando || carregando} onPress={() => setShowApproveDialog(true)} />
+          )}
           <Button
             title={salvando ? 'Salvando...' : editando ? 'Salvar alterações' : 'Criar orçamento'}
             disabled={salvando || carregando || !clientes.length || !produtos.length}
@@ -304,6 +348,12 @@ export default function NovoOrcamento() {
         titulo="Tem certeza que deseja excluir este orçamento?"
         onSuccess={confirmarExclusao}
       />
+      <DialogConfirmarAcao
+        show={showApproveDialog}
+        setShow={setShowApproveDialog}
+        titulo="Confirmar aprovação deste orçamento?"
+        onSuccess={confirmarAprovacao}
+      />
     </View>
   );
 }
@@ -319,4 +369,7 @@ const styles = StyleSheet.create({
   totalLabel: { color: '#DCE8F8', fontSize: 15, fontWeight: '700' },
   totalValue: { color: '#fff', fontSize: 21, fontWeight: '900' },
   actions: { marginTop: 14, gap: 12 },
+  approvalCard: { marginTop: 12, borderWidth: 1, borderRadius: 12, padding: 12, backgroundColor: '#ffffff' },
+  approvalTitle: { fontSize: 15, fontWeight: '800' },
+  approvalDetail: { marginTop: 4, color: '#64748B', fontSize: 12 },
 });

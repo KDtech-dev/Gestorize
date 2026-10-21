@@ -125,7 +125,7 @@ const Produto = ({
             <View style={styles.info}>
               <View style={styles.header}>
                 <Text
-                  numberOfLines={1}
+                  numberOfLines={2}
                   style={[
                     styles.title,
                     compactLists && styles.titleCompact,
@@ -341,6 +341,8 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
     flexShrink: 1,
+    flexWrap: 'wrap',
+    width: '100%',
   },
 
   subtitle: {

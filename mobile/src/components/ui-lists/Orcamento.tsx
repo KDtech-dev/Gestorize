@@ -6,10 +6,11 @@ type props = {
   title: string;
   cliente: string;
   valor: number;
+  status: 'pendente' | 'aprovado';
   onPress?: () => void;
 };
 
-const Orcamento = ({ title, cliente, valor, onPress }: props) => {
+const Orcamento = ({ title, cliente, valor, status, onPress }: props) => {
   const { colors } = useTheme();
   const { compactLists } = useThemeToggle();
   const isDark = colors.background !== '#ffffff';
@@ -20,6 +21,8 @@ const Orcamento = ({ title, cliente, valor, onPress }: props) => {
 
   const circleColor = isDark ? '#09377B' : 'rgba(6, 32, 70, 0.22)';
   const arrowColor = isDark ? '#ffffff' : '#062046';
+  const statusColor = status === 'aprovado' ? '#15803d' : '#b45309';
+  const statusBg = status === 'aprovado' ? '#dcfce7' : '#fef3c7';
 
   return (
     <TouchableOpacity activeOpacity={0.9} onPress={onPress}>
@@ -34,7 +37,7 @@ const Orcamento = ({ title, cliente, valor, onPress }: props) => {
           },
         ]}
       >
-        <View style={styles.left}>
+          <View style={styles.left}>
           <View
             style={[
               styles.circle,
@@ -49,7 +52,7 @@ const Orcamento = ({ title, cliente, valor, onPress }: props) => {
             />
           </View>
 
-          <View>
+          <View style={styles.details}>
             <Text
               numberOfLines={1}
               style={[
@@ -60,6 +63,13 @@ const Orcamento = ({ title, cliente, valor, onPress }: props) => {
             >
               {title}
             </Text>
+
+            <View style={[styles.statusBadge, { backgroundColor: isDark ? `${statusColor}33` : statusBg }]}>
+              <Ionicons name={status === 'aprovado' ? 'checkmark-circle' : 'time-outline'} size={14} color={statusColor} />
+              <Text style={[styles.statusText, { color: isDark ? '#ffffff' : statusColor }]}>
+                {status === 'aprovado' ? 'Aprovado' : 'Pendente'}
+              </Text>
+            </View>
 
             <Text
               numberOfLines={1}
@@ -110,7 +120,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    flex: 1,
+    minWidth: 0,
   },
+  details: { flex: 1, minWidth: 0 },
 
   circle: {
     width: 65,
@@ -142,4 +155,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginTop: 0,
   },
+  statusBadge: { alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 12, paddingHorizontal: 8, paddingVertical: 3, marginTop: 5 },
+  statusText: { fontSize: 12, fontWeight: '800' },
 });

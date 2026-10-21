@@ -11,6 +11,7 @@ class OrcamentoService
 {
     private const RELACOES = [
         'cliente',
+        'aprovador',
         'itens.produto.categoria',
         'itens.produto.fornecedor',
         'itens.produto.unidadeMedida',
@@ -53,6 +54,10 @@ class OrcamentoService
             $orcamento = Orcamento::findOrFail($id);
             $itens = $dados['itens'] ?? null;
 
+            $houveAlteracao = array_key_exists('titulo', $dados)
+                || array_key_exists('cliente_id', $dados)
+                || $itens !== null;
+
             $orcamento->update(Arr::only($dados, ['titulo', 'cliente_id']));
 
             if ($itens !== null) {
@@ -66,8 +71,29 @@ class OrcamentoService
                 $orcamento->update(['valor_total' => $orcamento->itens()->sum('subtotal')]);
             }
 
+            if ($houveAlteracao && $orcamento->status === 'aprovado') {
+                $orcamento->status = 'pendente';
+                $orcamento->aprovado_por = null;
+                $orcamento->aprovado_em = null;
+                $orcamento->save();
+            }
+
             return $orcamento->fresh(self::RELACOES);
         });
+    }
+
+    public function aprovar(string $id, string $usuarioId): Orcamento
+    {
+        $orcamento = Orcamento::findOrFail($id);
+
+        if ($orcamento->status !== 'aprovado') {
+            $orcamento->status = 'aprovado';
+            $orcamento->aprovado_por = $usuarioId;
+            $orcamento->aprovado_em = now();
+            $orcamento->save();
+        }
+
+        return $orcamento->fresh(self::RELACOES);
     }
 
     public function deletar(string $id): array
