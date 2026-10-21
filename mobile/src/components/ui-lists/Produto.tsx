@@ -155,7 +155,6 @@ const Produto = ({
                 ) : null}
               </View>
 
-              {/* Preço */}
               <Text
                 numberOfLines={1}
                 style={[
