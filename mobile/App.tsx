@@ -30,6 +30,7 @@ import NovoCliente from '@views/Clientes/NovoCliente';
 import NovoProduto from '@views/Produtos/NovoProduto';
 import NovoFornecedor from '@views/Fornecedores/NovoFornecedor';
 import NovoFuncionario from '@views/Funcionarios/NovoFuncionario';
+import NovoOrcamento from '@views/Orcamentos/NovoOrcamento';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const navigationRef = createNavigationContainerRef<RootStackParamList>();
@@ -61,6 +62,7 @@ const AppNavigator = () => {
             <Stack.Screen name="NovoFornecedor" component={NovoFornecedor} />
             <Stack.Screen name="NovoFuncionario" component={NovoFuncionario} />
             <Stack.Screen name="Orcamentos" component={Orcamentos} />
+            <Stack.Screen name="NovoOrcamento" component={NovoOrcamento} />
             <Stack.Screen name="Configuracoes" component={Configuracoes} />
 
             <Stack.Screen name="Ajuda" component={Ajuda} />

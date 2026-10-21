@@ -74,7 +74,7 @@ const Orcamento = ({ title, cliente, valor, onPress }: props) => {
 
             {!compactLists && (
               <Text style={[styles.subtitle, { color: subText }]}>
-                Valor: {valor.toLocaleString('pt-BR')} R$
+              Valor: {Number(valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
               </Text>
             )}
           </View>

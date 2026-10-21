@@ -161,6 +161,26 @@ export type ProdutoType = {
   updated_at: StringfiedDate;
 };
 
+export type OrcamentoItemType = {
+  id: string;
+  produto_id: string;
+  quantidade: number;
+  preco_unitario: number;
+  subtotal: number;
+  produto?: ProdutoType | null;
+};
+
+export type OrcamentoType = {
+  id: string;
+  cliente_id: string;
+  valor_total: number;
+  data_orcamento: StringfiedDate;
+  cliente?: ClienteType | null;
+  itens?: OrcamentoItemType[];
+  created_at?: StringfiedDate;
+  updated_at?: StringfiedDate;
+};
+
 export type RoleName = "admin" | "gestor" | "funcionario" | "cliente";
 
 export type RoleType = {
@@ -217,6 +237,7 @@ export type RootStackParamList = {
   ForgoutPassword: undefined;
   Homepage: undefined;
   Orcamentos: undefined;
+  NovoOrcamento: { modo: "criar" | "editar"; orcamentoId?: string } | undefined;
   Funcionarios: { novoFuncionario: boolean } | undefined;
   Clientes: { novoCliente: boolean } | undefined;
   Produtos: { novoProduto: boolean } | undefined;

@@ -1,192 +1,138 @@
-import Nav from '@components/utilities/Nav';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import {
+  Animated,
   FlatList,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
   StyleSheet,
   View,
-  Animated,
-  NativeSyntheticEvent,
-  NativeScrollEvent,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { useTheme } from '@context/ThemeContext';
-import Orcamento from '@components/ui-lists/Orcamento';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import Nav from '@components/utilities/Nav';
 import SearchBar from '@components/ui/SearchBar';
-import { useState, useRef, useMemo, useEffect, useCallback } from 'react';
 import TooltipChip from '@components/botoes/TooltipChip';
+import Orcamento from '@components/ui-lists/Orcamento';
+import { useTheme } from '@context/ThemeContext';
+import { OrcamentoType, RootStackParamList } from '@context/types';
+import { getOrcamentos } from '@api/apiOrcamentos';
+import Toast from 'react-native-toast-message';
+
+type Navigation = NativeStackNavigationProp<RootStackParamList>;
+type Filtro = '24h' | '7d' | 'mes' | null;
+
+const filtros: { id: Exclude<Filtro, null>; label: string }[] = [
+  { id: '24h', label: 'Últimas 24h' },
+  { id: '7d', label: 'Últimos 7 dias' },
+  { id: 'mes', label: 'Este mês' },
+];
+
+const nomeCliente = (orcamento: OrcamentoType) =>
+  orcamento.cliente?.nome ?? 'Cliente não informado';
 
 const Orcamentos = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<Navigation>();
   const { colors } = useTheme();
-
+  const [orcamentos, setOrcamentos] = useState<OrcamentoType[]>([]);
   const [search, setSearch] = useState('');
-  const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
-
+  const [selectedFiltro, setSelectedFiltro] = useState<Filtro>(null);
+  const [loading, setLoading] = useState(true);
   const scrollY = useRef(new Animated.Value(0)).current;
 
-  const opacity = useMemo(() => {
-    return scrollY.interpolate({
-      inputRange: [0, 100],
-      outputRange: [1, 0],
-      extrapolate: 'clamp',
-    });
-  }, [scrollY]);
+  const carregarOrcamentos = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await getOrcamentos();
+      setOrcamentos(response.data ?? []);
+    } catch (error: any) {
+      Toast.show({
+        type: 'error',
+        text1: 'Erro ao carregar orçamentos',
+        text2: error?.response?.data?.message ?? 'Tente novamente.',
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  const headerTranslate = useMemo(() => {
-    return scrollY.interpolate({
-      inputRange: [0, 120],
-      outputRange: [0, -120],
-      extrapolate: 'clamp',
-    });
-  }, [scrollY]);
-
-  const handleScroll = useCallback(
-    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-      scrollY.setValue(event.nativeEvent.contentOffset.y);
-    },
-    [scrollY],
-  );
-
-  const allData = useMemo(
-    () =>
-      Array.from({ length: 100 }, (_, i) => ({
-        id: i.toString(),
-        title: `Orçamento ${i}`,
-        cliente: `Cliente ${i}`,
-        valor: 1000 + i * 50,
-        data: new Date(Date.now() - i * 86400000),
-      })),
-    [],
-  );
+  useFocusEffect(useCallback(() => { carregarOrcamentos(); }, [carregarOrcamentos]));
 
   const filteredData = useMemo(() => {
-    return allData.filter((item) => {
-      const matchSearch =
-        item.title.toLowerCase().includes(search.toLowerCase()) ||
-        item.cliente.toLowerCase().includes(search.toLowerCase());
+    const termo = search.trim().toLocaleLowerCase('pt-BR');
+    const agora = new Date();
 
-      let matchFilter = true;
+    return orcamentos.filter((item) => {
+      const cliente = nomeCliente(item).toLocaleLowerCase('pt-BR');
+      const id = item.id.toLocaleLowerCase('pt-BR');
+      const correspondeBusca = !termo || cliente.includes(termo) || id.includes(termo);
+      const data = new Date(`${item.data_orcamento}T00:00:00`);
+      let correspondeFiltro = true;
 
-      if (selectedFilter === '1') {
-        matchFilter = Date.now() - item.data.getTime() <= 86400000;
+      if (selectedFiltro === '24h') {
+        correspondeFiltro = !Number.isNaN(data.getTime()) && agora.getTime() - data.getTime() <= 86400000 && data <= agora;
+      } else if (selectedFiltro === '7d') {
+        correspondeFiltro = !Number.isNaN(data.getTime()) && agora.getTime() - data.getTime() <= 7 * 86400000 && data <= agora;
+      } else if (selectedFiltro === 'mes') {
+        correspondeFiltro = !Number.isNaN(data.getTime()) && data.getMonth() === agora.getMonth() && data.getFullYear() === agora.getFullYear();
       }
 
-      if (selectedFilter === '2') {
-        matchFilter = Date.now() - item.data.getTime() <= 7 * 86400000;
-      }
-
-      if (selectedFilter === '3') {
-        const now = new Date();
-        matchFilter =
-          item.data.getMonth() === now.getMonth() &&
-          item.data.getFullYear() === now.getFullYear();
-      }
-
-      return matchSearch && matchFilter;
+      return correspondeBusca && correspondeFiltro;
     });
-  }, [allData, search, selectedFilter]);
+  }, [orcamentos, search, selectedFiltro]);
 
-  const sortedData = useMemo(() => {
-    const data = [...filteredData];
-
-    if (selectedFilter === '4') return data.sort((a, b) => b.valor - a.valor);
-    if (selectedFilter === '5') return data.sort((a, b) => a.valor - b.valor);
-
-    return data;
-  }, [filteredData, selectedFilter]);
-
-  const [visibleData, setVisibleData] = useState(sortedData.slice(0, 10));
-
-  const loadMore = () => {
-    if (visibleData.length >= sortedData.length) return;
-
-    const nextItems = sortedData.slice(
-      visibleData.length,
-      visibleData.length + 10,
-    );
-
-    setVisibleData((prev) => [...prev, ...nextItems]);
-  };
-
-  useEffect(() => {
-    setVisibleData(sortedData.slice(0, 10));
-  }, [sortedData]);
+  const opacity = scrollY.interpolate({ inputRange: [0, 100], outputRange: [1, 0], extrapolate: 'clamp' });
+  const headerTranslate = scrollY.interpolate({ inputRange: [0, 120], outputRange: [0, -120], extrapolate: 'clamp' });
+  const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    scrollY.setValue(event.nativeEvent.contentOffset.y);
+  }, [scrollY]);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Nav
         title="Orçamentos"
-        subtitle="100 cadastrados"
+        subtitle={`${filteredData.length} de ${orcamentos.length} cadastrados`}
         onBackPress={() => navigation.goBack()}
         rightType="add"
+        onAddPress={() => navigation.navigate('NovoOrcamento', { modo: 'criar' })}
       />
 
-      <Animated.View
-        pointerEvents="box-none"
-        style={{
-          position: 'absolute',
-          marginTop: 12,
-          top: 140,
-          left: 0,
-          right: 0,
-          transform: [{ translateY: headerTranslate }],
-          opacity,
-          zIndex: 10,
-        }}
-      >
-        <SearchBar
-          placehoder="Busque pelo título ou cliente"
-          value={search}
-          onChangeText={setSearch}
-        />
-
+      <Animated.View pointerEvents="box-none" style={[styles.headerFilters, { transform: [{ translateY: headerTranslate }], opacity }]}>
+        <SearchBar placeholder="Busque pelo cliente ou código" value={search} onChangeText={setSearch} />
         <View style={styles.filtersContainer}>
           <FlatList
-            data={[
-              { id: '1', label: 'Últimas 24h' },
-              { id: '2', label: 'Últimos 7 dias' },
-              { id: '3', label: 'Este mês' },
-              { id: '4', label: 'Maior valor' },
-              { id: '5', label: 'Menor valor' },
-            ]}
+            data={filtros}
             horizontal
             showsHorizontalScrollIndicator={false}
             keyExtractor={(item) => item.id}
-            contentContainerStyle={{ paddingHorizontal: 10, gap: 8 }}
-            renderItem={({ item }) => {
-              const isActive = selectedFilter === item.id;
-
-              return (
-                <TooltipChip
-                  label={item.label}
-                  active={isActive}
-                  onPress={() =>
-                    setSelectedFilter((prev) =>
-                      prev === item.id ? null : item.id,
-                    )
-                  }
-                />
-              );
-            }}
+            contentContainerStyle={styles.filtersContent}
+            renderItem={({ item }) => (
+              <TooltipChip
+                label={item.label}
+                active={selectedFiltro === item.id}
+                onPress={() => setSelectedFiltro((atual) => atual === item.id ? null : item.id)}
+              />
+            )}
           />
         </View>
       </Animated.View>
 
       <Animated.FlatList
-        data={visibleData}
+        data={filteredData}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={{ padding: 10, paddingTop: 135 }}
+        contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
+        refreshing={loading}
+        onRefresh={carregarOrcamentos}
         renderItem={({ item }) => (
           <Orcamento
-            title={item.title}
-            cliente={item.cliente}
-            valor={item.valor}
+            title={`Orçamento ${item.id.slice(0, 8)}`}
+            cliente={nomeCliente(item)}
+            valor={Number(item.valor_total ?? 0)}
+            onPress={() => navigation.navigate('NovoOrcamento', { modo: 'editar', orcamentoId: item.id })}
           />
         )}
-        onEndReached={loadMore}
-        onScroll={handleScroll} // ✅ corrigido
+        onScroll={handleScroll}
         scrollEventThrottle={16}
-        onEndReachedThreshold={0.5}
         initialNumToRender={10}
         maxToRenderPerBatch={10}
         windowSize={5}
@@ -199,10 +145,9 @@ const Orcamentos = () => {
 export default Orcamentos;
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  filtersContainer: {
-    marginTop: 10,
-  },
+  container: { flex: 1 },
+  headerFilters: { position: 'absolute', top: 140, left: 0, right: 0, marginTop: 12, zIndex: 10 },
+  filtersContainer: { marginTop: 10 },
+  filtersContent: { paddingHorizontal: 10, gap: 8 },
+  listContent: { padding: 10, paddingTop: 135 },
 });
