@@ -512,6 +512,7 @@ export default function NovoFuncionario() {
                                             : "Deixe vazio para manter a senha atual"
                                     }
                                     value={value ?? ""}
+                                    tipo="password"
                                     onChangeText={onChange}
                                 />
 
@@ -529,6 +530,7 @@ export default function NovoFuncionario() {
                                     label="Confirmar senha"
                                     placeholder="Repita a senha"
                                     value={value ?? ""}
+                                    tipo="password"
                                     onChangeText={onChange}
                                 />
 
