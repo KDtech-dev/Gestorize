@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Produto;
 use App\Models\Categoria;
 use App\Models\UnidadeMedida;
+use App\Models\Fornecedor;
 use Illuminate\Database\Seeder;
 
 class ProdutosSeeder extends Seeder
@@ -79,10 +80,17 @@ class ProdutosSeeder extends Seeder
             ['nome' => 'Carrinho de Controle',     'descricao' => 'Remoto, escala 1:18',    'preco_custo' => 50.00, 'porcentagem_lucro' => 60, 'preco_venda' => 80.00,  'estoque' => 20,  'categoria_id' => $brinquedos,  'unidade_medida_id' => $un],
         ];
 
-        foreach ($produtos as $produto) {
-            Produto::create(array_merge($produto, [
+        foreach ($produtos as $indice => $produto) {
+            $dataCadastro = now()->subDays(($indice * 11) % 360);
+            $registro = Produto::create(array_merge($produto, [
                 'data_entrada' => now()->toDateString(),
+                'fornecedor_id' => Fornecedor::query()->inRandomOrder()->value('id'),
             ]));
+
+            $registro->forceFill([
+                'created_at' => $dataCadastro,
+                'updated_at' => $dataCadastro,
+            ])->save();
         }
     }
 }

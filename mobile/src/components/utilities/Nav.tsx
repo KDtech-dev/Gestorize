@@ -18,7 +18,7 @@ type props = {
   showPessoaFisicaIcon?: boolean;
   showPessoaJuridicaIcon?: boolean;
 
-  rightType?: 'menu' | 'add' | 'download';
+  rightType?: 'menu' | 'add' | 'download' | 'share';
   onAddPress?: () => void;
   onDownloadPress?: () => void;
 };
@@ -50,7 +50,7 @@ const Nav = ({
       open();
     } else if (rightType === 'add') {
       onAddPress?.();
-    } else if (rightType === 'download') {
+    } else if (rightType === 'download' || rightType === 'share') {
       onDownloadPress?.();
     }
   };
@@ -94,6 +94,7 @@ const Nav = ({
           </TouchableOpacity>
         );
       case 'download':
+      case 'share':
         return (
           <TouchableOpacity
             style={[
@@ -105,7 +106,7 @@ const Nav = ({
             onPress={handleRightPress}
           >
             <Ionicons
-              name="download-outline"
+              name={rightType === 'share' ? 'share-outline' : 'download-outline'}
               size={24}
               color={isDarkBackground ? '#0f172a' : '#ffffff'}
             />

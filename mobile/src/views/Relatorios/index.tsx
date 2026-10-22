@@ -148,7 +148,7 @@ const Relatorios = ({ navigation }: Props) => {
         title="Relatórios"
         subtitle="Análise de métricas e indicadores"
         onBackPress={() => navigation.goBack()}
-        rightType="download"
+        rightType="share"
         onDownloadPress={compartilharRelatorio}
       />
 
@@ -269,8 +269,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   buttonContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    marginHorizontal: 20,
     marginTop: 8,
     marginBottom: 16,
   },

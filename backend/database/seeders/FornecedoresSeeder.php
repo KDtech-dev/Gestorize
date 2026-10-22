@@ -17,5 +17,7 @@ class FornecedoresSeeder extends Seeder
             'ramo_atividade'  => 'Distribuição Geral',
             'nome_responsavel' => 'João Silva',
         ]);
+
+        Fornecedor::factory(9)->create();
     }
 }

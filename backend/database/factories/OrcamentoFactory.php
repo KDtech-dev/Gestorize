@@ -14,6 +14,7 @@ class OrcamentoFactory extends Factory
     public function definition(): array
     {
         return [
+            'titulo'        => 'Orçamento ' . $this->faker->unique()->bothify('####'),
             'cliente_id'    => Cliente::inRandomOrder()->value('id')
                                     ?? Cliente::factory(),
             'valor_total'   => 0,
