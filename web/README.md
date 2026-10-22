@@ -29,4 +29,4 @@ No dispositivo físico, use o IP ou domínio do servidor Laravel acessível pela
 
 ## Escopo atual
 
-Login, dashboard, navegação filtrada pelas permissões do usuário, listagem, busca e formulários de cadastro/edição para clientes, produtos, fornecedores, funcionários e orçamentos, aprovação e exclusão condicionadas às permissões, relatório por período e tipo, além de registro de vendas com seleção de produtos, quantidades e cliente opcional.
+Login, dashboard, navegação filtrada pelas permissões do usuário, listagem, busca e formulários de cadastro/edição para clientes, produtos, fornecedores, funcionários e orçamentos, aprovação e exclusão condicionadas às permissões, relatório por período e tipo, registro de vendas, central de ajuda, configurações e perfil do usuário.

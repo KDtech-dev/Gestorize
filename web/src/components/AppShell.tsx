@@ -33,12 +33,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </Link>)}
       </nav>
       <div className="sidebar-bottom">
-        <div className="user-mini"><div className="avatar">{(user?.name ?? 'U').slice(0, 1).toUpperCase()}</div><div className="user-meta"><strong>{user?.name}</strong><span>{user?.role ?? 'Usuário'}</span></div></div>
+        <Link href="/perfil" className="user-mini"><div className="avatar">{(user?.name ?? 'U').slice(0, 1).toUpperCase()}</div><div className="user-meta"><strong>{user?.name}</strong><span>{user?.role ?? 'Usuário'}</span></div></Link>
+        <div className="sidebar-utilities"><Link href="/configuracoes">⚙ Configurações</Link><Link href="/ajuda">? Central de ajuda</Link></div>
         <button className="logout-button" onClick={() => void signOut()}><span>↪</span>Sair da conta</button>
       </div>
     </aside>
     <main className="main-area">
-      <header className="topbar"><div><span className="topbar-kicker">GESTORIZE <span>/</span> PAINEL</span><p>Olá, {(user?.name ?? '').split(' ')[0]}</p></div><div className="topbar-right"><span className="connection"><i />API conectada</span><button className="theme-toggle" onClick={toggle} aria-label={mode === 'dark' ? 'Ativar tema claro' : 'Ativar tema escuro'} title={mode === 'dark' ? 'Tema claro' : 'Tema escuro'}>{mode === 'dark' ? '☀' : '☾'}</button><div className="avatar top-avatar">{(user?.name ?? 'U').slice(0, 1).toUpperCase()}</div></div></header>
+      <header className="topbar"><div><span className="topbar-kicker">GESTORIZE <span>/</span> PAINEL</span><p>Olá, {(user?.name ?? '').split(' ')[0]}</p></div><div className="topbar-right"><span className="connection"><i />API conectada</span><Link className="header-utility" href="/ajuda" aria-label="Central de ajuda" title="Central de ajuda">?</Link><Link className="header-utility" href="/configuracoes" aria-label="Configurações" title="Configurações">⚙</Link><button className="theme-toggle" onClick={toggle} aria-label={mode === 'dark' ? 'Ativar tema claro' : 'Ativar tema escuro'} title={mode === 'dark' ? 'Tema claro' : 'Tema escuro'}>{mode === 'dark' ? '☀' : '☾'}</button><Link href="/perfil" className="avatar top-avatar" aria-label="Meu perfil">{(user?.name ?? 'U').slice(0, 1).toUpperCase()}</Link></div></header>
       <div className="page-content">{children}</div>
     </main>
   </div>;

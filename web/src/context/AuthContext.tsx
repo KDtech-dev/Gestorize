@@ -17,6 +17,7 @@ type AuthValue = {
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
+  updateUser: (user: Partial<WebUser>) => void;
   can: (permission: string) => boolean;
 };
 
@@ -61,11 +62,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const updateUser = (updated: Partial<WebUser>) => setUser((current) => current ? { ...current, ...updated } : current);
+
   const value = useMemo<AuthValue>(() => ({
     user,
     loading,
     signIn,
     signOut,
+    updateUser,
     can: (permission) => !!user && (user.role === 'admin' || !!user.permissions?.includes(permission)),
   }), [loading, user]);
 
