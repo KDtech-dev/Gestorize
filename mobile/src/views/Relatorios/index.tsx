@@ -7,8 +7,9 @@ import {
   KeyboardAvoidingView,
   Platform,
   FlatList,
-  Share,
 } from 'react-native';
+import * as Print from 'expo-print';
+import * as Sharing from 'expo-sharing';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@context/types';
 import { useTheme } from '@context/ThemeContext';
@@ -40,6 +41,94 @@ const reportTypes = [
   { id: 'produtos' as ReportType, label: 'Produtos' },
 ];
 
+const escapeHtml = (value: string) => value
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;')
+  .replace(/'/g, '&#039;');
+
+const formatCurrency = (value: number) => value.toLocaleString('pt-BR', {
+  style: 'currency',
+  currency: 'BRL',
+});
+
+const obterDetalheErro = (error: unknown) => {
+  const mensagemApi = formatErrorMessage(error, '');
+  if (mensagemApi) return mensagemApi;
+  if (error instanceof Error && error.message) return error.message;
+  if (typeof error === 'string' && error) return error;
+  return 'O dispositivo não retornou detalhes do erro.';
+};
+
+const gerarHtmlRelatorio = (report: RelatorioResponse, periodo: PeriodType, tipo: ReportType) => {
+  const periodoLabel = periods.find((item) => item.id === periodo)?.label ?? periodo;
+  const tipoLabel = reportTypes.find((item) => item.id === tipo)?.label ?? tipo;
+  const isProdutos = tipo === 'produtos';
+  const linhas = isProdutos
+    ? report.serie.categorias.map((item) => ({ rotulo: item.nome, valor: item.quantidade }))
+    : report.serie.rotulos.map((rotulo, index) => ({ rotulo, valor: report.serie.valores[index] ?? 0 }));
+  const maxValor = Math.max(...linhas.map((item) => item.valor), 0);
+  const formatarValor = (value: number) => tipo === 'movimentacao' ? formatCurrency(value) : String(value);
+  const formatarVariacao = (value: number | null) => value == null
+    ? 'Sem base de comparação'
+    : `${value > 0 ? '+' : ''}${value.toLocaleString('pt-BR')}% em relação ao período anterior`;
+  const linhaTabela = linhas.length
+    ? linhas.map((item) => {
+      const largura = maxValor > 0 ? Math.max((item.valor / maxValor) * 100, item.valor > 0 ? 2 : 0) : 0;
+      return `<tr><td>${escapeHtml(item.rotulo)}</td><td class="number">${escapeHtml(formatarValor(item.valor))}</td><td><div class="track"><div class="bar" style="width:${largura}%"></div></div></td></tr>`;
+    }).join('')
+    : '<tr><td colspan="3" class="empty">Nenhum registro neste período.</td></tr>';
+
+  return `<!doctype html><html><head><meta charset="utf-8" /><style>
+    @page { size: A4; margin: 18mm 14mm; }
+    * { box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; color: #172033; font-size: 11px; line-height: 1.45; }
+    .brand { color: #475569; font-size: 10px; font-weight: bold; letter-spacing: 1.5px; text-transform: uppercase; }
+    h1 { margin: 5px 0 3px; font-size: 25px; color: #102a43; }
+    .subtitle { color: #64748b; margin: 0; }
+    .rule { height: 3px; background: #d6ad43; margin: 16px 0 20px; }
+    .meta { display: flex; justify-content: space-between; color: #475569; margin-bottom: 16px; }
+    .grid { display: flex; flex-wrap: wrap; gap: 9px; margin-bottom: 18px; }
+    .metric { width: 32%; border: 1px solid #dbe2ea; border-radius: 8px; padding: 12px; }
+    .metric-label { color: #64748b; font-size: 10px; }
+    .metric-value { font-size: 17px; font-weight: bold; margin: 5px 0 3px; color: #102a43; }
+    .metric-change { font-size: 9px; color: #64748b; }
+    h2 { font-size: 15px; color: #102a43; margin: 20px 0 8px; }
+    table { border-collapse: collapse; width: 100%; }
+    th { background: #f1f5f9; text-align: left; color: #475569; font-size: 9px; text-transform: uppercase; }
+    th, td { padding: 8px; border-bottom: 1px solid #e2e8f0; }
+    .number { text-align: right; white-space: nowrap; font-weight: bold; }
+    .track { height: 7px; background: #edf1f5; border-radius: 5px; overflow: hidden; }
+    .bar { height: 7px; background: #c69f36; border-radius: 5px; }
+    .empty { color: #64748b; text-align: center; padding: 20px; }
+    .note { background: #f8fafc; border-left: 3px solid #c69f36; padding: 10px 12px; margin-top: 18px; color: #475569; }
+    .footer { border-top: 1px solid #e2e8f0; padding-top: 8px; margin-top: 24px; color: #94a3b8; font-size: 9px; }
+  </style></head><body>
+    <div class="brand">Gestorize · Relatórios</div>
+    <h1>${escapeHtml(tipoLabel)}</h1>
+    <p class="subtitle">Resumo das movimentações registradas no sistema</p>
+    <div class="rule"></div>
+    <div class="meta"><span>Período: <strong>${escapeHtml(periodoLabel)}</strong></span><span>Gerado em: ${new Date().toLocaleString('pt-BR')}</span></div>
+    <div class="grid">
+      <div class="metric"><div class="metric-label">Valor em orçamentos</div><div class="metric-value">${formatCurrency(report.metricas.valor_orcado.valor)}</div><div class="metric-change">${escapeHtml(formatarVariacao(report.metricas.valor_orcado.variacao))}</div></div>
+      <div class="metric"><div class="metric-label">Orçamentos criados</div><div class="metric-value">${report.metricas.orcamentos.valor}</div><div class="metric-change">${escapeHtml(formatarVariacao(report.metricas.orcamentos.variacao))}</div></div>
+      <div class="metric"><div class="metric-label">Novos clientes</div><div class="metric-value">${report.metricas.clientes.valor}</div><div class="metric-change">${escapeHtml(formatarVariacao(report.metricas.clientes.variacao))}</div></div>
+    </div>
+    <h2>Resumo do período</h2>
+    <table><tbody>
+      <tr><td>Orçamentos criados</td><td class="number">${report.totais.orcamentos}</td></tr>
+      <tr><td>Aprovações realizadas</td><td class="number">${report.totais.aprovacoes}</td></tr>
+      <tr><td>Orçamentos pendentes</td><td class="number">${report.totais.pendentes}</td></tr>
+      <tr><td>Produtos cadastrados</td><td class="number">${report.totais.produtos}</td></tr>
+    </tbody></table>
+    <h2>${isProdutos ? 'Produtos cadastrados por categoria' : tipo === 'movimentacao' ? 'Valor em orçamentos por período' : tipo === 'orcamentos' ? 'Orçamentos criados por período' : 'Novos clientes por período'}</h2>
+    <table><thead><tr><th>${isProdutos ? 'Categoria' : 'Intervalo'}</th><th class="number">${tipo === 'movimentacao' ? 'Valor' : 'Quantidade'}</th><th>Distribuição</th></tr></thead><tbody>${linhaTabela}</tbody></table>
+    <div class="note">${escapeHtml(report.nota)}</div>
+    <div class="footer">Documento gerado pelo Gestorize com base nos dados registrados até o momento da emissão.</div>
+  </body></html>`;
+};
+
 const Relatorios = ({ navigation }: Props) => {
   const { colors } = useTheme();
   const [selectedPeriod, setSelectedPeriod] = useState<PeriodType>('hoje');
@@ -47,6 +136,7 @@ const Relatorios = ({ navigation }: Props) => {
     useState<ReportType>('movimentacao');
   const [report, setReport] = useState<RelatorioResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [pdfLoading, setPdfLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
 
   const scrollViewRef = useRef<ScrollView>(null);
@@ -110,29 +200,48 @@ const Relatorios = ({ navigation }: Props) => {
     }
   }, [selectedReportType, report, colors]);
 
-  const moeda = (valor: number) => valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  const moeda = formatCurrency;
 
-  const compartilharRelatorio = useCallback(async () => {
+  const gerarPdfRelatorio = useCallback(async () => {
     if (!report) return;
 
-    const periodoLabel = periods.find((item) => item.id === selectedPeriod)?.label ?? selectedPeriod;
-    const resumo = [
-      `Relatório Gestorize — ${periodoLabel}`,
-      `Valor em orçamentos: ${moeda(report.totais.valor_orcado)}`,
-      `Orçamentos criados: ${report.totais.orcamentos}`,
-      `Aprovações no período: ${report.totais.aprovacoes}`,
-      `Orçamentos pendentes: ${report.totais.pendentes}`,
-      `Novos clientes: ${report.totais.clientes}`,
-      `Produtos cadastrados: ${report.totais.produtos}`,
-      report.nota,
-    ].join('\n');
-
+    setPdfLoading(true);
     try {
-      await Share.share({ title: 'Relatório Gestorize', message: resumo });
+      const html = gerarHtmlRelatorio(report, selectedPeriod, selectedReportType);
+
+      // No navegador, o Expo abre a janela de impressão e não retorna um arquivo URI.
+      if (Platform.OS === 'web') {
+        await Print.printAsync({ html });
+        return;
+      }
+
+      const arquivo = await Print.printToFileAsync({ html, base64: false });
+      if (!arquivo?.uri) {
+        throw new Error('A plataforma não retornou o arquivo PDF gerado.');
+      }
+
+      const podeCompartilhar = await Sharing.isAvailableAsync();
+      if (!podeCompartilhar) {
+        await Print.printAsync({ uri: arquivo.uri });
+        return;
+      }
+
+      await Sharing.shareAsync(arquivo.uri, {
+        mimeType: 'application/pdf',
+        dialogTitle: 'Relatório Gestorize em PDF',
+        UTI: 'com.adobe.pdf',
+      });
     } catch (error) {
-      Toast.show({ type: 'error', text1: 'Não foi possível compartilhar o relatório' });
+      const detalhe = obterDetalheErro(error);
+      Toast.show({
+        type: 'error',
+        text1: 'Não foi possível gerar o PDF',
+        text2: detalhe.length > 180 ? `${detalhe.slice(0, 177)}...` : detalhe,
+      });
+    } finally {
+      setPdfLoading(false);
     }
-  }, [report, selectedPeriod]);
+  }, [report, selectedPeriod, selectedReportType]);
 
   const handlePeriodChange = useCallback((period: PeriodType) => {
     setSelectedPeriod(period);
@@ -148,8 +257,8 @@ const Relatorios = ({ navigation }: Props) => {
         title="Relatórios"
         subtitle="Análise de métricas e indicadores"
         onBackPress={() => navigation.goBack()}
-        rightType="share"
-        onDownloadPress={compartilharRelatorio}
+        rightType="download"
+        onDownloadPress={gerarPdfRelatorio}
       />
 
       <ScrollView
@@ -222,11 +331,11 @@ const Relatorios = ({ navigation }: Props) => {
 
         <View style={styles.buttonContainer}>
           <Button
-            title="Compartilhar Relatório"
+            title={pdfLoading ? 'Gerando PDF...' : Platform.OS === 'web' ? 'Salvar relatório em PDF' : 'Gerar PDF do relatório'}
             variant="contained"
             color="primary"
-            onPress={compartilharRelatorio}
-            disabled={!report || loading}
+            onPress={gerarPdfRelatorio}
+            disabled={!report || loading || pdfLoading}
           />
         </View>
       </ScrollView>

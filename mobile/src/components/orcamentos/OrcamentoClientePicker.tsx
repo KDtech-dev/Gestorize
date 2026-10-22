@@ -105,7 +105,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 21, fontWeight: '900' },
   subtitle: { fontSize: 13, marginTop: 2 },
   closeButton: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-  filters: { paddingHorizontal: 12, gap: 8, paddingBottom: 8 },
+  filters: { paddingHorizontal: 12, gap: 9,  height:55},
   clients: { paddingHorizontal: 10, paddingTop: 8, paddingBottom: 28 },
   empty: { fontSize: 14, textAlign: 'center', padding: 24 },
 });

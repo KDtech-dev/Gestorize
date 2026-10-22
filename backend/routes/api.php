@@ -25,7 +25,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('refresh', [AuthController::class, 'refresh']);
     Route::get('me', [AuthController::class, 'me']);
     Route::put('me', [AuthController::class, 'atualizarMeuPerfil']);
-    Route::get('/relatorios', [RelatorioController::class, 'index'])->middleware('permission:relatorios.ver');
+    Route::get('/relatorios', [RelatorioController::class, 'index'])
+        ->middleware('role_or_permission:admin|relatorios.ver');
 
 
     Route::prefix('acessos')->middleware(['auth:sanctum', 'permission:acessos.gerenciar'])->group(function () {

@@ -14,23 +14,32 @@ class UpdateFuncionarioRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('cpf')) {
+            $this->merge([
+                'cpf' => preg_replace('/\D/', '', (string) $this->input('cpf')),
+            ]);
+        }
+    }
+
     public function rules(): array
     {
-        $funcionario = $this->route('funcionario');
+        $funcionario = $this->route('id') ?? $this->route('funcionario');
 
         if (! $funcionario instanceof Funcionario) {
             $funcionario = Funcionario::findOrFail($funcionario);
         }
 
-        $userId = $funcionario->user_id;
+        $funcionarioId = $funcionario->getKey();
 
         return [
             'name' => ['sometimes', 'required', 'string', 'max:255',],
-            'email' => ['sometimes', 'required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($userId),],
+            'email' => ['sometimes', 'required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($funcionarioId, 'id'),],
             'password' => ['sometimes', 'nullable', 'string', 'min:8', 'confirmed',],
             'telefone' => ['sometimes', 'nullable', 'string', 'max:20',],
             'data_nascimento' => ['sometimes', 'nullable', 'date', 'before:today',],
-            'cpf' => ['sometimes', 'nullable', 'string', 'size:11', Rule::unique('funcionarios', 'cpf')->where('user_id', '!=', $userId),],
+            'cpf' => ['sometimes', 'nullable', 'string', 'size:11', Rule::unique('funcionarios', 'cpf')->ignore($funcionarioId, 'id'),],
             'endereco_id' => ['sometimes', 'nullable', 'uuid', Rule::exists('enderecos', 'id'),],
             'role' => ['sometimes', 'nullable', 'string', Rule::in(['gestor', 'funcionario']),],
             'permissions' => ['sometimes', 'array',],

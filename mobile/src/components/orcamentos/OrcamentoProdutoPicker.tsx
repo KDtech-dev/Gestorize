@@ -119,11 +119,11 @@ const styles = StyleSheet.create({
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.48)', justifyContent: 'flex-end' },
   sheet: { height: '88%', borderTopLeftRadius: 26, borderTopRightRadius: 26, paddingTop: 18, overflow: 'hidden' },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 18, marginBottom: 10 },
-  heading: { flex: 1 },
+  heading: { flex: 1, marginBottom:1 },
   title: { fontSize: 21, fontWeight: '900' },
   subtitle: { fontSize: 13, marginTop: 2 },
   closeButton: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-  filters: { paddingHorizontal: 12, gap: 8, paddingBottom: 8 },
+  filters: { paddingHorizontal: 12, gap: 9,  height:55},
   products: { paddingHorizontal: 10, paddingTop: 8, paddingBottom: 28 },
   empty: { fontSize: 14, textAlign: 'center', padding: 24 },
 });

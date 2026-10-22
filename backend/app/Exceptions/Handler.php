@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Str;
+use Spatie\Permission\Exceptions\UnauthorizedException;
 use Throwable;
 
 class Handler extends ExceptionHandler
@@ -52,6 +53,14 @@ class Handler extends ExceptionHandler
             );
         }
 
+        if ($e instanceof UnauthorizedException) {
+            return ResponseService::exception(
+                $e,
+                Response::HTTP_FORBIDDEN,
+                'Você não possui permissão para esta ação.'
+            );
+        }
+
         if ($e instanceof AuthorizationException || $e->getPrevious() instanceof AuthorizationException) {
             return ResponseService::exception(
                 $e,
@@ -62,12 +71,14 @@ class Handler extends ExceptionHandler
 
         if ($e instanceof ModelNotFoundException) {
             $modelClass = $e->getModel();
-            $modelName = class_basename($modelClass);
+            $modelName = $modelClass ? class_basename($modelClass) : 'Recurso';
+            $ids = $e->getIds();
+            $identificador = $ids[0] ?? 'informado';
 
             return response()->json(
                 [
                     'success' => false,
-                    'message' => "O recurso {$modelName} com ID {$e->getIds()[0]} não foi encontrado.",
+                    'message' => "O recurso {$modelName} com ID {$identificador} não foi encontrado.",
                     'code' => Response::HTTP_NOT_FOUND,
                 ],
                 Response::HTTP_NOT_FOUND

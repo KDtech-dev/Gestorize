@@ -5,6 +5,7 @@ import {
     NativeScrollEvent,
     NativeSyntheticEvent,
     StyleSheet,
+    Text,
     View,
 } from 'react-native';
 
@@ -35,6 +36,7 @@ const Produtos = () => {
     const [selectedFiltro, setSelectedFiltro] = useState<
         'estoque' | 'sem_estoque' | null
     >(null);
+    const [selectedCategoria, setSelectedCategoria] = useState<string | null>(null);
 
     const scrollY = useRef(new Animated.Value(0)).current;
 
@@ -83,9 +85,18 @@ const Produtos = () => {
                         ? Number(item.estoque) > 0
                         : Number(item.estoque) <= 0;
 
-            return matchSearch && matchEstoque;
+            const categoriaProduto = item.categoria_titulo?.trim() || 'Sem categoria';
+            const matchCategoria = !selectedCategoria || categoriaProduto === selectedCategoria;
+
+            return matchSearch && matchEstoque && matchCategoria;
         });
-    }, [produtos, search, selectedFiltro]);
+    }, [produtos, search, selectedFiltro, selectedCategoria]);
+
+    const categorias = useMemo(
+        () => [...new Set(produtos.map((item) => item.categoria_titulo?.trim() || 'Sem categoria'))]
+            .sort((a, b) => a.localeCompare(b, 'pt-BR')),
+        [produtos],
+    );
 
     const opacity = scrollY.interpolate({
         inputRange: [0, 100],
@@ -188,6 +199,23 @@ const Produtos = () => {
                         }}
                     />
                 </View>
+                <View style={styles.filtersContainer}>
+                    <Text style={[styles.filterLabel, { color: colors.muted }]}>Categorias</Text>
+                    <FlatList
+                        data={[{ id: 'todas', label: 'Todas' }, ...categorias.map((categoria) => ({ id: categoria, label: categoria }))]}
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        keyExtractor={(item) => item.id}
+                        contentContainerStyle={styles.filtersContent}
+                        renderItem={({ item }) => (
+                            <TooltipChip
+                                label={item.label}
+                                active={item.id === 'todas' ? selectedCategoria === null : selectedCategoria === item.id}
+                                onPress={() => setSelectedCategoria((current) => item.id === 'todas' || current === item.id ? null : item.id)}
+                            />
+                        )}
+                    />
+                </View>
             </Animated.View>
 
             <Animated.FlatList
@@ -244,6 +272,13 @@ const styles = StyleSheet.create({
         marginTop: 10,
     },
 
+    filterLabel: {
+        fontSize: 12,
+        fontWeight: '700',
+        marginHorizontal: 12,
+        marginBottom: 6,
+    },
+
     filtersContent: {
         paddingHorizontal: 10,
         gap: 8,
@@ -251,6 +286,6 @@ const styles = StyleSheet.create({
 
     listContent: {
         padding: 10,
-        paddingTop: 135,
+        paddingTop: 205,
     },
 });

@@ -25,9 +25,18 @@ export default function ProdutoFornecedorPicker({ visible, suppliers, selectedId
       <View style={styles.header}><View style={{ flex: 1 }}><Text style={[styles.title, { color: colors.text }]}>Selecionar fornecedor</Text><Text style={{ color: colors.muted }}>{loading ? 'Carregando fornecedores...' : `${filtered.length} fornecedores encontrados`}</Text></View><TouchableOpacity onPress={onClose} style={[styles.close, { backgroundColor: colors.surface }]}><Ionicons name="close" size={24} color={colors.text} /></TouchableOpacity></View>
       <SearchBar placeholder="Busque por nome, ramo, e-mail ou CNPJ" value={search} onChangeText={setSearch} />
       <FlatList horizontal data={[{ id: 'all', name: 'Todos' }, ...branches.map((name) => ({ id: name, name }))]} keyExtractor={(item) => item.id} showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filters} renderItem={({ item }) => <TooltipChip label={item.name} active={item.id === 'all' ? !selectedBranch : selectedBranch === item.name} onPress={() => setSelectedBranch(item.id === 'all' || selectedBranch === item.name ? null : item.name)} />} />
-      <FlatList data={filtered} keyExtractor={(item) => item.id} showsVerticalScrollIndicator={false} contentContainerStyle={styles.list} ListEmptyComponent={<Text style={{ color: colors.muted, textAlign: 'center', padding: 24 }}>{loading ? 'Carregando...' : 'Nenhum fornecedor encontrado.'}</Text>} renderItem={({ item }) => <FornecedorCard nome={item.nome} email={item.email} telefone={item.telefone} ramo_atividade={item.ramo_atividade} nome_responsavel={item.nome_responsavel} avatar={item.avatar_url} local={[item.endereco?.cidade, item.endereco?.estado].filter(Boolean).join(' - ')} selected={item.id === selectedId} onPress={() => onSelect(item)} /> } />
+      <FlatList data={filtered} keyExtractor={(item) => item.id} showsVerticalScrollIndicator={false} contentContainerStyle={styles.list} ListEmptyComponent={<Text style={{ color: colors.muted, textAlign: 'center', padding: 24 }}>{loading ? 'Carregando...' : 'Nenhum fornecedor encontrado.'}</Text>} renderItem={({ item }) => <FornecedorCard nome={item.nome} email={item.email} telefone={item.telefone} ramo_atividade={item.ramo_atividade} nome_responsavel={item.nome_responsavel} avatar={item.avatar_url} local={[item.endereco?.cidade, item.endereco?.estado].filter(Boolean).join(' - ')} selected={item.id === selectedId} onPress={() => onSelect(item)} />} />
       {canAdd && onAdd && <View style={styles.add}><Button title="Cadastrar fornecedor" variant="outlined" onPress={onAdd} /></View>}
     </Pressable></Pressable>
   </Modal>;
 }
-const styles = StyleSheet.create({ overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.48)', justifyContent: 'flex-end' }, sheet: { height: '88%', borderTopLeftRadius: 26, borderTopRightRadius: 26, paddingTop: 18, overflow: 'hidden' }, header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 18, marginBottom: 10 }, title: { fontSize: 21, fontWeight: '900' }, close: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' }, filters: { paddingHorizontal: 12, gap: 8, paddingBottom: 8 }, list: { paddingHorizontal: 10, paddingTop: 8, paddingBottom: 16 }, add: { paddingHorizontal: 18, paddingBottom: 14 } });
+const styles = StyleSheet.create({
+  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.48)', justifyContent: 'flex-end' },
+  sheet: { height: '88%', borderTopLeftRadius: 26, borderTopRightRadius: 26, paddingTop: 18, overflow: 'hidden' },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 18, marginBottom: 10 },
+  title: { fontSize: 21, fontWeight: '900' },
+  close: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  filters: { paddingHorizontal: 12, gap: 9, height: 55 },
+  list: { paddingHorizontal: 10, paddingTop: 8, paddingBottom: 16 },
+  add: { paddingHorizontal: 18, paddingBottom: 14 }
+});
