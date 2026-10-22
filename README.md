@@ -10,6 +10,8 @@ O sistema é composto por uma API backend desenvolvida em Laravel, responsável 
 
 O banco de dados utilizado é o MySQL, garantindo a persistência das informações.
 
+Também há uma aplicação web responsiva em Next.js no diretório `web/`. As versões web e mobile acessam a mesma API Laravel e, portanto, consultam e atualizam os mesmos dados.
+
 ## Funcionalidades
 
 ### Gestão de Funcionários
@@ -54,6 +56,13 @@ O sistema utiliza Laravel Sanctum para autenticação por tokens de acesso à AP
 - Expo
 - TypeScript
 - Axios
+
+### Web
+
+- Next.js
+- React
+- TypeScript
+- Proxy server-side para a API Laravel
 
 ## Requisitos para Execução
 
