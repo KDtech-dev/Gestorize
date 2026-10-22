@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AcessoController;
+use App\Http\Controllers\Api\DashboardController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\ProdutoController;
 use App\Http\Controllers\Api\AuthController;
@@ -16,6 +17,8 @@ use App\Http\Controllers\Api\UserController;
 Route::post('login', [AuthController::class, 'login']);
 
 Route::middleware('auth:sanctum')->group(function () {
+
+    Route::get('/dashboard/resumo', DashboardController::class);
 
     Route::get('/categorias', [CategoriaController::class, 'index'])->middleware('permission:produtos.ver');
     Route::post('/categorias', [CategoriaController::class, 'store'])->middleware('permission:produtos.criar');;

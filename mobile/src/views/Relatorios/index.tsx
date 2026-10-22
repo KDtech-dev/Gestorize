@@ -9,7 +9,6 @@ import {
   FlatList,
 } from 'react-native';
 import * as Print from 'expo-print';
-import * as Sharing from 'expo-sharing';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@context/types';
 import { useTheme } from '@context/ThemeContext';
@@ -246,25 +245,8 @@ const Relatorios = ({ navigation }: Props) => {
         return;
       }
 
-      etapa = 'Gerar o arquivo PDF';
-      const arquivo = await Print.printToFileAsync({ html, base64: false });
-      if (!arquivo?.uri) {
-        throw new Error('A plataforma não retornou o arquivo PDF gerado.');
-      }
-
-      const podeCompartilhar = await Sharing.isAvailableAsync();
-      if (!podeCompartilhar) {
-        etapa = 'Abrir a impressão do PDF';
-        await Print.printAsync({ uri: arquivo.uri });
-        return;
-      }
-
-      etapa = 'Abrir o compartilhamento do PDF';
-      await Sharing.shareAsync(arquivo.uri, {
-        mimeType: 'application/pdf',
-        dialogTitle: 'Relatório Gestorize em PDF',
-        UTI: 'com.adobe.pdf',
-      });
+      etapa = 'Abrir a impressão do relatório';
+      await Print.printAsync({ html });
     } catch (error) {
       const detalhe = obterDetalheErro(error);
       Toast.show({
@@ -365,7 +347,7 @@ const Relatorios = ({ navigation }: Props) => {
 
         <View style={styles.buttonContainer}>
           <Button
-            title={pdfLoading ? 'Gerando PDF...' : Platform.OS === 'web' ? 'Salvar relatório em PDF' : 'Gerar PDF do relatório'}
+            title={pdfLoading ? 'Preparando relatório...' : Platform.OS === 'web' ? 'Salvar relatório em PDF' : 'Imprimir ou salvar em PDF'}
             variant="contained"
             color="primary"
             onPress={gerarPdfRelatorio}
