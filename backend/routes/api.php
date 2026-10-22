@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\ClienteController;
 use App\Http\Controllers\Api\FornecedorController;
 use App\Http\Controllers\Api\FuncionarioController;
 use App\Http\Controllers\Api\OrcamentoController;
+use App\Http\Controllers\Api\RelatorioController;
 use App\Http\Controllers\Api\UnidadeMedidaController;
 use App\Http\Controllers\Api\UserController;
 
@@ -24,6 +25,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('refresh', [AuthController::class, 'refresh']);
     Route::get('me', [AuthController::class, 'me']);
     Route::put('me', [AuthController::class, 'atualizarMeuPerfil']);
+    Route::get('/relatorios', [RelatorioController::class, 'index'])->middleware('permission:relatorios.ver');
 
 
     Route::prefix('acessos')->middleware(['auth:sanctum', 'permission:acessos.gerenciar'])->group(function () {

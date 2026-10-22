@@ -1,11 +1,13 @@
 import React, { useRef, useState, useMemo, useCallback } from 'react';
 import {
+  ActivityIndicator,
   View,
   StyleSheet,
   ScrollView,
   KeyboardAvoidingView,
   Platform,
   FlatList,
+  Share,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@context/types';
@@ -16,6 +18,9 @@ import { ReportChart } from '@components/reports/ReportChart';
 import TooltipChip from '@components/botoes/TooltipChip';
 import Button from '@components/botoes/Button';
 import { Text } from 'react-native-paper';
+import { getRelatorio, RelatorioResponse } from '@api/apiRelatorios';
+import Toast from 'react-native-toast-message';
+import { formatErrorMessage } from '@core/utils/format';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Relatorios'>;
 type ReportType = 'movimentacao' | 'orcamentos' | 'clientes' | 'produtos';
@@ -40,63 +45,94 @@ const Relatorios = ({ navigation }: Props) => {
   const [selectedPeriod, setSelectedPeriod] = useState<PeriodType>('hoje');
   const [selectedReportType, setSelectedReportType] =
     useState<ReportType>('movimentacao');
+  const [report, setReport] = useState<RelatorioResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const scrollViewRef = useRef<ScrollView>(null);
 
-  const metricsData = useMemo(() => ({
-    faturamento: {
-      value: 'R$ 15.300,00',
-      change: 12.5,
-      icon: 'currency-brl' as const,
-    },
-    orcamentos: {
-      value: '147',
-      change: 8.2,
-      icon: 'file-document-outline' as const,
-    },
-    clientes: { value: '348', change: 15.3, icon: 'account-group' as const },
-  }), []);
+  React.useEffect(() => {
+    let active = true;
+    setLoading(true);
+    setLoadError(null);
+    setReport(null);
+    getRelatorio(selectedPeriod, selectedReportType)
+      .then((data) => { if (active) setReport(data); })
+      .catch((error) => {
+        if (!active) return;
+        setLoadError(formatErrorMessage(error, 'Não foi possível carregar os dados do relatório.'));
+        Toast.show({ type: 'error', text1: 'Erro ao carregar relatório', text2: formatErrorMessage(error, 'Tente novamente.') });
+      })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [selectedPeriod, selectedReportType]);
 
   const chartData = useMemo(() => {
+    if (!report) return null;
     switch (selectedReportType) {
       case 'movimentacao':
         return {
           data: {
-            labels: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'],
-            datasets: [{ data: [1200, 1900, 1500, 2200, 2800, 3200, 2500] }],
+            labels: report.serie.rotulos,
+            datasets: [{ data: report.serie.valores }],
           },
-          total: 'R$ 15.300,00',
+          total: `${report.totais.valor_orcado.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} em orçamentos`,
         };
       case 'orcamentos':
         return {
           data: {
-            labels: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'],
-            datasets: [{ data: [12, 19, 15, 22, 28, 32, 25] }],
+            labels: report.serie.rotulos,
+            datasets: [{ data: report.serie.valores }],
           },
-          total: '147 orçamentos',
+          total: `${report.totais.orcamentos} criados · ${report.totais.aprovacoes} aprovações no período · ${report.totais.pendentes} pendentes`,
         };
       case 'clientes':
         return {
           data: {
-            labels: ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'],
-            datasets: [{ data: [45, 52, 48, 60, 68, 75, 82, 88, 94, 101, 108, 115] }],
+            labels: report.serie.rotulos,
+            datasets: [{ data: report.serie.valores }],
           },
-          total: '348 clientes',
+          total: `${report.totais.clientes} novos clientes`,
         };
       case 'produtos':
         return {
-          data: [
-            { name: 'Produto A', quantity: 35, color: colors.primary, legendFontColor: colors.muted, legendFontSize: 12 },
-            { name: 'Produto B', quantity: 28, color: colors.success, legendFontColor: colors.muted, legendFontSize: 12 },
-            { name: 'Produto C', quantity: 22, color: '#f59e0b', legendFontColor: colors.muted, legendFontSize: 12 },
-            { name: 'Produto D', quantity: 15, color: colors.error, legendFontColor: colors.muted, legendFontSize: 12 },
-          ],
-          total: '100 unidades',
+          data: report.serie.categorias.map((categoria, index) => ({
+            name: categoria.nome,
+            quantity: categoria.quantidade,
+            color: [colors.accent, colors.success, colors.primary, colors.error, '#64748B'][index % 5],
+            legendFontColor: colors.muted,
+            legendFontSize: 12,
+          })),
+          total: `${report.totais.produtos} produtos cadastrados`,
         };
       default:
         return null;
     }
-  }, [selectedReportType, colors]);
+  }, [selectedReportType, report, colors]);
+
+  const moeda = (valor: number) => valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+  const compartilharRelatorio = useCallback(async () => {
+    if (!report) return;
+
+    const periodoLabel = periods.find((item) => item.id === selectedPeriod)?.label ?? selectedPeriod;
+    const resumo = [
+      `Relatório Gestorize — ${periodoLabel}`,
+      `Valor em orçamentos: ${moeda(report.totais.valor_orcado)}`,
+      `Orçamentos criados: ${report.totais.orcamentos}`,
+      `Aprovações no período: ${report.totais.aprovacoes}`,
+      `Orçamentos pendentes: ${report.totais.pendentes}`,
+      `Novos clientes: ${report.totais.clientes}`,
+      `Produtos cadastrados: ${report.totais.produtos}`,
+      report.nota,
+    ].join('\n');
+
+    try {
+      await Share.share({ title: 'Relatório Gestorize', message: resumo });
+    } catch (error) {
+      Toast.show({ type: 'error', text1: 'Não foi possível compartilhar o relatório' });
+    }
+  }, [report, selectedPeriod]);
 
   const handlePeriodChange = useCallback((period: PeriodType) => {
     setSelectedPeriod(period);
@@ -113,6 +149,7 @@ const Relatorios = ({ navigation }: Props) => {
         subtitle="Análise de métricas e indicadores"
         onBackPress={() => navigation.goBack()}
         rightType="download"
+        onDownloadPress={compartilharRelatorio}
       />
 
       <ScrollView
@@ -143,11 +180,11 @@ const Relatorios = ({ navigation }: Props) => {
           />
         </View>
 
-        <View style={styles.metricsGrid}>
-          <MetricCard {...metricsData.faturamento} title="Faturamento" iconColor={colors.success} />
-          <MetricCard {...metricsData.orcamentos} title="Orçamentos" />
-          <MetricCard {...metricsData.clientes} title="Clientes" />
-        </View>
+        {report && <View style={styles.metricsGrid}>
+          <MetricCard value={moeda(report.metricas.valor_orcado.valor)} change={report.metricas.valor_orcado.variacao} title="Valor em orçamentos" icon="currency-brl" iconColor={colors.success} />
+          <MetricCard value={String(report.metricas.orcamentos.valor)} change={report.metricas.orcamentos.variacao} title="Orçamentos criados" icon="file-document-outline" />
+          <MetricCard value={String(report.metricas.clientes.valor)} change={report.metricas.clientes.variacao} title="Clientes novos" icon="account-group" />
+        </View>}
 
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>
@@ -171,7 +208,9 @@ const Relatorios = ({ navigation }: Props) => {
           />
         </View>
 
-        {chartData && (
+        {loading && <ActivityIndicator style={styles.loader} size="large" color={colors.primary} />}
+        {!loading && loadError && <Text style={[styles.message, { color: colors.error }]}>{loadError}</Text>}
+        {!loading && chartData && report && (
           <ReportChart
             type={selectedReportType}
             data={chartData.data}
@@ -179,12 +218,15 @@ const Relatorios = ({ navigation }: Props) => {
           />
         )}
 
+        {report && <Text style={[styles.note, { color: colors.muted }]}>{report.nota}</Text>}
+
         <View style={styles.buttonContainer}>
           <Button
-            title="Exportar Relatório"
+            title="Compartilhar Relatório"
             variant="contained"
             color="primary"
-            onPress={() => console.log('Exportando...')}
+            onPress={compartilharRelatorio}
+            disabled={!report || loading}
           />
         </View>
       </ScrollView>
@@ -232,4 +274,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
     marginBottom: 16,
   },
+  loader: { marginVertical: 32 },
+  message: { marginHorizontal: 20, marginBottom: 20, textAlign: 'center' },
+  note: { marginHorizontal: 20, marginTop: 4, marginBottom: 20, fontSize: 12, lineHeight: 18 },
 });

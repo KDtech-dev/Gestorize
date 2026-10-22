@@ -41,13 +41,31 @@ export const ReportChart = ({ type, data, total }: ReportChartProps) => {
   };
 
   const renderChart = () => {
+    const hasData = type === 'produtos'
+      ? Array.isArray(data) && data.some((item) => item.quantity > 0)
+      : Array.isArray(data?.datasets?.[0]?.data) && data.datasets[0].data.some((value: number) => value > 0);
+
+    if (!hasData) {
+      const title = type === 'movimentacao'
+        ? 'Valor em orçamentos por período'
+        : type === 'orcamentos'
+          ? 'Orçamentos criados por período'
+          : type === 'clientes'
+            ? 'Novos clientes por período'
+            : 'Produtos cadastrados por categoria';
+      return <View>
+        <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
+        <Text style={[styles.empty, { color: colors.muted }]}>Nenhuma movimentação registrada neste período.</Text>
+      </View>;
+    }
+
     switch (type) {
       case 'movimentacao':
       case 'orcamentos':
         return (
           <>
             <Text style={[styles.title, { color: colors.text }]}>
-              {type === 'movimentacao' ? 'Movimentação por Dia' : 'Orçamentos por Dia'}
+              {type === 'movimentacao' ? 'Valor em orçamentos por período' : 'Orçamentos criados por período'}
             </Text>
             <ScrollView 
               horizontal 
@@ -71,7 +89,7 @@ export const ReportChart = ({ type, data, total }: ReportChartProps) => {
       case 'clientes':
         return (
           <>
-            <Text style={[styles.title, { color: colors.text }]}>Novos Clientes</Text>
+            <Text style={[styles.title, { color: colors.text }]}>Novos clientes por período</Text>
             <ScrollView 
               horizontal 
               showsHorizontalScrollIndicator={false}
@@ -95,7 +113,7 @@ export const ReportChart = ({ type, data, total }: ReportChartProps) => {
       case 'produtos':
         return (
           <>
-            <Text style={[styles.title, { color: colors.text }]}>Produtos Mais Movimentados</Text>
+            <Text style={[styles.title, { color: colors.text }]}>Produtos cadastrados por categoria</Text>
             <View style={styles.pieChartContainer}>
               <PieChart
                 data={data}
@@ -172,4 +190,5 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
   },
+  empty: { textAlign: 'center', fontSize: 14, paddingVertical: 24 },
 });

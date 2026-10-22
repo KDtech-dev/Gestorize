@@ -6,7 +6,7 @@ import { useTheme } from '@context/ThemeContext';
 type MetricCardProps = {
   title: string;
   value: string;
-  change: number;
+  change: number | null;
   icon: keyof typeof MaterialCommunityIcons.glyphMap;
   iconColor?: string;
   onPress?: () => void;
@@ -38,8 +38,8 @@ export const MetricCard = ({ title, value, change, icon, iconColor, onPress }: M
             color={iconColor || colors.primary} 
           />
         </View>
-        <Text style={[styles.change, { color: change >= 0 ? colors.success : colors.error }]}>
-          {change >= 0 ? '↑' : '↓'} {Math.abs(change)}%
+        <Text style={[styles.change, { color: change == null ? colors.muted : change >= 0 ? colors.success : colors.error }]}>
+          {change == null ? 'Sem base' : `${change >= 0 ? '↑' : '↓'} ${Math.abs(change)}%`}
         </Text>
       </View>
       
