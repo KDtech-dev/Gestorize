@@ -50,7 +50,7 @@ export const getAxios = ({
   }
 
   const instance = axios.create({
-    baseURL: 'http://192.168.21.143:8000/api',
+    baseURL: 'http://192.168.15.11:8000/api',
     timeout: timeoutMs ?? 15000,
     headers,
   });
