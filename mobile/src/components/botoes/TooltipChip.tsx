@@ -13,25 +13,21 @@ const TooltipChip = ({ label, active = false, onPress }: Props) => {
   const isDark = colors.background !== '#ffffff';
 
   const backgroundColor = active
-    ? isDark
-      ? '#ffffff'
-      : '#000000'
-    : isDark
-      ? '#ffffff15'
-      : '#00000010';
+    ? isDark ? colors.accent : '#000000'
+    : isDark ? colors.card : '#00000010';
 
   const textColor = active
-    ? isDark
-      ? '#000'
-      : '#fff'
-    : isDark
-      ? '#fff'
-      : '#000';
+    ? isDark ? colors.accentText : '#fff'
+    : isDark ? '#E2E8F0' : '#000';
+
+  const borderColor = isDark
+    ? active ? colors.accent : '#526173'
+    : active ? '#000000' : 'transparent';
 
   return (
     <Pressable
       onPress={onPress}
-      style={[styles.container, { backgroundColor }]}
+      style={[styles.container, { backgroundColor, borderColor, borderWidth: isDark ? 1 : 0 }]}
     >
       <Text style={[styles.text, { color: textColor }]}>{label}</Text>
     </Pressable>

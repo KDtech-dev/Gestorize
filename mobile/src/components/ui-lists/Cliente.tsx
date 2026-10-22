@@ -41,12 +41,12 @@ const Cliente = ({
 
   const isDark = colors.background !== '#ffffff';
 
-  const cardBg = isDark ? '#325075' : '#ffffff';
+  const cardBg = colors.card;
   const textColor = isDark ? '#ffffff' : '#0f172a';
   const subText = isDark ? '#cbd5e1' : '#6b7280';
 
   const circleColor = isDark
-    ? '#05244d'
+    ? colors.elevated
     : 'rgba(6, 32, 70, 0.22)';
 
   const arrowColor = isDark ? '#ffffff' : '#062046';
@@ -85,7 +85,7 @@ const Cliente = ({
               shadowColor: isDark ? '#ffffff' : '#000000',
               shadowOpacity: isDark ? 0.08 : 0.8,
               borderWidth: selected ? 3 : 0,
-              borderColor: '#D6AC36',
+              borderColor: colors.accent,
             },
           ]}
         >

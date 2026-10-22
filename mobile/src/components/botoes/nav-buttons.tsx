@@ -31,16 +31,16 @@ export function NavButton({
   const scale = React.useRef(new Animated.Value(1)).current;
   const { colors, isDark } = useTheme();
 
-  const cardBg = isDark ? '#6476dacc' : '#ffffff';
+  const cardBg = colors.card;
 
-  const iconColor = disabled ? colors.muted : isDark ? '#005CE4' : '#ffffff';
+  const iconColor = disabled ? colors.muted : isDark ? colors.accent : '#ffffff';
 
-  const iconBg = disabled ? colors.border : isDark ? '#ffffff' : colors.primary;
+  const iconBg = disabled ? colors.border : isDark ? colors.elevated : colors.primary;
 
   const borderColor = disabled
     ? colors.border
     : isDark
-      ? '#ffffff00'
+      ? colors.accent
       : colors.primary;
 
   const textColor = disabled ? colors.muted : isDark ? '#ffffff' : colors.text;
@@ -48,7 +48,7 @@ export function NavButton({
   const subtitleColor = disabled
     ? colors.muted
     : isDark
-      ? '#e2e8f0'
+      ? '#C3CBD6'
       : colors.muted;
 
   const handlePressIn = () => {

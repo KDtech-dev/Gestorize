@@ -38,12 +38,12 @@ const Funcionario = ({
 
   const isDark = colors.background !== '#ffffff';
 
-  const cardBg = isDark ? '#325075' : '#ffffff';
+  const cardBg = colors.card;
   const textColor = isDark ? '#ffffff' : '#0f172a';
   const subText = isDark ? '#cbd5e1' : '#6b7280';
 
   const circleColor = isDark
-    ? '#05244d'
+    ? colors.elevated
     : 'rgba(6, 32, 70, 0.22)';
 
 

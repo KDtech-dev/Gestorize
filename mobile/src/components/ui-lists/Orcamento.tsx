@@ -15,11 +15,11 @@ const Orcamento = ({ title, cliente, valor, status, onPress }: props) => {
   const { compactLists } = useThemeToggle();
   const isDark = colors.background !== '#ffffff';
 
-  const cardBg = isDark ? '#253140' : '#ffffff';
+  const cardBg = colors.card;
   const textColor = isDark ? '#ffffff' : '#0f172a';
   const subText = isDark ? '#cbd5e1' : '#6b7280';
 
-  const circleColor = isDark ? '#344254' : 'rgba(6, 32, 70, 0.22)';
+  const circleColor = isDark ? colors.elevated : 'rgba(6, 32, 70, 0.22)';
   const arrowColor = isDark ? '#ffffff' : '#062046';
   const statusColor = isDark
     ? (status === 'aprovado' ? '#bbf7d0' : '#fde68a')

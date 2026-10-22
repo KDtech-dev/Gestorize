@@ -7,6 +7,10 @@ type ThemeContextType = AppTheme & {
 export type AppTheme = {
   colors: {
     primary: string;
+    card: string;
+    elevated: string;
+    accent: string;
+    accentText: string;
     background: string;
     surface: string;
     border: string;
@@ -20,6 +24,10 @@ export type AppTheme = {
 const defaultTheme: AppTheme = {
   colors: {
     primary: '#005CE4',
+    card: '#ffffff',
+    elevated: '#f8fafc',
+    accent: '#e6e3dd',
+    accentText: '#062046',
     background: '#ffffff',
     surface: '#f8fafc',
     border: '#ffffff',
@@ -56,6 +64,10 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
     const dark: AppTheme = {
       colors: {
         primary: '#ffffff',
+        card: '#254a79',
+        elevated: '#05244d',
+        accent: '#e0e0de',
+        accentText: '#062046',
         background: '#062046',
         surface: '#0b274f',
         border: '#0e3266',

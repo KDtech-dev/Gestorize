@@ -27,9 +27,9 @@ const HomeButton = ({
   disabled = false,
   type = 'submit',
 }: HomeButtonProps) => {
-  const { isDark } = useTheme();
+  const { colors, isDark } = useTheme();
   const buttonColor = color === 'primary'
-    ? (isDark ? '#354252' : '#0B3A75')
+    ? (isDark ? colors.card : '#2d5a91')
     : (isDark ? '#B28D3B' : '#F2B705');
   const buttonTextColor = color === 'primary' || isDark ? '#FFFFFF' : '#062046';
   const backgroundColor =
@@ -53,7 +53,7 @@ const HomeButton = ({
       borderColor: disabled ? '#AAB4C3' : borderColor,
       borderWidth: variant === 'outlined' ? 2 : 0,
       borderLeftWidth: isDark ? 4 : (variant === 'outlined' ? 2 : 0),
-      borderLeftColor: isDark ? '#B89A55' : borderColor,
+      borderLeftColor: isDark ? colors.accent : borderColor,
     },
   ];
 
