@@ -44,17 +44,19 @@ export const etiquetaProdutoHtml = (produto: {
 }) => {
   const preco = Number(produto.preco_venda ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   return `<!doctype html><html><head><meta charset="utf-8"><style>
-    @page { size: 76mm 50mm; margin: 3mm; } * { box-sizing: border-box; }
-    body { font-family: Arial,sans-serif; width: 70mm; margin: 0; color: #111; }
-    .nome { font-size: 15pt; font-weight: 700; line-height: 1.15; margin: 0 0 2mm; overflow-wrap: anywhere; }
-    .detalhe { font-size: 8pt; margin: 0 0 1mm; }
-    .preco { font-size: 12pt; font-weight: 700; margin-top: 2mm; }
-    .codigo { width: 100%; height: 14mm; margin-top: 2mm; }
-    .numero { text-align: center; font: 8pt monospace; margin: 1mm 0 0; letter-spacing: 1px; }
-  </style></head><body><p class="nome">${escaparHtml(produto.nome)}</p>
+    @page { size: 76mm 50mm; margin: 0; } * { box-sizing: border-box; }
+    html, body { width: 76mm; height: 50mm; margin: 0; padding: 0; overflow: hidden; }
+    body { font-family: Arial,sans-serif; color: #111; }
+    .etiqueta { width: 76mm; height: 50mm; padding: 3mm; overflow: hidden; page-break-inside: avoid; break-inside: avoid; }
+    .nome { max-height: 9mm; overflow: hidden; font-size: 13pt; font-weight: 700; line-height: 1.1; margin: 0 0 1.5mm; overflow-wrap: anywhere; }
+    .detalhe { max-height: 3.5mm; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 7pt; line-height: 1.1; margin: 0 0 .5mm; }
+    .preco { font-size: 11pt; font-weight: 700; line-height: 1.1; margin: 1mm 0 0; }
+    .codigo { display: block; width: 100%; height: 12mm; margin-top: 1mm; }
+    .numero { text-align: center; font: 7pt monospace; margin: .5mm 0 0; letter-spacing: 1px; }
+  </style></head><body><main class="etiqueta"><p class="nome">${escaparHtml(produto.nome)}</p>
     ${produto.categoria_titulo ? `<p class="detalhe">Categoria: ${escaparHtml(produto.categoria_titulo)}</p>` : ''}
     ${produto.fornecedor_razao_social ? `<p class="detalhe">Fornecedor: ${escaparHtml(produto.fornecedor_razao_social)}</p>` : ''}
     ${produto.unidade_medida_sigla ? `<p class="detalhe">Unidade: ${escaparHtml(produto.unidade_medida_sigla)}</p>` : ''}
     <p class="preco">${preco}</p>${codigo39Svg(produto.codigo_barras ?? '', 48)}<p class="numero">${escaparHtml(produto.codigo_barras ?? '')}</p>
-  </body></html>`;
+    </main></body></html>`;
 };
