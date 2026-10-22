@@ -75,6 +75,12 @@ const Homepage = () => {
       description: 'Crie, organize e acompanhe propostas',
     },
     {
+      route: 'Vendas' as const,
+      icon: 'point-of-sale' as const,
+      label: 'Vendas',
+      description: 'Registre vendas e acompanhe o estoque',
+    },
+    {
       route: 'Funcionarios' as const,
       icon: 'account-tie' as const,
       label: 'Funcionários',

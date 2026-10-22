@@ -19,6 +19,7 @@ const routePermission: Partial<Record<keyof RootStackParamList, string>> = {
   NovoOrcamento: 'orcamentos.ver',
   NovoFuncionario: 'users.ver',
   Relatorios: 'relatorios.ver',
+  Vendas: 'vendas.ver',
 };
 
 export const canAccessRoute = (

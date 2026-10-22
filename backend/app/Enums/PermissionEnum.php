@@ -25,6 +25,9 @@ enum PermissionEnum: string
     case ORCAMENTOS_EXCLUIR = 'orcamentos.excluir';
     case ORCAMENTOS_APROVAR = 'orcamentos.aprovar';
 
+    case VENDAS_VER = 'vendas.ver';
+    case VENDAS_CRIAR = 'vendas.criar';
+
     case USERS_VER = 'users.ver';
     case USERS_CRIAR = 'users.criar';
     case USERS_EDITAR = 'users.editar';
@@ -59,6 +62,9 @@ enum PermissionEnum: string
             self::ORCAMENTOS_EDITAR => 'Editar orçamentos',
             self::ORCAMENTOS_EXCLUIR => 'Excluir orçamentos',
             self::ORCAMENTOS_APROVAR => 'Aprovar orçamentos',
+
+            self::VENDAS_VER => 'Visualizar vendas',
+            self::VENDAS_CRIAR => 'Registrar vendas',
 
             self::USERS_VER => 'Visualizar usuários',
             self::USERS_CRIAR => 'Cadastrar usuários',
@@ -97,6 +103,9 @@ enum PermissionEnum: string
             self::ORCAMENTOS_EXCLUIR,
             self::ORCAMENTOS_APROVAR => 'Orçamentos',
 
+            self::VENDAS_VER,
+            self::VENDAS_CRIAR => 'Vendas',
+
             self::USERS_VER,
             self::USERS_CRIAR,
             self::USERS_EDITAR,
@@ -119,6 +128,7 @@ enum PermissionEnum: string
             self::ORCAMENTOS_VER,
             self::USERS_VER,
             self::RELATORIOS_VER => 'Visualizar',
+            self::VENDAS_VER => 'Visualizar',
 
             self::CLIENTES_CRIAR,
             self::PRODUTOS_CRIAR,
@@ -141,6 +151,7 @@ enum PermissionEnum: string
             self::ORCAMENTOS_APROVAR => 'Aprovar',
 
             self::RELATORIOS_GERAR => 'Gerar',
+            self::VENDAS_CRIAR => 'Cadastrar',
             self::RELATORIOS_EXPORTAR => 'Exportar',
 
             self::ACESSOS_GERENCIAR => 'Gerenciar',

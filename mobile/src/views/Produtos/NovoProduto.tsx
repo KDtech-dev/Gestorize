@@ -55,6 +55,9 @@ import { FormAccessProvider } from "@context/FormAccessContext";
 import { useUnsavedChangesGuard } from "../../hooks/useUnsavedChangesGuard";
 import ClickableTextCard from "@components/ClickableTextCard";
 import ProdutoFornecedorPicker from "@components/produtos/ProdutoFornecedorPicker";
+import * as Print from "expo-print";
+import { ProdutoType } from "@context/types";
+import { etiquetaProdutoHtml } from "@utils/codigoBarras";
 type Navigation =
     NativeStackNavigationProp<RootStackParamList>;
 
@@ -102,6 +105,7 @@ export default function NovoProduto() {
     const [carregandoCategorias, setCarregandoCategorias] = useState(false);
     const [unidadesMedida, setUnidadesMedida] = useState<Opcao[]>([]);
     const [saving, setSaving] = useState(false);
+    const [produtoParaEtiqueta, setProdutoParaEtiqueta] = useState<ProdutoType | null>(null);
     const modo = route.params?.modo ?? "criar";
     const produtoId = route.params?.produtoId;
     const isCriar = modo === "criar";
@@ -197,6 +201,7 @@ export default function NovoProduto() {
                 ]);
 
                 const produto = produtoResponse.data;
+                setProdutoParaEtiqueta(produto);
 
                 setCategorias(
                     categoriasResponse.data.map((categoria) => ({
@@ -594,6 +599,7 @@ export default function NovoProduto() {
                 }
 
                 const produtoAtualizado = await getProduto(produtoId);
+                setProdutoParaEtiqueta(produtoAtualizado.data);
 
                 const imagensAtualizadas: ImagemGaleria[] = (
                     produtoAtualizado.data.imagens ?? []
@@ -889,7 +895,7 @@ export default function NovoProduto() {
                         <ProdutoFornecedorPicker
                             visible={fornecedorModalVisivel}
                             suppliers={fornecedores}
-                            selectedId={value}
+                            selectedId={value ?? undefined}
                             loading={carregandoFornecedores}
                             canAdd={can(user, "fornecedores.criar")}
                             onClose={() => setFornecedorModalVisivel(false)}
@@ -944,6 +950,17 @@ export default function NovoProduto() {
                     />
                 </View>
                 <View style={styles.actionsContainer}>
+                    {isEditar && produtoParaEtiqueta?.codigo_barras ? (
+                        <View style={[styles.barcodeCard, { borderColor: colors.border, backgroundColor: colors.surface }]}>
+                            <Text style={[styles.sectionTitle, { color: colors.text }]}>Etiqueta do produto</Text>
+                            <Text style={{ color: colors.muted, marginBottom: 10 }}>Código {produtoParaEtiqueta.codigo_barras}</Text>
+                            <Button
+                                title="Imprimir etiqueta com código de barras"
+                                variant="outlined"
+                                onPress={() => Print.printAsync({ html: etiquetaProdutoHtml(produtoParaEtiqueta) })}
+                            />
+                        </View>
+                    ) : null}
                     {formCanEdit && <Button
                         title={
                             saving
@@ -1114,6 +1131,13 @@ const styles = StyleSheet.create({
         alignItems: "center",
         width: "100%",
         gap: 12,
+        marginBottom: 5,
+    },
+    barcodeCard: {
+        width: '100%',
+        borderWidth: 1,
+        borderRadius: 16,
+        padding: 15,
         marginBottom: 5,
     },
 

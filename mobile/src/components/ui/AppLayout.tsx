@@ -39,6 +39,12 @@ export const AppLayout = ({ children }: { children: React.ReactNode }) => {
       onPress: () => navigation.navigate('Orcamentos'),
     },
     {
+      route: 'Vendas' as const,
+      icon: 'point-of-sale' as const,
+      label: 'Vendas',
+      onPress: () => navigation.navigate('Vendas'),
+    },
+    {
       route: 'Funcionarios' as const,
       icon: 'account-tie' as const,
       label: 'Funcionários',

@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class Produto extends Model
 {
@@ -21,8 +22,22 @@ class Produto extends Model
         'fornecedor_id',
         'unidade_medida_id',
         'estoque',
-        'validade'
+        'validade',
+        'codigo_barras',
     ];
+
+    protected static function booted(): void
+    {
+        static::creating(function (Produto $produto) {
+            if (blank($produto->codigo_barras)) {
+                do {
+                    $codigo = 'PRD' . strtoupper(Str::random(9));
+                } while (static::where('codigo_barras', $codigo)->exists());
+
+                $produto->codigo_barras = $codigo;
+            }
+        });
+    }
 
     public function categoria()
     {

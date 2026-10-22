@@ -66,6 +66,12 @@ export const MenuProvider = ({ children, navigationRef }: MenuProviderProps) => 
       onPress: () => handleMenuAction(() => navigate('Orcamentos')),
     },
     {
+      route: 'Vendas',
+      icon: 'point-of-sale' as const,
+      label: 'Vendas',
+      onPress: () => handleMenuAction(() => navigate('Vendas')),
+    },
+    {
       route: 'Funcionarios',
       icon: 'account-tie' as const,
       label: 'Funcionários',

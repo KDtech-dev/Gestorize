@@ -35,6 +35,8 @@ class RolesSeeder extends Seeder
                 P::ORCAMENTOS_VER,
                 P::ORCAMENTOS_CRIAR,
                 P::ORCAMENTOS_EDITAR,
+                P::VENDAS_VER,
+                P::VENDAS_CRIAR,
                 P::USERS_VER,
                 P::RELATORIOS_VER,
             ],
@@ -45,6 +47,8 @@ class RolesSeeder extends Seeder
                 P::ORCAMENTOS_VER,
                 P::ORCAMENTOS_CRIAR,
                 P::PRODUTOS_VER,
+                P::VENDAS_VER,
+                P::VENDAS_CRIAR,
             ],
 
             RoleEnum::CLIENTE->value => [

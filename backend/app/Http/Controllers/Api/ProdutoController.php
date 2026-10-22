@@ -40,6 +40,16 @@ class ProdutoController extends Controller
         );
     }
 
+    public function buscarPorCodigo(string $codigo): JsonResponse
+    {
+        $codigo = strtoupper(trim($codigo));
+        $produto = Produto::with(['categoria', 'fornecedor', 'unidadeMedida', 'imagens'])
+            ->where('codigo_barras', $codigo)
+            ->firstOrFail();
+
+        return ResponseService::success(new ProdutoResource($produto));
+    }
+
     public function store(
         StoreProdutoRequest $request
     ): JsonResponse {

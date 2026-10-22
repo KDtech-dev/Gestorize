@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\OrcamentoController;
 use App\Http\Controllers\Api\RelatorioController;
 use App\Http\Controllers\Api\UnidadeMedidaController;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\VendaController;
 
 Route::post('login', [AuthController::class, 'login']);
 
@@ -52,7 +53,8 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::prefix('produtos')->group(function () {
-        Route::get('/',        [ProdutoController::class, 'index'])->middleware('permission:produtos.ver');
+        Route::get('/',        [ProdutoController::class, 'index'])->middleware('permission:produtos.ver|vendas.ver');
+        Route::get('/codigo/{codigo}', [ProdutoController::class, 'buscarPorCodigo'])->middleware('permission:produtos.ver|vendas.ver');
         Route::post('/',       [ProdutoController::class, 'store'])->middleware('permission:produtos.criar');
         Route::get('/{id}',    [ProdutoController::class, 'show'])->middleware('permission:produtos.ver');
         Route::put('/{produto}', [ProdutoController::class, 'update'])->middleware('permission:produtos.editar');
@@ -61,6 +63,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/{id}/imagem', [ProdutoController::class, 'removerImagem'])->middleware('permission:produtos.editar');
         Route::put('/{id}/imagem/principal', [ProdutoController::class, 'definirImagemPrincipal'])->middleware('permission:produtos.editar');
         Route::post('/{produto}/imagem/principal', [ProdutoController::class, 'substituirImagemPrincipal'])->middleware('permission:produtos.editar');
+    });
+
+    Route::prefix('vendas')->group(function () {
+        Route::get('/', [VendaController::class, 'index'])->middleware('permission:vendas.ver');
+        Route::post('/', [VendaController::class, 'store'])->middleware('permission:vendas.criar');
     });
 
     Route::prefix('fornecedores')->group(function () {

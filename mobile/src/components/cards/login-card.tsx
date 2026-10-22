@@ -11,8 +11,8 @@ type props = {
 };
 
 export default function LoginCard({ onLoginSuccess }: props) {
-  const [email, setEmail] = useState('teste@email.com');
-  const [senha, setSenha] = useState('123456');
+  const [email, setEmail] = useState('');
+  const [senha, setSenha] = useState('');
   const [remember, setRemember] = useState(false);
   const { signIn, loading } = useAuth();
   const [erro, setErro] = useState<string | null>(null);

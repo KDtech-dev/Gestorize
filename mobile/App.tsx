@@ -31,6 +31,7 @@ import NovoProduto from '@views/Produtos/NovoProduto';
 import NovoFornecedor from '@views/Fornecedores/NovoFornecedor';
 import NovoFuncionario from '@views/Funcionarios/NovoFuncionario';
 import NovoOrcamento from '@views/Orcamentos/NovoOrcamento';
+import Vendas from '@views/Vendas';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const navigationRef = createNavigationContainerRef<RootStackParamList>();
@@ -56,6 +57,7 @@ const AppNavigator = () => {
         ) : (
           <>
             <Stack.Screen name="Homepage" component={Homepage} />
+            {canAccess('Vendas') && <Stack.Screen name="Vendas" component={Vendas} />}
             <Stack.Screen name="Configuracoes" component={Configuracoes} />
 
             <Stack.Screen name="Ajuda" component={Ajuda} />

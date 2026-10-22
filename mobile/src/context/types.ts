@@ -158,6 +158,7 @@ export type ProdutoImagemType = {
 export type ProdutoType = {
   id: string;
   nome: string;
+  codigo_barras?: string | null;
   descricao: string | null;
   preco_custo: number | null;
   porcentagem_lucro: number | null;
@@ -251,6 +252,7 @@ export type EnderecoType = {
 };
 
 export type RootStackParamList = {
+  Vendas: undefined;
   Relatorios: undefined;
   Configuracoes: undefined;
   Ajuda: undefined;
