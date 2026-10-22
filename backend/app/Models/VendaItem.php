@@ -9,6 +9,8 @@ class VendaItem extends Model
 {
     use HasUuids;
 
+    protected $table = 'venda_itens';
+
     protected $fillable = [
         'venda_id', 'produto_id', 'produto_nome', 'codigo_barras',
         'quantidade', 'preco_unitario', 'subtotal',
