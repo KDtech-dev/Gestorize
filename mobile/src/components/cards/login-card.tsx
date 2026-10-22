@@ -2,7 +2,8 @@ import Button from '@components/botoes/Button';
 import InputLogin from '@components/inputs/input-login';
 import { useAuth } from '@context/AuthContext';
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Pressable } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@context/ThemeContext';
 
 type props = {
@@ -12,6 +13,7 @@ type props = {
 export default function LoginCard({ onLoginSuccess }: props) {
   const [email, setEmail] = useState('teste@email.com');
   const [senha, setSenha] = useState('123456');
+  const [remember, setRemember] = useState(false);
   const { signIn, loading } = useAuth();
   const [erro, setErro] = useState<string | null>(null);
 
@@ -23,7 +25,7 @@ export default function LoginCard({ onLoginSuccess }: props) {
 
   const handleLogin = async () => {
     try {
-      await signIn(email, senha);
+      await signIn(email, senha, remember);
       setErro(null);
       onLoginSuccess();
     } catch (e: any) {
@@ -53,6 +55,20 @@ export default function LoginCard({ onLoginSuccess }: props) {
         secureTextEntry
         icon="lock-closed-outline"
       />
+      {erro ? <Text style={styles.error}>{erro}</Text> : null}
+      <Pressable
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked: remember }}
+        onPress={() => setRemember((current) => !current)}
+        style={styles.rememberRow}
+      >
+        <Ionicons
+          name={remember ? 'checkbox' : 'square-outline'}
+          size={22}
+          color={remember ? colors.primary : colors.muted}
+        />
+        <Text style={[styles.rememberText, { color: colors.text }]}>Lembre de mim</Text>
+      </Pressable>
       <TouchableOpacity>
         <Text style={styles.forgot}>Esqueceu a senha?</Text>
       </TouchableOpacity>
@@ -104,5 +120,22 @@ const styles = StyleSheet.create({
     marginTop: 10,
     marginBottom: 25,
     fontWeight: '500',
+  },
+  rememberRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 9,
+    minHeight: 44,
+    marginTop: 8,
+  },
+  rememberText: {
+    fontSize: 15,
+    fontWeight: '500',
+  },
+  error: {
+    color: '#C62828',
+    fontSize: 13,
+    marginTop: 8,
   },
 });

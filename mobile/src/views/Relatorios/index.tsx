@@ -58,7 +58,36 @@ const obterDetalheErro = (error: unknown) => {
   if (mensagemApi) return mensagemApi;
   if (error instanceof Error && error.message) return error.message;
   if (typeof error === 'string' && error) return error;
+  if (error && typeof error === 'object') {
+    const erroEstruturado = error as { message?: unknown; code?: unknown };
+    if (typeof erroEstruturado.message === 'string' && erroEstruturado.message) return erroEstruturado.message;
+    if (typeof erroEstruturado.code === 'string' && erroEstruturado.code) return erroEstruturado.code;
+    const serializado = JSON.stringify(error);
+    if (serializado && serializado !== '{}') return serializado;
+  }
   return 'O dispositivo não retornou detalhes do erro.';
+};
+
+const imprimirHtmlNoNavegador = (html: string) => {
+  const janela = window.open('', '_blank');
+  if (!janela) {
+    throw new Error('O navegador bloqueou a janela de impressão. Permita pop-ups para salvar o relatório em PDF.');
+  }
+
+  let impressaoIniciada = false;
+  const iniciarImpressao = () => {
+    if (impressaoIniciada) return;
+    impressaoIniciada = true;
+    janela.focus();
+    janela.print();
+  };
+
+  janela.addEventListener('load', iniciarImpressao, { once: true });
+  janela.addEventListener('afterprint', () => janela.close(), { once: true });
+  janela.document.open();
+  janela.document.write(html);
+  janela.document.close();
+  window.setTimeout(iniciarImpressao, 500);
 };
 
 const gerarHtmlRelatorio = (report: RelatorioResponse, periodo: PeriodType, tipo: ReportType) => {
@@ -80,7 +109,7 @@ const gerarHtmlRelatorio = (report: RelatorioResponse, periodo: PeriodType, tipo
     }).join('')
     : '<tr><td colspan="3" class="empty">Nenhum registro neste período.</td></tr>';
 
-  return `<!doctype html><html><head><meta charset="utf-8" /><style>
+  return `<!doctype html><html><head><meta charset="utf-8" /><title>Relatório Gestorize</title><style>
     @page { size: A4; margin: 18mm 14mm; }
     * { box-sizing: border-box; }
     body { font-family: Arial, sans-serif; color: #172033; font-size: 11px; line-height: 1.45; }
@@ -206,15 +235,18 @@ const Relatorios = ({ navigation }: Props) => {
     if (!report) return;
 
     setPdfLoading(true);
+    let etapa = 'Preparar o relatório';
     try {
       const html = gerarHtmlRelatorio(report, selectedPeriod, selectedReportType);
 
-      // No navegador, o Expo abre a janela de impressão e não retorna um arquivo URI.
+      // No navegador, criamos a janela com o HTML do relatório para imprimir/salvar como PDF.
       if (Platform.OS === 'web') {
-        await Print.printAsync({ html });
+        etapa = 'Abrir a impressão do navegador';
+        imprimirHtmlNoNavegador(html);
         return;
       }
 
+      etapa = 'Gerar o arquivo PDF';
       const arquivo = await Print.printToFileAsync({ html, base64: false });
       if (!arquivo?.uri) {
         throw new Error('A plataforma não retornou o arquivo PDF gerado.');
@@ -222,10 +254,12 @@ const Relatorios = ({ navigation }: Props) => {
 
       const podeCompartilhar = await Sharing.isAvailableAsync();
       if (!podeCompartilhar) {
+        etapa = 'Abrir a impressão do PDF';
         await Print.printAsync({ uri: arquivo.uri });
         return;
       }
 
+      etapa = 'Abrir o compartilhamento do PDF';
       await Sharing.shareAsync(arquivo.uri, {
         mimeType: 'application/pdf',
         dialogTitle: 'Relatório Gestorize em PDF',
@@ -235,7 +269,7 @@ const Relatorios = ({ navigation }: Props) => {
       const detalhe = obterDetalheErro(error);
       Toast.show({
         type: 'error',
-        text1: 'Não foi possível gerar o PDF',
+        text1: etapa,
         text2: detalhe.length > 180 ? `${detalhe.slice(0, 177)}...` : detalhe,
       });
     } finally {

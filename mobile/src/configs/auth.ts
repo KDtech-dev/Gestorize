@@ -4,4 +4,6 @@ export default {
   logoutEndpoint: '/logout',
   storageTokenKeyName: 'authToken',
   userDataKeyName: 'userData',
+  expiresAtKeyName: 'authExpiresAt',
+  rememberKeyName: 'authRememberMe',
 };

@@ -25,10 +25,12 @@ class AuthService implements IAuthService
 
         $user->load(['roles.permissions', 'permissions']);
 
-        $token = $user->createToken('api-token')->plainTextToken;
+        $expiresAt = now()->addHours(3);
+        $token = $user->createToken('api-token', [], $expiresAt)->plainTextToken;
 
         return [
             'token' => $token,
+            'expires_at' => $expiresAt->toIso8601String(),
             'user' => (new UserResource($user))->resolve(),
         ];
     }
@@ -52,12 +54,22 @@ class AuthService implements IAuthService
             throw new AuthenticationException('Não autenticado');
         }
 
-        $user->currentAccessToken()?->delete();
+        $currentToken = $user->currentAccessToken();
+        $expiresAt = $currentToken?->expires_at
+            ?? $currentToken?->created_at?->copy()->addHours(3)
+            ?? now();
 
-        $newToken = $user->createToken('api-token')->plainTextToken;
+        $currentToken?->delete();
+
+        if ($expiresAt->isPast()) {
+            throw new AuthenticationException('Sessão expirada. Faça login novamente.');
+        }
+
+        $newToken = $user->createToken('api-token', [], $expiresAt)->plainTextToken;
 
         return [
             'token' => $newToken,
+            'expires_at' => $expiresAt->toIso8601String(),
             'user' => (new UserResource($user))->resolve(),
         ];
     }

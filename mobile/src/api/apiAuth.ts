@@ -29,6 +29,7 @@ const normalizeAuthPayload = (payload: any): LoginData => {
 
   return {
     token: String(payload.token),
+    expires_at: payload.expires_at ? String(payload.expires_at) : undefined,
 
     user: {
       ...user,
@@ -44,10 +45,12 @@ const normalizeAuthPayload = (payload: any): LoginData => {
 export async function postLogin(
   email: string,
   password: string,
+  remember: boolean,
 ): Promise<LoginData> {
   const { data } = await api.post<ResponseType<LoginData>>('/login', {
     email,
     password,
+    remember,
   });
 
   return normalizeAuthPayload(unwrap(data));
@@ -81,6 +84,9 @@ export const postRefreshToken = async (): Promise<RefreshData> => {
   const payload = normalizeAuthPayload(unwrap(data));
   await authStorage.set(payload.token);
   await secureStore.set(auth.userDataKeyName, JSON.stringify(payload.user));
+  if (payload.expires_at) {
+    await secureStore.set(auth.expiresAtKeyName, payload.expires_at);
+  }
 
   return payload;
 };
