@@ -1,0 +1,30 @@
+export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const headers = new Headers(init.headers);
+  headers.set('Accept', 'application/json');
+  if (init.body && !(init.body instanceof FormData) && !headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json');
+  }
+
+  const response = await fetch(`/api/proxy${path.startsWith('/') ? path : `/${path}`}`, {
+    ...init,
+    headers,
+    credentials: 'same-origin',
+    cache: 'no-store',
+  });
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) {
+    const message = payload?.message ?? 'Não foi possível concluir a solicitação.';
+    throw new Error(message);
+  }
+  return payload as T;
+}
+
+export type ApiEnvelope<T> = {
+  success: boolean;
+  message?: string | null;
+  data: T;
+};
+
+export function unwrap<T>(payload: ApiEnvelope<T> | T): T {
+  return (payload as ApiEnvelope<T>)?.data ?? (payload as T);
+}
