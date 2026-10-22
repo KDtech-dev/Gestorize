@@ -17,6 +17,7 @@ class StoreVendaRequest extends FormRequest
             'itens' => ['required', 'array', 'min:1'],
             'itens.*.produto_id' => ['required', 'uuid', 'distinct', 'exists:produtos,id'],
             'itens.*.quantidade' => ['required', 'integer', 'min:1'],
+            'cliente_id' => ['nullable', 'uuid', 'exists:clientes,id'],
         ];
     }
 }

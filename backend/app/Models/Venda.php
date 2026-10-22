@@ -9,7 +9,7 @@ class Venda extends Model
 {
     use HasUuids;
 
-    protected $fillable = ['usuario_id', 'valor_total', 'vendido_em'];
+    protected $fillable = ['usuario_id', 'cliente_id', 'cliente_nome', 'valor_total', 'vendido_em'];
 
     protected function casts(): array
     {
@@ -19,6 +19,11 @@ class Venda extends Model
     public function usuario()
     {
         return $this->belongsTo(User::class, 'usuario_id');
+    }
+
+    public function cliente()
+    {
+        return $this->belongsTo(Cliente::class);
     }
 
     public function itens()

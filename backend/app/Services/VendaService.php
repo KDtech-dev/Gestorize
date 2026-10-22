@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Produto;
 use App\Models\Venda;
+use App\Models\Cliente;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -11,14 +12,20 @@ class VendaService
 {
     public function listar()
     {
-        return Venda::with(['usuario', 'itens'])->latest('vendido_em')->get();
+        return Venda::with(['usuario', 'cliente', 'itens'])->latest('vendido_em')->get();
     }
 
     public function criar(array $dados, string $usuarioId): Venda
     {
         return DB::transaction(function () use ($dados, $usuarioId) {
+            $cliente = !empty($dados['cliente_id'])
+                ? Cliente::findOrFail($dados['cliente_id'])
+                : null;
+
             $venda = Venda::create([
                 'usuario_id' => $usuarioId,
+                'cliente_id' => $cliente?->id,
+                'cliente_nome' => $cliente?->nome,
                 'valor_total' => 0,
                 'vendido_em' => now(),
             ]);
@@ -53,7 +60,7 @@ class VendaService
 
             $venda->update(['valor_total' => $total]);
 
-            return $venda->load(['usuario', 'itens']);
+            return $venda->load(['usuario', 'cliente', 'itens']);
         });
     }
 }

@@ -18,9 +18,10 @@ type props = {
   showPessoaFisicaIcon?: boolean;
   showPessoaJuridicaIcon?: boolean;
 
-  rightType?: 'menu' | 'add' | 'download' | 'share';
+  rightType?: 'menu' | 'add' | 'download' | 'share' | 'print';
   onAddPress?: () => void;
   onDownloadPress?: () => void;
+  onPrintPress?: () => void;
 };
 
 const Nav = ({
@@ -31,6 +32,7 @@ const Nav = ({
   rightType = 'add',
   onAddPress,
   onDownloadPress,
+  onPrintPress,
 }: props) => {
   const { colors } = useTheme();
   const { open } = useMenu();
@@ -52,6 +54,8 @@ const Nav = ({
       onAddPress?.();
     } else if (rightType === 'download' || rightType === 'share') {
       onDownloadPress?.();
+    } else if (rightType === 'print') {
+      onPrintPress?.();
     }
   };
 
@@ -78,6 +82,8 @@ const Nav = ({
       case 'add':
         return (
           <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Adicionar"
             style={[
               styles.actionButton,
               {
@@ -95,8 +101,11 @@ const Nav = ({
         );
       case 'download':
       case 'share':
+      case 'print':
         return (
           <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel={rightType === 'print' ? 'Imprimir etiqueta' : rightType === 'share' ? 'Compartilhar' : 'Baixar'}
             style={[
               styles.actionButton,
               {
@@ -106,7 +115,7 @@ const Nav = ({
             onPress={handleRightPress}
           >
             <Ionicons
-              name={rightType === 'share' ? 'share-outline' : 'download-outline'}
+              name={rightType === 'share' ? 'share-outline' : rightType === 'print' ? 'print-outline' : 'download-outline'}
               size={24}
               color={isDarkBackground ? '#0f172a' : '#ffffff'}
             />

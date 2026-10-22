@@ -118,6 +118,14 @@ export default function NovoProduto() {
     const [nomeCategoria, setNomeCategoria] = useState("");
     const [salvandoCategoria, setSalvandoCategoria] = useState(false);
     const imagensAlteradas = !imagensIguais(imagens, imagensOriginais);
+    const imprimirEtiqueta = async () => {
+        if (!produtoParaEtiqueta?.codigo_barras) return;
+        try {
+            await Print.printAsync({ html: etiquetaProdutoHtml(produtoParaEtiqueta) });
+        } catch {
+            Toast.show({ type: "error", text1: "Não foi possível abrir a impressão da etiqueta." });
+        }
+    };
     const {
         control,
         handleSubmit,
@@ -651,7 +659,8 @@ export default function NovoProduto() {
             <Nav title={isCriar ? "Novo Produto" : "Editar Produto"}
                 subtitle="Produto"
                 onBackPress={() => navigation.goBack()}
-                rightType="menu"
+                rightType={isEditar && produtoParaEtiqueta?.codigo_barras ? "print" : "menu"}
+                onPrintPress={imprimirEtiqueta}
             />
 
             <KeyboardAwareScrollView
@@ -957,7 +966,7 @@ export default function NovoProduto() {
                             <Button
                                 title="Imprimir etiqueta com código de barras"
                                 variant="outlined"
-                                onPress={() => Print.printAsync({ html: etiquetaProdutoHtml(produtoParaEtiqueta) })}
+                                onPress={imprimirEtiqueta}
                             />
                         </View>
                     ) : null}

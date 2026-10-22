@@ -16,6 +16,8 @@ export type VendaType = {
   valor_total: number | string;
   vendido_em: string;
   vendedor: string | null;
+  cliente_id?: string | null;
+  cliente_nome?: string | null;
   itens: VendaItem[];
 };
 
@@ -26,8 +28,9 @@ export const getVendas = async (): Promise<ResponseType<VendaType[]>> => {
 
 export const registrarVenda = async (
   itens: Array<{ produto_id: string; quantidade: number }>,
+  clienteId?: string | null,
 ): Promise<ResponseType<VendaType>> => {
-  const response = await getAxios().post('/vendas', { itens });
+  const response = await getAxios().post('/vendas', { itens, cliente_id: clienteId ?? null });
   return response.data;
 };
 

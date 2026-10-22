@@ -38,7 +38,7 @@ class RelatorioService
         return [
             'periodo' => $periodo,
             'tipo' => $tipo,
-            'nota' => 'O valor financeiro representa orçamentos criados. Vendas e movimentações de estoque ainda não são registradas pelo sistema.',
+            'nota' => 'Este relatório resume orçamentos. Consulte vendas registradas e baixas de estoque no histórico de vendas.',
             'metricas' => [
                 'valor_orcado' => [
                     'valor' => round($valorOrcado, 2),
