@@ -23,6 +23,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useCallback, useEffect, useState } from "react";
 import { z } from "zod";
 import { useUnsavedChangesGuard } from "../../hooks/useUnsavedChangesGuard";
+import { useAuth } from "@context/AuthContext";
+import { can } from "@utils/permissions";
+import { FormAccessProvider } from "@context/FormAccessContext";
 
 import { RootStackParamList } from "@context/types";
 import { useTheme } from "@context/ThemeContext";
@@ -64,6 +67,7 @@ export default function NovoFornecedor() {
     const navigation = useNavigation<Navigation>();
     const route = useRoute<Route>();
     const { colors } = useTheme();
+    const { user } = useAuth();
 
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [avatar, setAvatar] = useState<string | null>(null);
@@ -77,6 +81,10 @@ export default function NovoFornecedor() {
 
     const isCriar = modo === "criar";
     const isEditar = modo === "editar";
+    const podeCriar = can(user, 'fornecedores.criar');
+    const podeEditar = can(user, 'fornecedores.editar');
+    const podeExcluir = can(user, 'fornecedores.excluir');
+    const formCanEdit = isCriar ? podeCriar : podeEditar;
     const avatarAlterado = avatar !== avatarOriginal;
     const {
         control,
@@ -398,6 +406,7 @@ export default function NovoFornecedor() {
     }
 
     return (
+        <FormAccessProvider canEdit={formCanEdit}>
         <View
             style={[
                 styles.container,
@@ -856,7 +865,7 @@ export default function NovoFornecedor() {
 
                 {/* Ações */}
                 <View style={styles.actionsContainer}>
-                    <Button
+                    {formCanEdit && <Button
                         title={
                             saving
                                 ? "Salvando..."
@@ -870,9 +879,9 @@ export default function NovoFornecedor() {
                             (!isDirty && !avatarAlterado) || saving
                         }
                         onPress={handleSubmit(onSubmit)}
-                    />
+                    />}
 
-                    {isEditar && (
+                    {isEditar && podeExcluir && (
                         <Button
                             title="Excluir fornecedor"
                             variant="delete"
@@ -891,6 +900,7 @@ export default function NovoFornecedor() {
             />
             {unsavedGuard.dialog}
         </View>
+        </FormAccessProvider>
     );
 }
 

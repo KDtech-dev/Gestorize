@@ -12,6 +12,7 @@ import {
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@context/ThemeContext";
+import { useFormCanEdit } from "@context/FormAccessContext";
 
 export type ImagemGaleria = {
     id: string;
@@ -34,6 +35,7 @@ export default function GaleriaImagens({
     maxImagens = 10,
 }: GaleriaImagensProps) {
     const { colors } = useTheme();
+    editable = useFormCanEdit() && editable;
     const [imagemExpandida, setImagemExpandida] = useState<ImagemGaleria | null>(null);
     const selecionarImagens = async () => {
         if (!editable || imagens.length >= maxImagens) {

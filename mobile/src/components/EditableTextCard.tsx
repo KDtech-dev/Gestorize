@@ -11,6 +11,7 @@ import type { DimensionValue } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { formatMoney, formatMoneyInput } from '@core/utils/format';
 import { useTheme } from '@context/ThemeContext';
+import { useFormCanEdit } from '@context/FormAccessContext';
 
 type Props = {
   label?: string;
@@ -39,6 +40,8 @@ const EditableTextCard = ({
   );
   const [secureText, setSecureText] = useState(true);
   const { colors } = useTheme();
+  const formCanEdit = useFormCanEdit();
+  const fieldEditable = editable && formCanEdit;
 
   const inputRef = useRef<TextInput>(null);
 
@@ -56,7 +59,7 @@ const EditableTextCard = ({
     tipo === 'number' ? 'numeric' : 'default';
 
   const handleFocus = () => {
-    if (editable) {
+    if (fieldEditable) {
       setIsEditing(true);
     }
   };
@@ -88,9 +91,9 @@ const EditableTextCard = ({
     <View
       style={[
         styles.container,
-        !editable && styles.containerDisabled,
+        !fieldEditable && styles.containerDisabled,
         {
-          backgroundColor: editable ? colors.surface : colors.background,
+          backgroundColor: fieldEditable ? colors.surface : colors.background,
           borderColor: isEditing ? colors.primary : (colors.background === '#ffffff' ? '#D5DCE5' : '#8794A7'),
         },
         { width },
@@ -99,7 +102,7 @@ const EditableTextCard = ({
       <Text
         style={[
           styles.label,
-          !editable && styles.labelDisabled,
+          !fieldEditable && styles.labelDisabled,
           { color: colors.muted },
         ]}
       >
@@ -111,18 +114,18 @@ const EditableTextCard = ({
           activeOpacity={1}
           style={styles.inputContainer}
           onPress={() => {
-            if (editable) {
+            if (fieldEditable) {
               inputRef.current?.focus();
             }
           }}
-          disabled={!editable}
+          disabled={!fieldEditable}
         >
           <TextInput
             ref={inputRef}
             style={[
               styles.input,
               !isEditing && styles.inputReadOnly,
-              !editable && styles.inputDisabled,
+              !fieldEditable && styles.inputDisabled,
               { color: colors.text },
             ]}
             value={internalValue}
@@ -133,7 +136,7 @@ const EditableTextCard = ({
             placeholder={placeholder}
             placeholderTextColor={colors.muted}
             secureTextEntry={isPassword && secureText}
-            editable={editable}
+            editable={fieldEditable}
             autoCapitalize={isPassword ? 'none' : 'sentences'}
             autoCorrect={!isPassword}
           />
@@ -143,7 +146,7 @@ const EditableTextCard = ({
           <TouchableOpacity
             onPress={toggleSecureText}
             style={styles.iconWrapper}
-            disabled={!editable}
+            disabled={!fieldEditable}
             activeOpacity={0.7}
             hitSlop={8}
           >

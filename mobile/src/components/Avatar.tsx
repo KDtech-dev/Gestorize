@@ -10,6 +10,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '@context/ThemeContext';
+import { useFormCanEdit } from '@context/FormAccessContext';
 
 type AvatarProps = {
     nome?: string;
@@ -29,6 +30,7 @@ const Avatar = ({
     onImageRemoved,
 }: AvatarProps) => {
     const { colors } = useTheme();
+    editable = useFormCanEdit() && editable;
 
     const [imagem, setImagem] = useState<string | null>(imageUri);
     const [imagemExpandida, setImagemExpandida] = useState(false);

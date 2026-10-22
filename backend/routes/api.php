@@ -75,14 +75,14 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::prefix('funcionarios')->group(function () {
-        Route::get('/', [FuncionarioController::class, 'index'])->middleware('permission:funcionarios.ver');
-        Route::post('/', [FuncionarioController::class, 'store'])->middleware('permission:funcionarios.criar');
-        Route::get('/{id}', [FuncionarioController::class, 'show'])->middleware('permission:funcionarios.ver');
-        Route::put('/{id}', [FuncionarioController::class, 'atualizar'])->middleware('permission:funcionarios.editar');
-        Route::delete('/{id}', [FuncionarioController::class, 'destroy'])->middleware('permission:funcionarios.excluir', 'prevent.admin.self.deletion');
+        Route::get('/', [FuncionarioController::class, 'index'])->middleware('permission:users.ver');
+        Route::post('/', [FuncionarioController::class, 'store'])->middleware('permission:users.criar');
+        Route::get('/{id}', [FuncionarioController::class, 'show'])->middleware('permission:users.ver');
+        Route::put('/{id}', [FuncionarioController::class, 'atualizar'])->middleware('permission:users.editar');
+        Route::delete('/{id}', [FuncionarioController::class, 'destroy'])->middleware('permission:users.excluir', 'prevent.admin.self.deletion');
 
-        Route::post('/{id}/avatar', [FuncionarioController::class, 'atualizarAvatar'])->middleware('permission:funcionarios.editar');
-        Route::delete('/{id}/avatar', [FuncionarioController::class, 'removerAvatar'])->middleware('permission:funcionarios.editar');
+        Route::post('/{id}/avatar', [FuncionarioController::class, 'atualizarAvatar'])->middleware('permission:users.editar');
+        Route::delete('/{id}/avatar', [FuncionarioController::class, 'removerAvatar'])->middleware('permission:users.editar');
     });
 
     Route::prefix('orcamentos')->group(function () {
@@ -96,10 +96,10 @@ Route::middleware('auth:sanctum')->group(function () {
 
 
     Route::prefix('users')->group(function () {
-        Route::get('/', [UserController::class, 'index']);
-        Route::post('/', [UserController::class, 'store']);
-        Route::get('/{user}', [UserController::class, 'show']);
-        Route::put('/{user}', [UserController::class, 'update']);
-        Route::delete('/{user}', [UserController::class, 'destroy']);
+        Route::get('/', [UserController::class, 'index'])->middleware('permission:users.ver');
+        Route::post('/', [UserController::class, 'store'])->middleware('permission:users.criar');
+        Route::get('/{user}', [UserController::class, 'show'])->middleware('permission:users.ver');
+        Route::put('/{user}', [UserController::class, 'update'])->middleware('permission:users.editar');
+        Route::delete('/{user}', [UserController::class, 'destroy'])->middleware('permission:users.excluir');
     });
 });

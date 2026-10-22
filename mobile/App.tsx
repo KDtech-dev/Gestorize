@@ -24,7 +24,7 @@ import { MenuProvider } from '@context/MenuContext';
 import toastConfig from '@components/ui/ToastConfig';
 import Relatorios from '@views/Relatorios/index';
 import Configuracoes from '@views/Configuracoes';
-import { canAccessRoute } from '@utils/permissions';
+import { canAccessForm, canAccessRoute } from '@utils/permissions';
 import Ajuda from '@views/Ajuda';
 import NovoCliente from '@views/Clientes/NovoCliente';
 import NovoProduto from '@views/Produtos/NovoProduto';
@@ -56,33 +56,20 @@ const AppNavigator = () => {
         ) : (
           <>
             <Stack.Screen name="Homepage" component={Homepage} />
-            <Stack.Screen name="Clientes" component={Clientes} />
-            <Stack.Screen name="NovoCliente" component={NovoCliente} />
-            <Stack.Screen name="NovoProduto" component={NovoProduto} />
-            <Stack.Screen name="NovoFornecedor" component={NovoFornecedor} />
-            <Stack.Screen name="NovoFuncionario" component={NovoFuncionario} />
-            <Stack.Screen name="Orcamentos" component={Orcamentos} />
-            <Stack.Screen name="NovoOrcamento" component={NovoOrcamento} />
             <Stack.Screen name="Configuracoes" component={Configuracoes} />
 
             <Stack.Screen name="Ajuda" component={Ajuda} />
             <Stack.Screen name="UserPerfil" component={UserPerfil} />
-            {canAccess('Produtos') && (
-              <>
-                <Stack.Screen name="Produtos" component={Produtos} />
-
-              </>
-            )}
-            {canAccess('Fornecedores') && (
-              <>
-                <Stack.Screen name="Fornecedores" component={Fornecedores} />
-              </>
-            )}
-            {canAccess('Funcionarios') && (
-              <>
-                <Stack.Screen name="Funcionarios" component={Funcionarios} />
-              </>
-            )}
+            {canAccess('Clientes') && <Stack.Screen name="Clientes" component={Clientes} />}
+            {canAccessForm(user, 'clientes') && <Stack.Screen name="NovoCliente" component={NovoCliente} />}
+            {canAccess('Produtos') && <Stack.Screen name="Produtos" component={Produtos} />}
+            {canAccessForm(user, 'produtos') && <Stack.Screen name="NovoProduto" component={NovoProduto} />}
+            {canAccess('Fornecedores') && <Stack.Screen name="Fornecedores" component={Fornecedores} />}
+            {canAccessForm(user, 'fornecedores') && <Stack.Screen name="NovoFornecedor" component={NovoFornecedor} />}
+            {canAccess('Funcionarios') && <Stack.Screen name="Funcionarios" component={Funcionarios} />}
+            {canAccessForm(user, 'users') && <Stack.Screen name="NovoFuncionario" component={NovoFuncionario} />}
+            {canAccess('Orcamentos') && <Stack.Screen name="Orcamentos" component={Orcamentos} />}
+            {canAccessForm(user, 'orcamentos') && <Stack.Screen name="NovoOrcamento" component={NovoOrcamento} />}
             {canAccess('Relatorios') && (
               <Stack.Screen name="Relatorios" component={Relatorios} />
             )}

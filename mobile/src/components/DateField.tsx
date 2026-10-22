@@ -11,6 +11,7 @@ import DateTimePicker, {
     DateTimePickerEvent,
 } from "@react-native-community/datetimepicker";
 import { useTheme } from "@context/ThemeContext";
+import { useFormCanEdit } from "@context/FormAccessContext";
 
 type Props = {
     label: string;
@@ -48,6 +49,7 @@ const DateField = ({
 }: Props) => {
     const [show, setShow] = useState(false);
     const { colors } = useTheme();
+    const formCanEdit = useFormCanEdit();
 
     const handleChange = (
         event: DateTimePickerEvent,
@@ -66,7 +68,8 @@ const DateField = ({
         <View>
             <TouchableOpacity
                 activeOpacity={0.7}
-                onPress={() => setShow(true)}
+                onPress={() => formCanEdit && setShow(true)}
+                disabled={!formCanEdit}
                 style={[styles.container, { backgroundColor: colors.surface, borderColor: colors.background === '#ffffff' ? '#D5DCE5' : '#8794A7' }]}
             >
                 <Text style={[styles.label, { color: colors.muted }]}>{label}</Text>

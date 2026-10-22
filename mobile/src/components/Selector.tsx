@@ -2,6 +2,7 @@ import ClickableTextCard from "@components/ClickableTextCard";
 import { Opcao } from "@context/types";
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
+import { useFormCanEdit } from "@context/FormAccessContext";
 import {
     Modal,
     Pressable,
@@ -38,6 +39,8 @@ export default function Selector({
     onAdd,
 }: SelectorProps) {
     const [visible, setVisible] = useState(false);
+    const formCanEdit = useFormCanEdit();
+    const isDisabled = disabled || !formCanEdit;
 
     const labelSelecionado =
         options.find((item) => String(item.id) === String(value))?.nome ?? "";
@@ -52,7 +55,7 @@ export default function Selector({
     };
 
     const abrir = () => {
-        if (disabled) return;
+        if (isDisabled) return;
         onOpen?.();
         setVisible(true);
     };
@@ -63,6 +66,7 @@ export default function Selector({
                 value={labelSelecionado}
                 placeholder={placeholder}
                 onPress={() => abrir()}
+                disabled={isDisabled}
             />
 
             <Modal

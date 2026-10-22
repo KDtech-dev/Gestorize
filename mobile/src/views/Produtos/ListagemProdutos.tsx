@@ -22,12 +22,16 @@ import { ProdutoType, RootStackParamList } from '@context/types';
 import { getProdutos } from '@api/apiProdutos';
 
 import Toast from 'react-native-toast-message';
+import { useAuth } from '@context/AuthContext';
+import { can } from '@utils/permissions';
 
 type Navigation = NativeStackNavigationProp<RootStackParamList>;
 
 const Produtos = () => {
     const navigation = useNavigation<Navigation>();
     const { colors } = useTheme();
+    const { user } = useAuth();
+    const podeCriar = can(user, 'produtos.criar');
 
     const [produtos, setProdutos] = useState<ProdutoType[]>([]);
     const [search, setSearch] = useState('');
@@ -139,7 +143,7 @@ const Produtos = () => {
                 title="Produtos"
                 subtitle={`${filteredData.length} de ${produtos.length} cadastrados`}
                 onBackPress={() => navigation.goBack()}
-                rightType="add"
+                rightType={podeCriar ? "add" : "menu"}
                 onAddPress={() =>
                     navigation.navigate('NovoProduto', {
                         modo: 'criar',

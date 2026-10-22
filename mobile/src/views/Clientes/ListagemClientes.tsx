@@ -18,6 +18,8 @@ import { useTheme } from '@context/ThemeContext';
 import { ClienteType, RootStackParamList } from '@context/types';
 import { getClientes } from '@api/apiClientes';
 import Toast from 'react-native-toast-message';
+import { useAuth } from '@context/AuthContext';
+import { can } from '@utils/permissions';
 
 
 type Navigation = NativeStackNavigationProp<RootStackParamList>;
@@ -36,6 +38,8 @@ const tiposCliente = [
 const Clientes = () => {
   const navigation = useNavigation<Navigation>();
   const { colors } = useTheme();
+  const { user } = useAuth();
+  const podeCriar = can(user, 'clientes.criar');
   const [clientes, setClientes] = useState<ClienteType[]>([]);
   const [selectedTipo, setSelectedTipo] = useState<'PF' | 'PJ' | null>(
     null,
@@ -116,7 +120,7 @@ const Clientes = () => {
         title="Clientes"
         subtitle={`${filteredData.length} de ${clientes.length} cadastrados`}
         onBackPress={() => navigation.goBack()}
-        rightType="add"
+        rightType={podeCriar ? "add" : "menu"}
         onAddPress={() => navigation.navigate("NovoCliente", {
           modo: "criar",
         })}

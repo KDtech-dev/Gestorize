@@ -1,10 +1,10 @@
 import { getAxios } from '@configs/axios';
 
 export type DashboardResumo = {
-  clientes: number;
-  orcamentos_aprovados: number;
-  orcamentos_pendentes: number;
-  produtos_em_estoque: number;
+  clientes: number | null;
+  orcamentos_aprovados: number | null;
+  orcamentos_pendentes: number | null;
+  produtos_em_estoque: number | null;
 };
 
 export const getDashboardResumo = async (): Promise<DashboardResumo> => {

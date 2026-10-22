@@ -13,6 +13,11 @@ const routePermission: Partial<Record<keyof RootStackParamList, string>> = {
   Fornecedores: 'fornecedores.ver',
   Orcamentos: 'orcamentos.ver',
   Funcionarios: 'users.ver',
+  NovoCliente: 'clientes.ver',
+  NovoProduto: 'produtos.ver',
+  NovoFornecedor: 'fornecedores.ver',
+  NovoOrcamento: 'orcamentos.ver',
+  NovoFuncionario: 'users.ver',
   Relatorios: 'relatorios.ver',
 };
 
@@ -23,3 +28,10 @@ export const canAccessRoute = (
   const required = routePermission[routeName];
   return required ? can(user, required) : true;
 };
+
+export const canAccessForm = (
+  user: UserType | null,
+  resource: 'clientes' | 'produtos' | 'fornecedores' | 'orcamentos' | 'users',
+) => can(user, `${resource}.ver`)
+  || can(user, `${resource}.criar`)
+  || can(user, `${resource}.editar`);

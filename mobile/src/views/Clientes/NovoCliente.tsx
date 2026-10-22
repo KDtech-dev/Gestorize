@@ -32,6 +32,9 @@ import DateField from "@components/DateField";
 import { useUnsavedChangesGuard } from "../../hooks/useUnsavedChangesGuard";
 import OrcamentoClienteResumo from "@components/orcamentos/OrcamentoClienteResumo";
 import { OrcamentoResumoType } from "@context/types";
+import { useAuth } from "@context/AuthContext";
+import { can } from "@utils/permissions";
+import { FormAccessProvider } from "@context/FormAccessContext";
 
 type Navigation = NativeStackNavigationProp<RootStackParamList>;
 
@@ -46,6 +49,7 @@ export default function NovoCliente() {
     const navigation = useNavigation<Navigation>();
     const route = useRoute<Route>();
     const { colors } = useTheme();
+    const { user } = useAuth();
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [avatar, setAvatar] = useState<string | null>(null);
     const [avatarOriginal, setAvatarOriginal] = useState<string | null>(null);
@@ -56,6 +60,10 @@ export default function NovoCliente() {
     const clienteId = route.params?.clienteId;
     const isCriar = modo === "criar";
     const isEditar = modo === "editar";
+    const podeCriar = can(user, 'clientes.criar');
+    const podeEditar = can(user, 'clientes.editar');
+    const podeExcluir = can(user, 'clientes.excluir');
+    const formCanEdit = isCriar ? podeCriar : podeEditar;
     const avatarAlterado = avatar !== avatarOriginal;
     const {
         control,
@@ -411,6 +419,7 @@ export default function NovoCliente() {
     }
 
     return (
+        <FormAccessProvider canEdit={formCanEdit}>
         <View style={[styles.container, { backgroundColor: colors.background, },]}>
             <Nav
                 title={isCriar ? "Novo Cliente" : "Editar Cliente"}
@@ -461,7 +470,7 @@ export default function NovoCliente() {
                             }) => (
                                 <>
                                     <TouchableOpacity
-                                        disabled={!isCriar}
+                                        disabled={!isCriar || !formCanEdit}
                                         activeOpacity={0.8}
                                         style={[styles.tipoButton, { backgroundColor: value === "pf" ? "#062046" : colors.surface, },]}
                                         onPress={() => {
@@ -483,7 +492,7 @@ export default function NovoCliente() {
                                     </TouchableOpacity>
 
                                     <TouchableOpacity
-                                        disabled={!isCriar}
+                                        disabled={!isCriar || !formCanEdit}
                                         activeOpacity={0.8}
                                         style={[styles.tipoButton, { backgroundColor: value === "pj" ? "#062046" : colors.surface, },]}
                                         onPress={() => {
@@ -961,7 +970,7 @@ export default function NovoCliente() {
                     </View>
                 )}
                 <View style={styles.actionsContainer}>
-                    <Button
+                    {formCanEdit && <Button
                         title={
                             saving
                                 ? "Salvando..."
@@ -975,9 +984,9 @@ export default function NovoCliente() {
                         onPress={handleSubmit(
                             onSubmit
                         )}
-                    />
+                    />}
 
-                    {isEditar && (
+                    {isEditar && podeExcluir && (
                         <Button
                             title="Excluir cliente"
                             variant="delete"
@@ -995,6 +1004,7 @@ export default function NovoCliente() {
             />
             {unsavedGuard.dialog}
         </View >
+        </FormAccessProvider>
     );
 }
 

@@ -9,6 +9,7 @@ import {
 import type { DimensionValue } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@context/ThemeContext';
+import { useFormCanEdit } from '@context/FormAccessContext';
 
 type Props = {
   label?: string;
@@ -29,10 +30,11 @@ const ClickableTextCard = ({
 }: Props) => {
   const isEmpty = !value;
   const { colors } = useTheme();
+  const fieldEditable = useFormCanEdit() && !disabled;
 
   return (
-    <TouchableOpacity onPress={disabled ? undefined : onPress} activeOpacity={0.7} disabled={disabled}>
-      <View style={[styles.container, disabled && styles.containerDisabled, { width, backgroundColor: colors.surface, borderColor: colors.background === '#ffffff' ? '#D5DCE5' : '#8794A7' }]}>
+    <TouchableOpacity onPress={fieldEditable ? onPress : undefined} activeOpacity={0.7} disabled={!fieldEditable}>
+      <View style={[styles.container, !fieldEditable && styles.containerDisabled, { width, backgroundColor: fieldEditable ? colors.surface : colors.background, borderColor: colors.background === '#ffffff' ? '#D5DCE5' : '#8794A7' }]}>
         <View style={styles.textContainer}>
           <View>
             <Text style={[styles.label, { color: colors.muted }]}>{label}</Text>
@@ -40,7 +42,7 @@ const ClickableTextCard = ({
               {value || placeholder}
             </Text>
           </View>
-          {!disabled && <MaterialIcons name="arrow-drop-down" size={28} color={colors.muted} />}
+          {fieldEditable && <MaterialIcons name="arrow-drop-down" size={28} color={colors.muted} />}
         </View>
       </View>
     </TouchableOpacity>

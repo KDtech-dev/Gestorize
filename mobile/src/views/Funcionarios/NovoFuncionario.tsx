@@ -36,6 +36,8 @@ import { createFuncionario, deleteFuncionario, getFuncionario, removeFuncionario
 import ClickableTextCard from "@components/ClickableTextCard";
 import ModalPermissoes from "@components/ModalPermissoes";
 import { useAuth } from "@context/AuthContext";
+import { can } from "@utils/permissions";
+import { FormAccessProvider } from "@context/FormAccessContext";
 import { getPapeis } from "@api/apiAcessos";
 import { formatErrorMessage } from "@core/utils/format";
 import { useUnsavedChangesGuard } from "../../hooks/useUnsavedChangesGuard";
@@ -70,6 +72,10 @@ export default function NovoFuncionario() {
     const [avatar, setAvatar] = useState<string | null>(null);
     const [avatarOriginal, setAvatarOriginal] = useState<string | null>(null);
     const { user: usuarioLogado } = useAuth();
+    const podeCriar = can(usuarioLogado, 'users.criar');
+    const podeEditar = can(usuarioLogado, 'users.editar');
+    const podeExcluir = can(usuarioLogado, 'users.excluir');
+    const formCanEdit = isCriar ? podeCriar : podeEditar;
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [showPermissionsModal, setShowPermissionsModal] = useState(false);
     const [perfis, setPerfis] = useState<Opcao[]>(PERFIS_FALLBACK);
@@ -424,6 +430,7 @@ export default function NovoFuncionario() {
     }
 
     return (
+        <FormAccessProvider canEdit={formCanEdit}>
         <View
             style={[
                 styles.container,
@@ -713,7 +720,7 @@ export default function NovoFuncionario() {
                     </>}
 
                     <View style={styles.actionsContainer}>
-                        <Button
+                        {formCanEdit && <Button
                             title={
                                 saving
                                     ? "Salvando..."
@@ -728,9 +735,9 @@ export default function NovoFuncionario() {
                                 (isEditar && !isDirty && !avatarAlterado)
                             }
                             onPress={handleSubmit(onSubmit)}
-                        />
+                        />}
 
-                        {isEditar && (
+                {isEditar && podeExcluir && (
                             <Button
                                 title="Excluir funcionário"
                                 variant="delete"
@@ -762,6 +769,7 @@ export default function NovoFuncionario() {
             />
             {unsavedGuard.dialog}
         </View>
+        </FormAccessProvider>
     );
 }
 

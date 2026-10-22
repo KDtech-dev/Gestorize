@@ -21,6 +21,8 @@ import { FornecedorType, RootStackParamList } from '@context/types';
 import { getFornecedores } from '@api/apiFornecedores';
 
 import Toast from 'react-native-toast-message';
+import { useAuth } from '@context/AuthContext';
+import { can } from '@utils/permissions';
 
 type Navigation = NativeStackNavigationProp<RootStackParamList>;
 type OrdemAlfabetica = 'asc' | 'desc';
@@ -28,6 +30,8 @@ type OrdemAlfabetica = 'asc' | 'desc';
 const Fornecedores = () => {
     const navigation = useNavigation<Navigation>();
     const { colors } = useTheme();
+    const { user } = useAuth();
+    const podeCriar = can(user, 'fornecedores.criar');
 
     const [fornecedores, setFornecedores] = useState<FornecedorType[]>([]);
     const [search, setSearch] = useState('');
@@ -202,7 +206,7 @@ const Fornecedores = () => {
                 title="Fornecedores"
                 subtitle={`${filteredData.length} de ${fornecedores.length} cadastrados`}
                 onBackPress={() => navigation.goBack()}
-                rightType="add"
+                rightType={podeCriar ? "add" : "menu"}
                 onAddPress={() =>
                     navigation.navigate('NovoFornecedor', {
                         modo: 'criar',

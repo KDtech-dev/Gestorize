@@ -51,6 +51,7 @@ import { produtoSchema } from "@schemas/ProdutoSchema";
 import { getFornecedores } from "@api/apiFornecedores";
 import { useAuth } from "@context/AuthContext";
 import { can } from "@utils/permissions";
+import { FormAccessProvider } from "@context/FormAccessContext";
 import { useUnsavedChangesGuard } from "../../hooks/useUnsavedChangesGuard";
 import ClickableTextCard from "@components/ClickableTextCard";
 import ProdutoFornecedorPicker from "@components/produtos/ProdutoFornecedorPicker";
@@ -105,6 +106,10 @@ export default function NovoProduto() {
     const produtoId = route.params?.produtoId;
     const isCriar = modo === "criar";
     const isEditar = modo === "editar";
+    const podeCriar = can(user, 'produtos.criar');
+    const podeEditar = can(user, 'produtos.editar');
+    const podeExcluir = can(user, 'produtos.excluir');
+    const formCanEdit = isCriar ? podeCriar : podeEditar;
     const [showCategoriaModal, setShowCategoriaModal] = useState(false);
     const [nomeCategoria, setNomeCategoria] = useState("");
     const [salvandoCategoria, setSalvandoCategoria] = useState(false);
@@ -635,6 +640,7 @@ export default function NovoProduto() {
     }, [custo, lucro, setValue]);
 
     return (
+        <FormAccessProvider canEdit={formCanEdit}>
         <View style={[styles.container, { backgroundColor: colors.background, },]}>
             <Nav title={isCriar ? "Novo Produto" : "Editar Produto"}
                 subtitle="Produto"
@@ -938,7 +944,7 @@ export default function NovoProduto() {
                     />
                 </View>
                 <View style={styles.actionsContainer}>
-                    <Button
+                    {formCanEdit && <Button
                         title={
                             saving
                                 ? "Salvando..."
@@ -953,9 +959,9 @@ export default function NovoProduto() {
                             saving
                         }
                         onPress={handleSubmit(onSubmit)}
-                    />
+                    />}
 
-                    {isEditar && (
+                    {isEditar && podeExcluir && (
                         <Button
                             title="Excluir produto"
                             variant="delete"
@@ -1055,6 +1061,7 @@ export default function NovoProduto() {
                 </Pressable>
             </Modal>
         </View>
+        </FormAccessProvider>
     );
 }
 

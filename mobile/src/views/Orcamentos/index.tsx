@@ -17,6 +17,8 @@ import { useTheme } from '@context/ThemeContext';
 import { OrcamentoType, RootStackParamList } from '@context/types';
 import { getOrcamentos } from '@api/apiOrcamentos';
 import Toast from 'react-native-toast-message';
+import { useAuth } from '@context/AuthContext';
+import { can } from '@utils/permissions';
 
 type Navigation = NativeStackNavigationProp<RootStackParamList>;
 type Filtro = '24h' | '7d' | 'mes' | null;
@@ -34,6 +36,8 @@ const nomeCliente = (orcamento: OrcamentoType) =>
 const Orcamentos = () => {
   const navigation = useNavigation<Navigation>();
   const { colors } = useTheme();
+  const { user } = useAuth();
+  const podeCriar = can(user, 'orcamentos.criar');
   const [orcamentos, setOrcamentos] = useState<OrcamentoType[]>([]);
   const [search, setSearch] = useState('');
   const [selectedFiltro, setSelectedFiltro] = useState<Filtro>(null);
@@ -96,7 +100,7 @@ const Orcamentos = () => {
         title="Orçamentos"
         subtitle={`${filteredData.length} de ${orcamentos.length} cadastrados`}
         onBackPress={() => navigation.goBack()}
-        rightType="add"
+        rightType={podeCriar ? "add" : "menu"}
         onAddPress={() => navigation.navigate('NovoOrcamento', { modo: 'criar' })}
       />
 

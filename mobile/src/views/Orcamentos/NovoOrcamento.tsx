@@ -38,6 +38,8 @@ import {
 } from '@context/types';
 import { useTheme } from '@context/ThemeContext';
 import { useAuth } from '@context/AuthContext';
+import { can } from '@utils/permissions';
+import { FormAccessProvider } from '@context/FormAccessContext';
 import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
 import Toast from 'react-native-toast-message';
 
@@ -79,6 +81,10 @@ export default function NovoOrcamento() {
   const modo = route.params?.modo ?? 'criar';
   const orcamentoId = route.params?.orcamentoId;
   const editando = modo === 'editar';
+  const podeCriar = can(user, 'orcamentos.criar');
+  const podeEditar = can(user, 'orcamentos.editar');
+  const podeExcluir = can(user, 'orcamentos.excluir');
+  const podeAprovar = podeCriar || podeEditar || can(user, 'orcamentos.aprovar');
 
   const [clientes, setClientes] = useState<ClienteType[]>([]);
   const [produtos, setProdutos] = useState<ProdutoType[]>([]);
@@ -98,8 +104,7 @@ export default function NovoOrcamento() {
   const [salvando, setSalvando] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showApproveDialog, setShowApproveDialog] = useState(false);
-  const podeAprovar = ['admin'].includes(user?.role)
-    || user?.permissions?.some((permission: string) => ['orcamentos.criar', 'orcamentos.editar', 'orcamentos.aprovar'].includes(permission));
+  const formCanEdit = editando ? podeEditar && !bloqueado : podeCriar;
 
   const opcoesClientes = useMemo(
     () => clientes.map((cliente) => ({ id: cliente.id, nome: cliente.nome })),
@@ -274,6 +279,7 @@ export default function NovoOrcamento() {
   };
 
   return (
+    <FormAccessProvider canEdit={formCanEdit}>
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Nav
         title={editando ? 'Editar orçamento' : 'Novo orçamento'}
@@ -295,7 +301,7 @@ export default function NovoOrcamento() {
           label="Cliente"
           value={opcoesClientes.find((cliente) => cliente.id === clienteId)?.nome ?? ''}
           placeholder={carregando ? 'Carregando clientes...' : 'Selecione um cliente'}
-          disabled={bloqueado}
+            disabled={bloqueado || !formCanEdit}
           onPress={!carregando && !salvando && !bloqueado ? () => setModalClientesVisivel(true) : undefined}
         />
         <EditableTextCard label="Criado em" value={criadoEm || 'Automático ao salvar'} editable={false} />
@@ -325,7 +331,7 @@ export default function NovoOrcamento() {
           label="Produtos"
           value=""
           placeholder={carregando ? 'Carregando produtos...' : 'Toque para adicionar um produto'}
-          disabled={bloqueado}
+          disabled={bloqueado || !formCanEdit}
           onPress={!carregando && !salvando && !bloqueado ? () => setModalProdutosVisivel(true) : undefined}
         />
         {itens.map((item, index) => {
@@ -336,7 +342,7 @@ export default function NovoOrcamento() {
             item={item}
             produto={produto}
             index={index}
-            disabled={salvando || bloqueado}
+            disabled={salvando || bloqueado || !formCanEdit}
             onChangeQuantidade={(quantidade) => atualizarQuantidade(item.key, quantidade)}
             onRemove={() => setItens((atuais) => atuais.filter((atual) => atual.key !== item.key))}
           />;
@@ -350,12 +356,12 @@ export default function NovoOrcamento() {
           {editando && statusOrcamento === 'pendente' && podeAprovar && (
             <Button title="Aprovar orçamento" disabled={salvando || carregando} onPress={() => setShowApproveDialog(true)} />
           )}
-          <Button
+          {formCanEdit && <Button
             title={salvando ? 'Salvando...' : editando ? 'Salvar alterações' : 'Criar orçamento'}
             disabled={salvando || bloqueado || carregando || !clientes.length || !produtos.length || (editando && !houveAlteracaoReal)}
             onPress={salvar}
-          />
-          {editando && (
+          />}
+          {editando && podeExcluir && (
             <Button
               title="Excluir orçamento"
               variant="delete"
@@ -396,6 +402,7 @@ export default function NovoOrcamento() {
       />
       {guardOrcamento.dialog}
     </View>
+    </FormAccessProvider>
   );
 }
 

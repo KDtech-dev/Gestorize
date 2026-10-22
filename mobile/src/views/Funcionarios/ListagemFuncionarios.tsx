@@ -33,6 +33,7 @@ import { FuncionarioType, RootStackParamList } from '@context/types';
 import { getFuncionarios } from '@api/apiFuncionario';
 
 import Toast from 'react-native-toast-message';
+import { can } from '@utils/permissions';
 
 type Navigation = NativeStackNavigationProp<RootStackParamList>;
 
@@ -55,6 +56,7 @@ const Funcionarios = () => {
 
     const { colors } = useTheme();
     const { user } = useAuth();
+    const podeCriar = can(user, 'users.criar');
 
     const [funcionarios, setFuncionarios] = useState<FuncionarioType[]>([]);
 
@@ -156,7 +158,7 @@ const Funcionarios = () => {
                 title="Funcionários"
                 subtitle={`${filteredData.length} de ${funcionarios.length} cadastrados`}
                 onBackPress={() => navigation.goBack()}
-                rightType="add"
+                rightType={podeCriar ? "add" : "menu"}
                 onAddPress={() =>
                     navigation.navigate('NovoFuncionario', {
                         modo: 'criar',

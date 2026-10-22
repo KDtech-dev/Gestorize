@@ -11,7 +11,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@context/types';
 import { useTheme } from '@context/ThemeContext';
 import { useAuth } from '@context/AuthContext';
-import { canAccessRoute } from '@utils/permissions';
+import { can, canAccessRoute } from '@utils/permissions';
 import { DashboardResumo, getDashboardResumo } from '@api/apiDashboard';
 
 const metricColors = {
@@ -43,11 +43,11 @@ const Homepage = () => {
   );
 
   const metricas = [
-    { id: 'clientes', titulo: 'Clientes cadastrados', valor: resumo?.clientes, icon: 'account-group-outline' as const, cores: metricColors.clientes },
-    { id: 'aprovados', titulo: 'Orçamentos aprovados', valor: resumo?.orcamentos_aprovados, icon: 'check-decagram-outline' as const, cores: metricColors.aprovados },
-    { id: 'pendentes', titulo: 'Orçamentos pendentes', valor: resumo?.orcamentos_pendentes, icon: 'clock-outline' as const, cores: metricColors.pendentes },
-    { id: 'estoque', titulo: 'Produtos com estoque', valor: resumo?.produtos_em_estoque, icon: 'cube-outline' as const, cores: metricColors.estoque },
-  ];
+    { id: 'clientes', titulo: 'Clientes cadastrados', valor: resumo?.clientes, permissao: 'clientes.ver', icon: 'account-group-outline' as const, cores: metricColors.clientes },
+    { id: 'aprovados', titulo: 'Orçamentos aprovados', valor: resumo?.orcamentos_aprovados, permissao: 'orcamentos.ver', icon: 'check-decagram-outline' as const, cores: metricColors.aprovados },
+    { id: 'pendentes', titulo: 'Orçamentos pendentes', valor: resumo?.orcamentos_pendentes, permissao: 'orcamentos.ver', icon: 'clock-outline' as const, cores: metricColors.pendentes },
+    { id: 'estoque', titulo: 'Produtos com estoque', valor: resumo?.produtos_em_estoque, permissao: 'produtos.ver', icon: 'cube-outline' as const, cores: metricColors.estoque },
+  ].filter((item) => can(user, item.permissao));
 
   const quickActions = [
     {
