@@ -83,7 +83,7 @@ const Ajuda = () => {
         </Card>
 
         <Text style={[styles.sectionTitle, { color: colors.text }]}>Dúvidas frequentes</Text>
-        <Card mode="outlined" style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <View style={[styles.faqCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
           {perguntas.map((pergunta, index) => (
             <React.Fragment key={pergunta.titulo}>
               {index > 0 ? <Divider style={{ backgroundColor: colors.border }} /> : null}
@@ -100,7 +100,7 @@ const Ajuda = () => {
               </List.Accordion>
             </React.Fragment>
           ))}
-        </Card>
+        </View>
 
         <Card mode="contained" style={[styles.supportCard, { backgroundColor: colors.elevated }]}>
           <Card.Content>
@@ -126,6 +126,7 @@ const styles = StyleSheet.create({
   body: { fontSize: 14, lineHeight: 21 },
   sectionTitle: { fontSize: 18, fontWeight: '900', marginTop: 8, marginBottom: 1 },
   card: { borderRadius: 16, overflow: 'hidden' },
+  faqCard: { borderRadius: 16, borderWidth: 1, overflow: 'hidden' },
   steps: { gap: 13 },
   stepRow: { flexDirection: 'row', gap: 12, alignItems: 'flex-start' },
   stepNumber: { width: 27, height: 27, borderRadius: 14, color: '#FFFFFF', textAlign: 'center', textAlignVertical: 'center', fontWeight: '900', overflow: 'hidden' },

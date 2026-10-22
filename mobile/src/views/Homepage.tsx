@@ -3,6 +3,7 @@ import { ActivityIndicator, FlatList, ScrollView, StyleSheet, View } from 'react
 import { StatusBar } from 'expo-status-bar';
 import { Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import HomeHeader from '@components/HomeHeader';
 import { NavButton } from '@components/botoes/nav-buttons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
@@ -14,10 +15,10 @@ import { canAccessRoute } from '@utils/permissions';
 import { DashboardResumo, getDashboardResumo } from '@api/apiDashboard';
 
 const metricColors = {
-  clientes: '#6D28D9',
-  aprovados: '#047857',
-  pendentes: '#C2410C',
-  estoque: '#1D4ED8',
+  clientes: { base: '#5B21B6', highlight: '#7C3AED', sheen: '#8B5CF6', shadow: '#3B0764' },
+  aprovados: { base: '#047857', highlight: '#059669', sheen: '#10B981', shadow: '#064E3B' },
+  pendentes: { base: '#C2410C', highlight: '#EA580C', sheen: '#F97316', shadow: '#7C2D12' },
+  estoque: { base: '#1D4ED8', highlight: '#2563EB', sheen: '#3B82F6', shadow: '#172554' },
 } as const;
 
 const Homepage = () => {
@@ -42,10 +43,10 @@ const Homepage = () => {
   );
 
   const metricas = [
-    { id: 'clientes', titulo: 'Clientes cadastrados', valor: resumo?.clientes, icon: 'account-group-outline' as const, cor: metricColors.clientes },
-    { id: 'aprovados', titulo: 'Orçamentos aprovados', valor: resumo?.orcamentos_aprovados, icon: 'check-decagram-outline' as const, cor: metricColors.aprovados },
-    { id: 'pendentes', titulo: 'Orçamentos pendentes', valor: resumo?.orcamentos_pendentes, icon: 'clock-outline' as const, cor: metricColors.pendentes },
-    { id: 'estoque', titulo: 'Produtos com estoque', valor: resumo?.produtos_em_estoque, icon: 'cube-outline' as const, cor: metricColors.estoque },
+    { id: 'clientes', titulo: 'Clientes cadastrados', valor: resumo?.clientes, icon: 'account-group-outline' as const, cores: metricColors.clientes },
+    { id: 'aprovados', titulo: 'Orçamentos aprovados', valor: resumo?.orcamentos_aprovados, icon: 'check-decagram-outline' as const, cores: metricColors.aprovados },
+    { id: 'pendentes', titulo: 'Orçamentos pendentes', valor: resumo?.orcamentos_pendentes, icon: 'clock-outline' as const, cores: metricColors.pendentes },
+    { id: 'estoque', titulo: 'Produtos com estoque', valor: resumo?.produtos_em_estoque, icon: 'cube-outline' as const, cores: metricColors.estoque },
   ];
 
   const quickActions = [
@@ -92,11 +93,26 @@ const Homepage = () => {
       <HomeHeader />
       <ScrollView
         style={[styles.container, { backgroundColor: colors.background }]}
+        contentContainerStyle={styles.scrollContent}
       >
         <View style={styles.contentWrapper}>
+          <View style={[styles.welcomePanel, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <View style={styles.welcomeCopy}>
+              <Text style={[styles.welcomeEyebrow, { color: colors.primary }]}>PAINEL DE CONTROLE</Text>
+              <Text style={[styles.welcomeTitle, { color: colors.text }]}>Olá, {(user?.nome ?? user?.name ?? 'bem-vindo').split(' ')[0]}</Text>
+              <Text style={[styles.welcomeSubtitle, { color: colors.muted }]}>Acompanhe sua operação em um só lugar.</Text>
+            </View>
+            <View style={[styles.welcomeIcon, { backgroundColor: colors.elevated }]}>
+              <MaterialCommunityIcons name="view-dashboard-outline" size={26} color={colors.primary} />
+            </View>
+          </View>
+
           <View style={styles.metricsHeader}>
             <View>
-              <Text variant="titleMedium" style={[styles.sectionTitle, styles.metricsTitle, { color: colors.text }]}>Resumo do sistema</Text>
+              <View style={styles.sectionHeading}>
+                <MaterialCommunityIcons name="chart-box-outline" size={21} color={colors.primary} />
+                <Text variant="titleMedium" style={[styles.sectionTitle, styles.metricsTitle, { color: colors.text }]}>Resumo do sistema</Text>
+              </View>
               <Text style={[styles.metricsSubtitle, { color: colors.muted }]}>Indicadores atualizados ao abrir esta tela</Text>
             </View>
             {carregandoResumo ? <ActivityIndicator size="small" color={colors.primary} /> : null}
@@ -109,7 +125,19 @@ const Homepage = () => {
             keyExtractor={(item) => item.id}
             contentContainerStyle={styles.metricsList}
             renderItem={({ item }) => (
-              <View style={[styles.metricCard, { backgroundColor: item.cor }]}>
+              <View style={[styles.metricCard, { borderColor: item.cores.highlight }]}>
+                <Svg style={StyleSheet.absoluteFill} pointerEvents="none">
+                  <Defs>
+                    <LinearGradient id={`metal-${item.id}`} x1="0" y1="0" x2="0" y2="1">
+                      <Stop offset="0" stopColor={item.cores.highlight} />
+                      <Stop offset="0.32" stopColor={item.cores.base} />
+                      <Stop offset="0.49" stopColor={item.cores.sheen} />
+                      <Stop offset="0.57" stopColor={item.cores.base} />
+                      <Stop offset="1" stopColor={item.cores.shadow} />
+                    </LinearGradient>
+                  </Defs>
+                  <Rect x="0" y="0" width="100%" height="100%" rx="19" fill={`url(#metal-${item.id})`} />
+                </Svg>
                 <View style={styles.metricCardTop}>
                   <Text style={styles.metricLabel}>{item.titulo}</Text>
                   <MaterialCommunityIcons name={item.icon} size={22} color="#FFFFFF" />
@@ -120,12 +148,10 @@ const Homepage = () => {
             )}
           />
 
-          <Text
-            variant="titleMedium"
-            style={[styles.sectionTitle, { color: colors.text }]}
-          >
-            Acesso Rápido
-          </Text>
+          <View style={styles.sectionHeading}>
+            <MaterialCommunityIcons name="lightning-bolt-outline" size={21} color={colors.primary} />
+            <Text variant="titleMedium" style={[styles.sectionTitle, { color: colors.text }]}>Acesso Rápido</Text>
+          </View>
           <View style={styles.grid}>
             {quickActions.map((item) => (
               <NavButton
@@ -139,12 +165,10 @@ const Homepage = () => {
             ))}
           </View>
 
-          <Text
-            variant="titleMedium"
-            style={[styles.sectionTitle, { color: colors.text }]}
-          >
-            Mais Opções
-          </Text>
+          <View style={styles.sectionHeading}>
+            <MaterialCommunityIcons name="dots-horizontal-circle-outline" size={21} color={colors.primary} />
+            <Text variant="titleMedium" style={[styles.sectionTitle, { color: colors.text }]}>Mais Opções</Text>
+          </View>
           <View style={styles.grid}>
             <NavButton
               icon="cog"
@@ -182,8 +206,26 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
     gap: 12,
   },
+  scrollContent: { paddingBottom: 20 },
+  welcomePanel: {
+    minHeight: 104,
+    marginTop: 14,
+    marginBottom: 3,
+    padding: 16,
+    borderRadius: 20,
+    borderWidth: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  welcomeCopy: { flex: 1, gap: 3 },
+  welcomeEyebrow: { fontSize: 10, fontWeight: '900', letterSpacing: 1.15 },
+  welcomeTitle: { fontSize: 23, lineHeight: 29, fontWeight: '900' },
+  welcomeSubtitle: { fontSize: 13, lineHeight: 18 },
+  welcomeIcon: { width: 48, height: 48, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   sectionTitle: {
-    marginTop: 12,
+    marginTop: 0,
     marginBottom: 4,
     color: '#0f172a',
     fontWeight: '800',
@@ -194,14 +236,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  metricsTitle: { marginBottom: 0 },
+  sectionHeading: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10 },
+  metricsTitle: { marginTop: 0, marginBottom: 0 },
   metricsSubtitle: { fontSize: 12, marginTop: 3 },
   metricsList: { gap: 12, paddingVertical: 4, paddingRight: 16 },
   metricCard: {
     width: 190,
     minHeight: 126,
     borderRadius: 18,
+    borderWidth: 1,
     padding: 16,
+    overflow: 'hidden',
     justifyContent: 'space-between',
     elevation: 3,
     shadowColor: '#000000',
