@@ -22,10 +22,11 @@ export default function ModulePage() {
   const params = useParams<{ module: string }>();
   const module = params.module;
   const config = moduleConfig[module];
-  const { can, loading } = useAuth();
+  const { can, loading, user } = useAuth();
+  const isGlobalAdmin = user?.role === 'admin' && !user.organization_id;
 
   if (loading) return <div className="boot-screen"><span className="spinner" />Carregando…</div>;
-  if (!config || !can(config.permission)) return <AppShell><section className="empty-state"><span className="empty-icon">⌁</span><h1>Acesso indisponível</h1><p>Seu perfil não possui acesso a esta área.</p></section></AppShell>;
+  if (isGlobalAdmin || !config || !can(config.permission)) return <AppShell><section className="empty-state"><span className="empty-icon">⌁</span><h1>Acesso indisponível</h1><p>Seu perfil não possui acesso a esta área.</p></section></AppShell>;
   if (module === 'vendas') return <AppShell><SalesOverview /></AppShell>;
   return <AppShell>
     {module === 'relatorios' ? <ReportsPage /> : <DataModule title={config.title} endpoint={config.endpoint} module={module} />}

@@ -21,6 +21,10 @@ class RoleResource extends JsonResource
                 ->map(fn($p) => PermissionEnum::tryFrom($p->name)?->nome() ?? 'Outros')
                 ->unique()
                 ->values(),
+            'permission_ids' => $this->permissions
+                ->pluck('name')
+                ->unique()
+                ->values(),
         ];
     }
 }

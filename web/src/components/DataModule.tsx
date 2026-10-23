@@ -139,7 +139,7 @@ export function DataModule({ title, endpoint, module }: { title: string; endpoin
           const display = Array.isArray(value) ? value.map((item) => String((item as Row).nome ?? '')).filter(Boolean).join(', ') : typeof value === 'object' ? String((value as Row).nome ?? (value as Row).titulo ?? '—') : String(value);
           return <div className="detail-relation" key={key}><span>{prettyLabel(key)}</span><strong>{display || '—'}</strong></div>;
         })}
-        {Array.isArray(selected.itens) && <div className="detail-items"><h3>Itens</h3>{(selected.itens as Row[]).map((item, index) => <div key={String(item.id ?? index)}><span>{String(item.produto_nome ?? item.produto?.nome ?? 'Produto')} × {String(item.quantidade ?? 1)}</span><strong>{currency(item.subtotal ?? item.preco_unitario)}</strong></div>)}</div>}
+        {Array.isArray(selected.itens) && <div className="detail-items"><h3>Itens</h3>{(selected.itens as Row[]).map((item, index) => <div key={String(item.id ?? index)}><span>{String(item.produto_nome ?? (item.produto as Row | undefined)?.nome ?? 'Produto')} × {String(item.quantidade ?? 1)}</span><strong>{currency(item.subtotal ?? item.preco_unitario)}</strong></div>)}</div>}
       </div>}
       </div>}
     </section>

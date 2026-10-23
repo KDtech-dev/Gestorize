@@ -7,6 +7,7 @@ import { Alert, Box, Button, Stack, Typography } from '@mui/material';
 import { canSell, useAuth } from '@/context/AuthContext';
 import { apiFetch, unwrap } from '@/lib/api';
 import { MetricsGrid, QuickAccess, ReportPanels } from '@/components/DashboardWidgets';
+import { OrganizationsAdmin } from '@/components/OrganizationsAdmin';
 
 type Summary = { clientes: number | null; orcamentos_aprovados: number | null; orcamentos_pendentes: number | null; produtos_em_estoque: number | null };
 type Report = { totais: Record<string, number>; serie: { rotulos: string[]; valores: number[] } };
@@ -14,14 +15,15 @@ type ActivityType = 'orcamentos' | 'vendas';
 const activityStorageKey = (userId: string) => `gestorize:dashboard:activity:${userId}`;
 
 const cards = [
-  { key: 'clientes', label: 'Clientes cadastrados', icon: 'mdi:account-multiple-outline', permission: 'clientes.ver', href: '/clientes' },
-  { key: 'orcamentos_aprovados', label: 'Orçamentos aprovados', icon: 'mdi:check-circle-outline', permission: 'orcamentos.ver', href: '/orcamentos' },
-  { key: 'orcamentos_pendentes', label: 'Orçamentos pendentes', icon: 'mdi:clock-outline', permission: 'orcamentos.ver', href: '/orcamentos' },
-  { key: 'produtos_em_estoque', label: 'Produtos em estoque', icon: 'mdi:package-variant-closed', permission: 'produtos.ver', href: '/produtos' },
+  { key: 'clientes', label: 'Clientes cadastrados', icon: 'mdi:account-multiple-outline', permission: 'clientes.ver', href: '/clientes', color: '#9333EA' },
+  { key: 'orcamentos_aprovados', label: 'Orçamentos aprovados', icon: 'mdi:check-circle-outline', permission: 'orcamentos.ver', href: '/orcamentos', color: '#00A83B' },
+  { key: 'orcamentos_pendentes', label: 'Orçamentos pendentes', icon: 'mdi:clock-outline', permission: 'orcamentos.ver', href: '/orcamentos', color: '#F97316' },
+  { key: 'produtos_em_estoque', label: 'Produtos em estoque', icon: 'mdi:package-variant-closed', permission: 'produtos.ver', href: '/produtos', color: '#0EA5E9' },
 ] as const;
 
 export function Dashboard() {
   const { can, user } = useAuth();
+  const isGlobalAdmin = user?.role === 'admin' && !user.organization_id;
   const [summary, setSummary] = useState<Summary | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
@@ -32,11 +34,12 @@ export function Dashboard() {
   const [activityPreferenceReady, setActivityPreferenceReady] = useState(false);
 
   useEffect(() => {
+    if (isGlobalAdmin) { setLoading(false); return; }
     apiFetch<unknown>('/dashboard/resumo')
       .then((response) => setSummary(unwrap<Summary>(response as never)))
       .catch((reason) => setError(reason instanceof Error ? reason.message : 'Não foi possível carregar o resumo.'))
       .finally(() => setLoading(false));
-  }, []);
+  }, [isGlobalAdmin]);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -46,7 +49,7 @@ export function Dashboard() {
   }, [user?.id]);
 
   useEffect(() => {
-    if (!can('relatorios.ver')) { setReportLoading(false); return; }
+    if (isGlobalAdmin || !can('relatorios.ver')) { setReportLoading(false); return; }
     if (!activityPreferenceReady) return;
 
     setReportLoading(true);
@@ -60,7 +63,7 @@ export function Dashboard() {
       .then(([chart, budget]) => { setChartReport(chart); setBudgetReport(budget); })
       .catch(() => { setChartReport(null); setBudgetReport(null); })
       .finally(() => setReportLoading(false));
-  }, [activityType, activityPreferenceReady, can]);
+  }, [activityType, activityPreferenceReady, can, isGlobalAdmin]);
 
   const changeActivityType = (type: ActivityType) => {
     setActivityType(type);
@@ -69,13 +72,15 @@ export function Dashboard() {
 
   const visibleCards = cards.filter((card) => can(card.permission));
 
+  if (isGlobalAdmin) return <OrganizationsAdmin />;
+
   return (
     <Stack spacing={3}>
       <Box sx={{ pb: 0.5, display: 'flex', alignItems: { xs: 'flex-start', sm: 'flex-end' }, justifyContent: 'space-between', gap: 2, flexWrap: 'wrap' }}>
         <Box>
-          <Typography component="span" sx={{ color: 'var(--muted)', fontSize: 11, fontWeight: 800, letterSpacing: 1.1 }}>PAINEL DE CONTROLE</Typography>
-          <Typography component="h1" sx={{ mt: 0.5, color: 'var(--ink)', font: '800 clamp(25px,3vw,32px) Manrope,sans-serif', letterSpacing: '-0.7px' }}>Visão geral</Typography>
-          <Typography sx={{ mt: 0.75, color: 'var(--muted)', fontSize: { xs: 14, md: 15 }, lineHeight: 1.5 }}>Acompanhe os indicadores e acesse as principais ações do sistema.</Typography>
+          <Typography component="span" sx={{ color: 'var(--muted)', fontSize: 'clamp(12px,1vw,14px)', fontWeight: 800, letterSpacing: 1.1 }}>PAINEL DE CONTROLE</Typography>
+          <Typography component="h1" sx={{ mt: 0.5, color: 'var(--ink)', font: '800 clamp(30px,3.4vw,40px) Manrope,sans-serif', letterSpacing: '-0.7px' }}>Visão geral</Typography>
+          <Typography sx={{ mt: 0.75, color: 'var(--muted)', fontSize: 'clamp(16px,1.2vw,18px)', lineHeight: 1.5 }}>Acompanhe os indicadores e acesse as principais ações do sistema.</Typography>
         </Box>
         {canSell(user) && (
           <Button
@@ -83,7 +88,7 @@ export function Dashboard() {
             href="/vendas/nova"
             variant="contained"
             startIcon={<Icon icon="mdi:cart-outline" width={23} height={23} />}
-            sx={{ minHeight: 52, px: 3, mb: 0.75, borderRadius: '12px', bgcolor: '#005CE4', color: '#fff', fontSize: 16, fontWeight: 700, textTransform: 'none', boxShadow: '0 5px 14px #005CE433', '&:hover': { bgcolor: '#0048b8', boxShadow: '0 7px 18px #005CE440' } }}
+            sx={{ minHeight: 54, px: 3, mb: 0.75, borderRadius: '12px', bgcolor: '#005CE4', color: '#fff', fontSize: 'clamp(16px,1.15vw,18px)', fontWeight: 700, textTransform: 'none', boxShadow: '0 5px 14px #005CE433', '&:hover': { bgcolor: '#0048b8', boxShadow: '0 7px 18px #005CE440' } }}
           >
             Vender +
           </Button>

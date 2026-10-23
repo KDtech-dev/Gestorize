@@ -23,7 +23,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { user, signOut, can } = useAuth();
   const { mode, toggle } = useTheme();
-  const visibleNavigation = navigation.filter((item) => !item.permission || can(item.permission));
+  const isGlobalAdmin = user?.role === 'admin' && !user.organization_id;
+  const visibleNavigation = navigation.filter((item) => {
+    if (isGlobalAdmin) return item.href === '/';
+    return !item.permission || can(item.permission);
+  });
 
   return <div className="app-frame">
     <aside className="sidebar">

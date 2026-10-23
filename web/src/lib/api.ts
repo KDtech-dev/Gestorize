@@ -13,7 +13,12 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
   });
   const payload = await response.json().catch(() => null);
   if (!response.ok) {
-    const message = payload?.message ?? 'Não foi possível concluir a solicitação.';
+    const validationMessage = payload?.errors && typeof payload.errors === 'object'
+      ? Object.values(payload.errors as Record<string, unknown[]>).flat().find((value) => typeof value === 'string')
+      : undefined;
+    const message = (typeof validationMessage === 'string' ? validationMessage : null)
+      ?? payload?.message
+      ?? 'Não foi possível concluir a solicitação.';
     throw new Error(message);
   }
   return payload as T;
