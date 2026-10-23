@@ -78,7 +78,7 @@ const Homepage = () => {
       route: 'Vendas' as const,
       icon: 'point-of-sale' as const,
       label: 'Vendas',
-      description: can(user, 'vendas.ver') ? 'Registre vendas e consulte movimentações' : 'Acesse o caixa para registrar uma venda',
+      description: 'Acompanhe histórico, faturamento e resultados',
     },
     {
       route: 'Funcionarios' as const,
@@ -117,7 +117,7 @@ const Homepage = () => {
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Vender. Abrir caixa para registrar uma venda"
-              onPress={() => navigation.navigate('Vendas')}
+              onPress={() => navigation.navigate('NovaVenda')}
               style={({ pressed }) => [styles.sellButton, { backgroundColor: colors.primary, opacity: pressed ? 0.88 : 1 }]}
             >
               <MaterialCommunityIcons name="cart-outline" size={23} color="#fff" />

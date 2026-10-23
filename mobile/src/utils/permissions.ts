@@ -30,7 +30,8 @@ export const canAccessRoute = (
   user: UserType | null,
   routeName: keyof RootStackParamList,
 ) => {
-  if (routeName === 'Vendas') return canSell(user) || can(user, 'vendas.ver');
+  if (routeName === 'NovaVenda') return canSell(user);
+  if (routeName === 'Vendas') return can(user, 'vendas.ver');
   const required = routePermission[routeName];
   return required ? can(user, required) : true;
 };

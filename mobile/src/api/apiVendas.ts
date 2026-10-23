@@ -1,6 +1,8 @@
 import { getAxios } from '@configs/axios';
 import { ProdutoType, ResponseType } from '@context/types';
 
+export type FormaPagamento = 'pix' | 'dinheiro' | 'debito' | 'credito';
+
 export type VendaItem = {
   id: string;
   produto_id: string | null;
@@ -18,6 +20,8 @@ export type VendaType = {
   vendido_em: string;
   vendedor: string | null;
   forma_pagamento?: 'pix' | 'dinheiro' | 'debito' | 'credito' | null;
+  desconto?: number | string;
+  orcamento_id?: string | null;
   cliente_id?: string | null;
   cliente_nome?: string | null;
   itens: VendaItem[];
@@ -31,8 +35,15 @@ export const getVendas = async (): Promise<ResponseType<VendaType[]>> => {
 export const registrarVenda = async (
   itens: Array<{ produto_id: string; quantidade: number }>,
   clienteId?: string | null,
+  opcoes?: { orcamentoId?: string | null; formaPagamento?: FormaPagamento; desconto?: number },
 ): Promise<ResponseType<VendaType>> => {
-  const response = await getAxios().post('/vendas', { itens, cliente_id: clienteId ?? null });
+  const response = await getAxios().post('/vendas', {
+    itens,
+    cliente_id: clienteId ?? null,
+    orcamento_id: opcoes?.orcamentoId ?? null,
+    forma_pagamento: opcoes?.formaPagamento ?? 'pix',
+    desconto: opcoes?.desconto ?? 0,
+  });
   return response.data;
 };
 

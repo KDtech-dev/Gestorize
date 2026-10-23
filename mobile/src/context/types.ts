@@ -255,6 +255,7 @@ export type EnderecoType = {
 
 export type RootStackParamList = {
   Vendas: undefined;
+  NovaVenda: undefined;
   Relatorios: undefined;
   Configuracoes: undefined;
   Ajuda: undefined;
