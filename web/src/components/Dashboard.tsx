@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { apiFetch, unwrap } from '@/lib/api';
+import { WelcomeBanner } from '@/components/WelcomeBanner';
 
 type Summary = { clientes: number | null; orcamentos_aprovados: number | null; orcamentos_pendentes: number | null; produtos_em_estoque: number | null };
 type Report = { totais: Record<string, number>; serie: { rotulos: string[]; valores: number[] } };
@@ -39,7 +40,7 @@ export function Dashboard() {
 
   const visibleCards = cards.filter((card) => can(card.permission));
   return <>
-    <section className="welcome-banner"><div><span className="eyebrow">SEU NEGÓCIO EM FOCO</span><h1>Gestão simples, decisões melhores.</h1><p>Acompanhe os principais indicadores e acesse seus módulos.</p></div><div className="banner-mark">G</div></section>
+    <WelcomeBanner />
     <div className="section-heading"><div><span className="eyebrow">ACOMPANHAMENTO</span><h2>Resumo do sistema</h2></div></div>
     {error && <div className="inline-error">{error}</div>}
     <section className="metric-grid">

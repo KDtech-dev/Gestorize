@@ -124,3 +124,11 @@
 .login-submit{width:100%;min-height:64px;margin-top:5px;border-radius:15px;font-size:18px;font-weight:900}
 .theme-root[data-theme=dark] .login-card .login-field>label{color:var(--ink)}
 @media(max-width:700px){.login-form-wrap{padding:24px}.login-options{gap:8px}.remember-option{font-size:13px}.login-options>a{font-size:12px}}
+
+.welcome-banner{min-height:248px;display:flex;align-items:center}
+.welcome-banner-content{position:relative;z-index:1;max-width:calc(100% - 175px)}
+.welcome-banner .eyebrow{font-size:13px;letter-spacing:1.45px}
+.welcome-banner h1{max-width:760px;font-size:clamp(30px,3.2vw,42px);line-height:1.18}
+.welcome-banner p{max-width:680px;font-size:16px;line-height:1.55}
+.banner-mark img{display:block;width:92px;height:78px;object-fit:contain}
+@media(max-width:700px){.welcome-banner{min-height:230px;padding:23px 19px}.welcome-banner-content{max-width:calc(100% - 58px)}.welcome-banner .eyebrow{font-size:11px;letter-spacing:1px}.welcome-banner h1{max-width:100%;font-size:clamp(27px,7vw,33px);line-height:1.2}.welcome-banner p{max-width:100%;font-size:14px;line-height:1.5}.banner-mark img{width:48px;height:42px}}
