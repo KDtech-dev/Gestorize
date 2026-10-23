@@ -6,22 +6,22 @@ import { Box, Card, CardContent, Link as MuiLink, Paper, Stack, Typography } fro
 
 export type SummaryKey = 'clientes' | 'orcamentos_aprovados' | 'orcamentos_pendentes' | 'produtos_em_estoque';
 export type Metric = { key: SummaryKey; label: string; icon: string; permission: string; href: string };
-export type QuickItem = { href: string; title: string; description: string; icon: string; permission: string };
+export type QuickItem = { href: string; title: string; description: string; icon: string; permission: string; viewPermission: string };
 
 export function MetricCard({ metric, value, loading }: { metric: Metric; value: number | null | undefined; loading: boolean }) {
   return (
-    <Card component="article" sx={{ position: 'relative', minHeight: 151, overflow: 'hidden', border: '1px solid var(--line)', borderRadius: '16px', bgcolor: 'var(--card)', boxShadow: '0 6px 20px #1d392a08', '&::before': { content: '""', position: 'absolute', inset: '0 auto 0 0', width: 3, bgcolor: '#005CE4' } }}>
-      <CardContent sx={{ height: '100%', p: '18px 19px !important', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-        <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
-          <Typography sx={{ color: 'var(--muted)', fontSize: 13, fontWeight: 600 }}>{metric.label}</Typography>
-          <Box sx={{ width: 36, height: 36, flexShrink: 0, display: 'grid', placeItems: 'center', borderRadius: '11px', bgcolor: '#005CE41a', color: '#005CE4' }}>
-            <Icon icon={metric.icon} width={21} height={21} />
+    <Card component="article" sx={{ minHeight: 145, border: '1px solid var(--line)', borderRadius: '17px', bgcolor: 'var(--card)', boxShadow: '0 8px 24px #0f172a0a' }}>
+      <CardContent sx={{ minHeight: 145, p: '15px 17px !important', display: 'flex', flexDirection: 'column' }}>
+        <Stack direction="row" sx={{ alignItems: 'center', gap: 1.1 }}>
+          <Box sx={{ width: 34, height: 34, flexShrink: 0, display: 'grid', placeItems: 'center', borderRadius: '11px', bgcolor: 'color-mix(in srgb, var(--primary) 11%, var(--card))', color: 'var(--primary)' }}>
+            <Icon icon={metric.icon} width={19} height={19} />
           </Box>
+          <Typography sx={{ color: 'var(--muted)', fontSize: 13, fontWeight: 650, lineHeight: 1.35 }}>{metric.label}</Typography>
         </Stack>
-        <Typography component="strong" sx={{ color: 'var(--ink)', font: '800 30px Manrope,sans-serif', letterSpacing: '-1px' }}>
+        <Typography component="strong" sx={{ mt: 1.5, color: 'var(--ink)', font: '800 29px Manrope,sans-serif', letterSpacing: '-1px', lineHeight: 1.1 }}>
           {loading ? '—' : (value ?? 0).toLocaleString('pt-BR')}
         </Typography>
-        <MuiLink component={Link} href={metric.href} underline="none" sx={{ width: 'max-content', color: 'var(--primary)', fontSize: 12, fontWeight: 700 }}>
+        <MuiLink component={Link} href={metric.href} underline="none" sx={{ mt: 0.75, width: 'max-content', color: 'var(--primary)', fontSize: 12, fontWeight: 700 }}>
           Abrir {metric.href === '/orcamentos' ? 'orçamentos' : metric.href.slice(1)} <Box component="span" sx={{ pl: 0.5 }}>↗</Box>
         </MuiLink>
       </CardContent>

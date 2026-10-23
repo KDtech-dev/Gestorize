@@ -59,6 +59,15 @@ export function DataModule({ title, endpoint, module }: { title: string; endpoin
       .finally(() => setLoading(false));
   }, [endpoint, title]);
 
+  useEffect(() => {
+    if (!canCreate) return;
+    const url = new URL(window.location.href);
+    if (url.searchParams.get('novo') !== '1') return;
+    setEditing(null);
+    url.searchParams.delete('novo');
+    window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
+  }, [canCreate]);
+
   const facetValues = useMemo(() => [...new Set(rows.flatMap((row) => module === 'fornecedores' && Array.isArray(row.categorias) ? (row.categorias as Row[]).map((category) => String(category.nome ?? '')).filter(Boolean) : [facetLabel(row, module)]).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR')), [module, rows]);
   const filteredRows = useMemo(() => rows.filter((row) => {
     const matchesSearch = definition.search.some((key) => String(row[key] ?? '').toLocaleLowerCase().includes(search.toLocaleLowerCase())) || (module === 'fornecedores' && Array.isArray(row.categorias) && (row.categorias as Row[]).some((category) => String(category.nome ?? '').toLocaleLowerCase().includes(search.toLocaleLowerCase())));

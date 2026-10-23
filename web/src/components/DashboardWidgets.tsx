@@ -36,7 +36,7 @@ export function ReportPanels({ report, loading }: { report: Report | null; loadi
   const maxValue = Math.max(...(report?.serie.valores ?? []), 1);
 
   return (
-    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: 'minmax(0,1.65fr) minmax(260px,.8fr)' }, gap: 1.9, mt: 2.75 }}>
+    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: 'minmax(0,1.65fr) minmax(260px,.8fr)' }, gap: 1.9 }}>
       <Paper component="article" sx={panelSx}>
         <PanelTitle
           eyebrow="ÚLTIMOS 7 DIAS"
@@ -89,29 +89,29 @@ export function ReportPanels({ report, loading }: { report: Report | null; loadi
 }
 
 const quickItems: QuickItem[] = [
-  { href: '/clientes', title: 'Clientes', description: 'Cadastros e histórico', icon: 'mdi:account-multiple-outline', permission: 'clientes.ver' },
-  { href: '/produtos', title: 'Produtos', description: 'Catálogo e estoque', icon: 'mdi:package-variant-closed', permission: 'produtos.ver' },
-  { href: '/orcamentos', title: 'Orçamentos', description: 'Propostas e aprovações', icon: 'mdi:file-document-outline', permission: 'orcamentos.ver' },
-  { href: '/vendas', title: 'Vendas', description: 'Registrar e consultar vendas', icon: 'mdi:cash-register', permission: 'vendas.ver' },
-  { href: '/fornecedores', title: 'Fornecedores', description: 'Parceiros cadastrados', icon: 'mdi:truck-outline', permission: 'fornecedores.ver' },
-  { href: '/funcionarios', title: 'Funcionários', description: 'Equipe e acessos', icon: 'mdi:account-cog-outline', permission: 'users.ver' },
-  { href: '/relatorios', title: 'Relatórios', description: 'Indicadores e movimentações', icon: 'mdi:chart-box-outline', permission: 'relatorios.ver' },
+  { href: '/produtos?novo=1', title: 'Novo produto', description: 'Adicionar item ao catálogo', icon: 'mdi:package-variant-plus', permission: 'produtos.criar', viewPermission: 'produtos.ver' },
+  { href: '/orcamentos?novo=1', title: 'Novo orçamento', description: 'Criar proposta para cliente', icon: 'mdi:file-document-plus-outline', permission: 'orcamentos.criar', viewPermission: 'orcamentos.ver' },
+  { href: '/clientes?novo=1', title: 'Novo cliente', description: 'Cadastrar cliente', icon: 'mdi:account-plus-outline', permission: 'clientes.criar', viewPermission: 'clientes.ver' },
+  { href: '/vendas', title: 'Nova venda', description: 'Iniciar um atendimento', icon: 'mdi:cash-register', permission: 'vendas.criar', viewPermission: 'vendas.ver' },
+  { href: '/fornecedores?novo=1', title: 'Novo fornecedor', description: 'Cadastrar parceiro comercial', icon: 'mdi:truck-plus-outline', permission: 'fornecedores.criar', viewPermission: 'fornecedores.ver' },
+  { href: '/funcionarios?novo=1', title: 'Novo funcionário', description: 'Adicionar pessoa à equipe', icon: 'mdi:account-cog-outline', permission: 'users.criar', viewPermission: 'users.ver' },
 ];
 
 export function QuickAccess({ can }: { can: (permission: string) => boolean }) {
-  const items = quickItems.filter((item) => can(item.permission));
+  const items = quickItems.filter((item) => can(item.permission) && can(item.viewPermission));
 
   return (
-    <>
-      <Stack sx={{ mt: 4, mb: 1.9 }}>
-        <Typography component="span" sx={{ color: 'var(--muted)', fontSize: 10, fontWeight: 800, letterSpacing: 1.1 }}>NAVEGAÇÃO</Typography>
-        <Typography component="h2" sx={{ mt: 0.5, color: 'var(--ink)', font: '800 21px Manrope,sans-serif' }}>Acesso rápido</Typography>
+    <Box sx={{ minWidth: 0 }}>
+      <Stack sx={{ mb: 1.5 }}>
+        <Typography component="span" sx={{ color: 'var(--muted)', fontSize: 10, fontWeight: 800, letterSpacing: 1.1 }}>ATALHOS</Typography>
+        <Typography component="h2" sx={{ mt: 0.5, color: 'var(--ink)', font: '800 21px Manrope,sans-serif' }}>Ações rápidas</Typography>
+        <Typography sx={{ mt: 0.5, color: 'var(--muted)', fontSize: 13, lineHeight: 1.5 }}>Crie cadastros e inicie operações.</Typography>
       </Stack>
-      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2,minmax(0,1fr))', lg: 'repeat(3,minmax(0,1fr))' }, gap: 1.5 }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: '1fr', gap: 1.1 }}>
         {items.map((item) => (
           <QuickAccessCard key={item.href} item={item} />
         ))}
       </Box>
-    </>
+    </Box>
   );
 }

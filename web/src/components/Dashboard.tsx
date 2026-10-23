@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { Alert, Box, Stack, Typography } from '@mui/material';
 import { useAuth } from '@/context/AuthContext';
 import { apiFetch, unwrap } from '@/lib/api';
-import { WelcomeBanner } from '@/components/WelcomeBanner';
 import { MetricsGrid, QuickAccess, ReportPanels } from '@/components/DashboardWidgets';
 
 type Summary = { clientes: number | null; orcamentos_aprovados: number | null; orcamentos_pendentes: number | null; produtos_em_estoque: number | null };
@@ -44,15 +43,19 @@ export function Dashboard() {
 
   return (
     <Stack spacing={3}>
-      <WelcomeBanner />
-      <Box>
-        <Typography component="span" sx={{ color: 'var(--muted)', fontSize: 10, fontWeight: 800, letterSpacing: 1.1 }}>ACOMPANHAMENTO</Typography>
-        <Typography component="h2" sx={{ mt: 0.5, color: 'var(--ink)', font: '800 21px Manrope,sans-serif' }}>Resumo do sistema</Typography>
+      <Box sx={{ pb: 0.5 }}>
+        <Typography component="span" sx={{ color: 'var(--muted)', fontSize: 11, fontWeight: 800, letterSpacing: 1.1 }}>PAINEL DE CONTROLE</Typography>
+        <Typography component="h1" sx={{ mt: 0.5, color: 'var(--ink)', font: '800 clamp(25px,3vw,32px) Manrope,sans-serif', letterSpacing: '-0.7px' }}>Visão geral</Typography>
+        <Typography sx={{ mt: 0.75, color: 'var(--muted)', fontSize: { xs: 14, md: 15 }, lineHeight: 1.5 }}>Acompanhe os indicadores e acesse as principais ações do sistema.</Typography>
       </Box>
       {error && <Alert severity="error" variant="outlined" sx={{ borderRadius: '12px' }}>{error}</Alert>}
       <MetricsGrid metrics={[...visibleCards]} values={summary} loading={loading} />
-      {can('relatorios.ver') && <ReportPanels report={report} loading={reportLoading} />}
-      <QuickAccess can={can} />
+      {can('relatorios.ver') ? (
+        <Box sx={{ width: '100%', display: 'grid', gridTemplateColumns: { xs: '1fr', lg: 'minmax(0,2.2fr) minmax(280px,.8fr)' }, alignItems: 'start', gap: { xs: 3, lg: 2.5 } }}>
+          <ReportPanels report={report} loading={reportLoading} />
+          <QuickAccess can={can} />
+        </Box>
+      ) : <QuickAccess can={can} />}
     </Stack>
   );
 }
