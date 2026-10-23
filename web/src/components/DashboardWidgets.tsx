@@ -101,7 +101,7 @@ export function ReportPanels({ report, budgetReport, loading, activityType, onAc
 const quickItems: QuickItem[] = [
   { href: '/produtos?novo=1', title: 'Novo produto', description: 'Adicionar item ao catálogo', icon: 'mdi:package-variant-plus', permission: 'produtos.criar', viewPermission: 'produtos.ver' },
   { href: '/orcamentos?novo=1', title: 'Novo orçamento', description: 'Criar proposta para cliente', icon: 'mdi:file-document-plus-outline', permission: 'orcamentos.criar', viewPermission: 'orcamentos.ver' },
-  { href: '/clientes?novo=1', title: 'Novo cliente', description: 'Cadastrar cliente', icon: 'mdi:account-plus-outline', permission: 'clientes.criar', viewPermission: 'clientes.ver' },
+  { href: '/clientes/nova', title: 'Novo cliente', description: 'Cadastrar cliente', icon: 'mdi:account-plus-outline', permission: 'clientes.criar', viewPermission: 'clientes.ver' },
   { href: '/fornecedores?novo=1', title: 'Novo fornecedor', description: 'Cadastrar parceiro comercial', icon: 'mdi:truck-plus-outline', permission: 'fornecedores.criar', viewPermission: 'fornecedores.ver' },
   { href: '/funcionarios?novo=1', title: 'Novo funcionário', description: 'Adicionar pessoa à equipe', icon: 'mdi:account-cog-outline', permission: 'users.criar', viewPermission: 'users.ver' },
 ];

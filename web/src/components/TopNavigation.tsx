@@ -14,7 +14,7 @@ export type NavigationItem = {
 
 export function TopNavigation({ items }: { items: NavigationItem[] }) {
   const pathname = usePathname();
-  const selected = items.find((item) => pathname === item.href)?.href ?? false;
+  const selected = items.find((item) => pathname === item.href || (item.href === '/clientes' && pathname.startsWith('/clientes/')))?.href ?? false;
 
   return (
     <Tabs

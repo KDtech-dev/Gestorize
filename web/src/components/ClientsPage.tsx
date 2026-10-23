@@ -1,11 +1,12 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Icon } from '@iconify/react';
 import { FormControl, InputLabel, MenuItem, Select } from '@mui/material';
 import { apiFetch } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
-import { RecordEditor } from '@/components/RecordEditor';
+import { useToast } from '@/context/ToastContext';
 import { UserAvatar } from '@/components/UserAvatar';
 import { EntityActionButton, EntityDirectoryHeading, EntityPageHeading, EntityPagination, EntitySummaryCard } from '@/components/entities/EntityPageParts';
 
@@ -90,13 +91,14 @@ function ClientFilters({ search, type, count, onSearch, onType }: { search: stri
 }
 
 export function ClientsPage() {
+  const router = useRouter();
   const { can } = useAuth();
+  const { showToast } = useToast();
   const [clients, setClients] = useState<Client[]>([]);
   const [search, setSearch] = useState('');
   const [type, setType] = useState('');
   const [page, setPage] = useState(1);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [editing, setEditing] = useState<Client | null | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -112,10 +114,8 @@ export function ClientsPage() {
     if (!can('clientes.criar')) return;
     const url = new URL(window.location.href);
     if (url.searchParams.get('novo') !== '1') return;
-    setEditing(null);
-    url.searchParams.delete('novo');
-    window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
-  }, [can]);
+    router.replace('/clientes/nova');
+  }, [can, router]);
 
   const filtered = useMemo(() => {
     const term = search.trim().toLocaleLowerCase();
@@ -132,19 +132,16 @@ export function ClientsPage() {
   const physical = clients.filter((client) => String(client.tipo ?? '').toLowerCase() !== 'pj').length;
   const business = clients.length - physical;
 
-  async function saveClient(payload: Client, id?: string) {
-    await apiFetch(id ? `/clientes/${id}` : '/clientes', { method: id ? 'PUT' : 'POST', body: JSON.stringify(payload) });
-    await reload();
-  }
-
   async function deleteClient(client: Client) {
     if (!window.confirm(`Excluir ${String(client.nome ?? 'este cliente')}? Essa ação não pode ser desfeita.`)) return;
     try {
       await apiFetch(`/clientes/${client.id}`, { method: 'DELETE' });
-      await reload();
       if (selectedId === client.id) setSelectedId(null);
+      showToast('Cliente excluído com sucesso.', 'success');
+      try { await reload(); }
+      catch { showToast('Cliente excluído, mas não foi possível atualizar a listagem.', 'warning'); }
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'Não foi possível excluir o cliente.');
+      showToast(reason instanceof Error ? reason.message : 'Não foi possível excluir o cliente.', 'error');
     }
   }
 
@@ -154,7 +151,7 @@ export function ClientsPage() {
   }
 
   return <div className="clients-page">
-    <EntityPageHeading eyebrow="RELACIONAMENTO" icon="mdi:account-group-outline" title="Clientes" description="Consulte e organize as pessoas físicas e jurídicas da sua organização." createLabel="Novo cliente" canCreate={can('clientes.criar')} onCreate={() => setEditing(null)} />
+    <EntityPageHeading eyebrow="RELACIONAMENTO" icon="mdi:account-group-outline" title="Clientes" description="Consulte e organize as pessoas físicas e jurídicas da sua organização." createLabel="Novo cliente" canCreate={can('clientes.criar')} onCreate={() => router.push('/clientes/nova')} />
 
     <section className="client-summary-grid" aria-label="Resumo de clientes">
       <EntitySummaryCard label="Total de clientes" value={loading ? '—' : clients.length} icon="mdi:account-group-outline" color="#005CE4" />
@@ -165,9 +162,8 @@ export function ClientsPage() {
     <section className="client-directory">
       <ClientFilters search={search} type={type} count={filtered.length} onSearch={(value) => changeFilter(value, setSearch)} onType={(value) => changeFilter(value, setType)} />
       {error && <div className="inline-error">{error}</div>}
-      {loading ? <div className="table-loading"><span className="spinner" />Carregando clientes…</div> : pageItems.length ? <div className="client-card-grid">{pageItems.map((client) => <ClientCard key={String(client.id)} client={client} selected={selectedId === client.id} onSelect={() => setSelectedId(selectedId === client.id ? null : String(client.id))} onEdit={() => setEditing(client)} onDelete={() => void deleteClient(client)} />)}</div> : <div className="empty-state compact"><span className="empty-icon"><Icon icon="mdi:account-search-outline" /></span><h2>{search || type ? 'Nenhum cliente encontrado' : 'Ainda não há clientes'}</h2><p>{search || type ? 'Ajuste os filtros para ver outros cadastros.' : 'Cadastre o primeiro cliente para começar.'}</p></div>}
+      {loading ? <div className="table-loading"><span className="spinner" />Carregando clientes…</div> : pageItems.length ? <div className="client-card-grid">{pageItems.map((client) => <ClientCard key={String(client.id)} client={client} selected={selectedId === client.id} onSelect={() => setSelectedId(selectedId === client.id ? null : String(client.id))} onEdit={() => router.push(`/clientes/nova?id=${encodeURIComponent(String(client.id))}`)} onDelete={() => void deleteClient(client)} />)}</div> : <div className="empty-state compact"><span className="empty-icon"><Icon icon="mdi:account-search-outline" /></span><h2>{search || type ? 'Nenhum cliente encontrado' : 'Ainda não há clientes'}</h2><p>{search || type ? 'Ajuste os filtros para ver outros cadastros.' : 'Cadastre o primeiro cliente para começar.'}</p></div>}
       {!loading && <EntityPagination noun="clientes" page={currentPage} totalPages={totalPages} total={filtered.length} from={(currentPage - 1) * PAGE_SIZE + 1} to={Math.min(currentPage * PAGE_SIZE, filtered.length)} onChange={setPage} />}
     </section>
-    {editing !== undefined && <RecordEditor module="clientes" row={editing} onClose={() => setEditing(undefined)} onSave={saveClient} />}
   </div>;
 }

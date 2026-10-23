@@ -8,6 +8,7 @@ import Image from 'next/image';
 import { Icon } from '@iconify/react';
 import { TopNavigation, type NavigationItem } from '@/components/TopNavigation';
 import { UserMenu } from '@/components/UserMenu';
+import { requestGuardedAction } from '@/hooks/useUnsavedChangesGuard';
 
 const navigation: NavigationItem[] = [
   { href: '/', title: 'Visão geral', icon: 'mdi:view-dashboard-outline' },
@@ -24,29 +25,31 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { user, signOut, can } = useAuth();
   const { mode, toggle } = useTheme();
   const isGlobalAdmin = user?.role === 'admin' && !user.organization_id;
+  const guardedSignOut = () => requestGuardedAction(() => { void signOut(); });
   const visibleNavigation = navigation.filter((item) => {
     if (isGlobalAdmin) return item.href === '/';
     return !item.permission || can(item.permission);
   });
+  const isNavigationActive = (href: string) => pathname === href || (href === '/clientes' && pathname.startsWith('/clientes/'));
 
   return <div className="app-frame">
     <aside className="sidebar">
       <nav className="side-nav" aria-label="Navegação principal">
-        {visibleNavigation.map((item) => <Link key={item.href} href={item.href} className={`nav-link ${pathname === item.href ? 'active' : ''}`} aria-label={item.title}>
-          <span className="nav-icon" data-tooltip={item.title}><Icon icon={item.icon} width={19} height={19} /></span><span>{item.title}</span>{pathname === item.href && <span className="nav-current" />}
+        {visibleNavigation.map((item) => <Link key={item.href} href={item.href} className={`nav-link ${isNavigationActive(item.href) ? 'active' : ''}`} aria-label={item.title}>
+          <span className="nav-icon" data-tooltip={item.title}><Icon icon={item.icon} width={19} height={19} /></span><span>{item.title}</span>{isNavigationActive(item.href) && <span className="nav-current" />}
         </Link>)}
       </nav>
       <div className="sidebar-bottom">
-        <button className="logout-button" onClick={() => void signOut()}><span>↪</span>Sair da conta</button>
+        <button className="logout-button" onClick={guardedSignOut}><span>↪</span>Sair da conta</button>
       </div>
     </aside>
     <main className="main-area">
       <header className="topbar">
         <Link href="/" className="brand topbar-brand"> <Image src={mode === 'light' ? '/images/LogoLight.png' : '/images/Logo.png'} alt="Gestorize" width={58} height={50} priority /></Link>
         <TopNavigation items={visibleNavigation} />
-        <div className="topbar-right"><button className="theme-toggle" onClick={toggle} aria-label={mode === 'dark' ? 'Ativar tema claro' : 'Ativar tema escuro'} data-tooltip={mode === 'dark' ? 'Tema claro' : 'Tema escuro'}>{mode === 'dark' ? '☀' : '☾'}</button><UserMenu name={user?.name ?? 'Usuário'} email={user?.email ?? ''} role={user?.role ?? 'Usuário'} imageUrl={user?.avatar_url ?? user?.avatar} signOut={signOut} /></div>
+        <div className="topbar-right"><button className="theme-toggle" onClick={toggle} aria-label={mode === 'dark' ? 'Ativar tema claro' : 'Ativar tema escuro'} data-tooltip={mode === 'dark' ? 'Tema claro' : 'Tema escuro'}>{mode === 'dark' ? '☀' : '☾'}</button><UserMenu name={user?.name ?? 'Usuário'} email={user?.email ?? ''} role={user?.role ?? 'Usuário'} imageUrl={user?.avatar_url ?? user?.avatar} signOut={async () => { guardedSignOut(); }} /></div>
       </header>
-      <div className={`page-content ${pathname === '/' ? 'dashboard-content' : ''} ${['/clientes', '/produtos', '/fornecedores', '/orcamentos', '/funcionarios', '/vendas', '/relatorios'].includes(pathname) ? 'clients-content' : ''}`}>{children}</div>
+      <div className={`page-content ${pathname === '/' ? 'dashboard-content' : ''} ${['/clientes', '/clientes/nova', '/produtos', '/fornecedores', '/orcamentos', '/funcionarios', '/vendas', '/relatorios'].includes(pathname) ? 'clients-content' : ''}`}>{children}</div>
     </main>
   </div>;
 }
