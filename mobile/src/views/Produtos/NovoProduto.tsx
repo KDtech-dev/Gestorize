@@ -121,8 +121,6 @@ export default function NovoProduto() {
     const imprimirEtiqueta = async () => {
         if (!produtoParaEtiqueta?.codigo_barras) return;
         try {
-            // O expo-print usa Letter como padrão; informe a dimensão da etiqueta
-            // para evitar que o conteúdo seja paginado em uma segunda folha.
             await Print.printAsync({ html: etiquetaProdutoHtml(produtoParaEtiqueta), width: 216, height: 142 });
         } catch {
             Toast.show({ type: "error", text1: "Não foi possível abrir a impressão da etiqueta." });
