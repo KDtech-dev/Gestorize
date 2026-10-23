@@ -1,4 +1,7 @@
-import React, { createContext, useContext, useMemo, useState } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const THEME_STORAGE_KEY = 'gestorize.theme.mode';
 
 type ThemeContextType = AppTheme & {
   isDark: boolean;
@@ -57,6 +60,25 @@ const ThemeToggleContext = createContext<{
 export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
   const [mode, setMode] = useState<'light' | 'dark'>('light');
   const [compactLists, setCompactLists] = useState(false);
+  const [themeLoaded, setThemeLoaded] = useState(false);
+  const themeChangedByUser = useRef(false);
+
+  useEffect(() => {
+    let mounted = true;
+    AsyncStorage.getItem(THEME_STORAGE_KEY)
+      .then((storedMode) => {
+        if (mounted && !themeChangedByUser.current && (storedMode === 'light' || storedMode === 'dark')) {
+          setMode(storedMode);
+        }
+      })
+      .catch(() => {})
+      .finally(() => { if (mounted) setThemeLoaded(true); });
+    return () => { mounted = false; };
+  }, []);
+
+  useEffect(() => {
+    if (themeLoaded) AsyncStorage.setItem(THEME_STORAGE_KEY, mode).catch(() => {});
+  }, [mode, themeLoaded]);
 
   const value = useMemo(() => {
     const light = defaultTheme;
@@ -86,13 +108,16 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
     };
   }, [mode]);
 
-  const toggle = () => setMode((m) => (m === 'light' ? 'dark' : 'light'));
+  const toggle = () => {
+    themeChangedByUser.current = true;
+    setMode((current) => current === 'light' ? 'dark' : 'light');
+  };
 
   return (
     <ThemeToggleContext.Provider
       value={{ toggle, compactLists, setCompactLists, mode }}
     >
-      <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
+      <ThemeContext.Provider value={value}>{themeLoaded ? children : null}</ThemeContext.Provider>
     </ThemeToggleContext.Provider>
   );
 };

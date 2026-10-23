@@ -8,33 +8,32 @@ import {
   KeyboardAvoidingView,
   Platform,
   Animated,
+  Pressable,
 } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@context/types';
 import { useAuth } from '@context/AuthContext';
 import LoginCard from '@components/cards/login-card';
-import { useTheme } from '@context/ThemeContext';
+import { useTheme, useThemeToggle } from '@context/ThemeContext';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Login'>;
 
 const Login = ({ navigation }: Props) => {
   const { colors, isDark } = useTheme();
+  const { toggle } = useThemeToggle();
 
   const translateYCard = useRef(new Animated.Value(0)).current;
   const translateYLogo = useRef(new Animated.Value(0)).current;
   const scaleLogo = useRef(new Animated.Value(1)).current;
 
-  const headerBackground = isDark ? '#ffffff' : '#0D2B52';
-  const isDarkHeader = headerBackground !== '#ffffff';
+  const headerBackground = isDark ? colors.background : '#0D2B52';
+  const textColor = '#ffffff';
+  const subtitleColor = '#ffffffcc';
 
-  const textColor = isDarkHeader ? '#ffffff' : '#0f172a';
-  const subtitleColor = isDarkHeader ? '#ffffffcc' : '#475569';
+  const cardBackground = colors.surface;
 
-  const cardBackground = isDark ? '#0b274f' : '#ffffff';
-
-  const logoSource = isDarkHeader
-    ? require('@assets/images/LogoLight.png')
-    : require('@assets/images/Logo.png');
+  const logoSource = require('@assets/images/LogoLight.png');
 
   useEffect(() => {
     const showSub = Keyboard.addListener('keyboardDidShow', () => { });
@@ -91,6 +90,15 @@ const Login = ({ navigation }: Props) => {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={-70}
       >
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={isDark ? 'Ativar tema claro' : 'Ativar tema escuro'}
+          onPress={toggle}
+          style={[styles.themeButton, { backgroundColor: isDark ? '#ffffff20' : '#ffffff18', borderColor: '#ffffff55' }]}
+        >
+          <MaterialCommunityIcons name={isDark ? 'white-balance-sunny' : 'moon-waning-crescent'} size={19} color="#fff" />
+          <Text style={styles.themeButtonText}>{isDark ? 'Claro' : 'Escuro'}</Text>
+        </Pressable>
         <View style={styles.header}>
           <Animated.Image
             source={logoSource}
@@ -158,4 +166,18 @@ const styles = StyleSheet.create({
     padding: 20,
     marginTop: -40,
   },
+  themeButton: {
+    position: 'absolute',
+    zIndex: 2,
+    top: 52,
+    right: 20,
+    minHeight: 38,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderRadius: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+  },
+  themeButtonText: { color: '#fff', fontSize: 13, fontWeight: '700' },
 });

@@ -23,7 +23,7 @@ const metricColors = {
 const Homepage = () => {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const { user } = useAuth();
   const podeVender = canSell(user);
   const [resumo, setResumo] = useState<DashboardResumo | null>(null);
@@ -118,7 +118,7 @@ const Homepage = () => {
               accessibilityRole="button"
               accessibilityLabel="Vender. Abrir caixa para registrar uma venda"
               onPress={() => navigation.navigate('NovaVenda')}
-              style={({ pressed }) => [styles.sellButton, { backgroundColor: colors.primary, opacity: pressed ? 0.88 : 1 }]}
+              style={({ pressed }) => [styles.sellButton, { backgroundColor: isDark ? '#2563EB' : colors.primary, opacity: pressed ? 0.88 : 1 }]}
             >
               <MaterialCommunityIcons name="cart-outline" size={23} color="#fff" />
               <Text style={styles.sellButtonText}>Vender +</Text>
