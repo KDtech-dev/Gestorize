@@ -31,3 +31,47 @@
 @media(max-width:900px){.steps-grid{grid-template-columns:1fr}.help-step{min-height:0}.settings-profile-card{flex-wrap:wrap}.settings-profile-card .secondary-button{margin-left:auto}}
 @media(max-width:700px){.sidebar-utilities{display:none}.sidebar-bottom{display:none}.topbar-right{gap:7px}.header-utility{width:27px;height:27px;font-size:12px}.theme-toggle{width:29px;height:29px;font-size:15px}.help-intro{padding:19px;align-items:flex-start;gap:13px}.help-intro-mark{width:43px;height:43px;border-radius:13px;font-size:22px}.help-intro h2{font-size:17px}.help-intro p{font-size:10px}.help-section{margin-top:23px}.help-step{padding:13px}.faq-question{min-height:51px;padding:11px 13px;font-size:10px}.faq-answer{padding:0 40px 14px 13px;font-size:10px}.help-support{padding:14px}.settings-profile-card{padding:13px;gap:10px}.settings-avatar{width:45px;height:45px}.settings-account{min-width:calc(100% - 65px)}.settings-profile-card .role-pill{margin-left:55px}.settings-profile-card .secondary-button{margin-left:auto;min-height:34px;padding:0 9px;font-size:9px}.settings-section{padding:14px}.setting-row{min-height:61px}.profile-identity-card{padding:14px;gap:10px}.profile-avatar-large{width:48px;height:48px}.profile-identity-card h2{font-size:13px}.profile-identity-card>.role-pill{display:none}.profile-section{padding:15px}.profile-fields{grid-template-columns:1fr;gap:11px}.profile-fields .editor-field input{height:40px}.profile-save-bar{bottom:7px;padding:9px}.profile-save-bar>span{font-size:9px}.profile-save-bar .primary-button{min-height:36px;padding:0 10px;font-size:9px}}
 .theme-root[data-compact=true] .table-scroll td{height:43px}.theme-root[data-compact=true] .table-scroll th{height:36px}.theme-root[data-compact=true] .quick-card{min-height:61px;padding-top:10px;padding-bottom:10px}
+
+/* Dashboard charts and desktop-first data views */
+.metric-card{cursor:default}
+.metric-card:hover{transform:none;box-shadow:0 6px 20px #1d392a08}
+.metric-card>a{width:max-content;color:var(--primary);font-size:10px;font-weight:700}
+.metric-card>a span{padding-left:4px}
+.overview-grid{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(260px,.8fr);gap:15px;margin-top:22px}
+.overview-chart-panel,.overview-status-panel{min-width:0;padding:20px}
+.overview-chart-panel .panel-heading,.overview-status-panel .panel-heading{align-items:center}
+.overview-chart-panel .panel-heading h2,.overview-status-panel .panel-heading h2{margin-top:6px}
+.overview-link{flex:none;color:var(--primary);font-size:10px;font-weight:700}
+.overview-bars{height:205px;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));align-items:end;gap:12px;margin-top:20px}
+.overview-bar-column{height:100%;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:7px}
+.overview-bar-column>strong{color:var(--muted);font-size:10px}
+.overview-bar-track{width:min(100%,36px);height:145px;display:flex;align-items:flex-end;overflow:hidden;border-radius:8px;background:var(--surface-soft)}
+.overview-bar-track>span{width:100%;min-height:3px;border-radius:7px 7px 3px 3px;background:linear-gradient(180deg,#4e91f5,#005CE4)}
+.overview-bar-column>small{color:var(--muted);font-size:9px}
+.overview-empty{min-height:170px;display:grid;place-items:center;color:var(--muted);font-size:11px}
+.overview-status-total{display:flex;align-items:baseline;gap:9px;margin:27px 0 24px}
+.overview-status-total strong{font:800 34px Manrope,sans-serif;letter-spacing:-1px}
+.overview-status-total span{color:var(--muted);font-size:11px}
+.overview-status-row{display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-top:1px solid var(--line);color:var(--muted);font-size:11px}
+.overview-status-row>span{display:flex;align-items:center;gap:8px}
+.overview-status-row strong{color:var(--ink);font-size:13px}
+.status-dot{width:9px;height:9px;border-radius:50%}
+.approved-dot{background:#16a34a}.pending-dot{background:#f59e0b}
+.module-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:-5px 0 17px}
+.module-metric{min-height:75px;display:flex;flex-direction:column;justify-content:space-between;padding:13px 16px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.module-metric span{color:var(--muted);font-size:10px;font-weight:600}
+.module-metric strong{font:800 20px Manrope,sans-serif;color:var(--ink)}
+.table-toolbar-actions{display:flex;align-items:center;gap:16px}
+.facet-field{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:10px;font-weight:600}
+.facet-field select{height:36px;max-width:210px;padding:0 10px;border:1px solid var(--line);border-radius:9px;background:var(--surface);color:var(--ink);font-size:10px}
+.detail-title{display:flex;flex-direction:column;gap:7px}
+.detail-subsection{margin-top:20px;padding-top:15px;border-top:1px solid var(--line)}
+.detail-subsection h3{margin:0 0 10px;color:var(--ink);font:700 12px Manrope}
+.detail-subsection>div{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.detail-subsection p{min-width:0;display:flex;flex-direction:column;gap:5px;margin:0}
+.detail-subsection p span,.detail-relation span{color:var(--muted);font-size:9px;text-transform:capitalize}
+.detail-subsection p strong,.detail-relation strong{overflow:hidden;color:var(--ink);font-size:10px;text-overflow:ellipsis}
+.detail-relation{display:inline-flex;flex-direction:column;gap:5px;margin:14px 16px 0 0;padding:10px 12px;border:1px solid var(--line);border-radius:9px;background:var(--surface)}
+.table-scroll tbody tr{cursor:pointer}
+@media(max-width:1050px){.overview-grid{grid-template-columns:1fr}.overview-status-panel{min-height:220px}.detail-subsection>div{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:700px){.module-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.table-toolbar{align-items:stretch;flex-direction:column}.table-toolbar-actions{justify-content:space-between;gap:8px}.facet-field{min-width:0;flex:1}.facet-field select{max-width:none;flex:1}.table-count{white-space:nowrap}.overview-chart-panel,.overview-status-panel{padding:15px}.overview-bars{gap:5px}.overview-bar-track{width:min(100%,26px);height:120px}.overview-chart-panel .panel-heading{align-items:flex-start}.overview-link{font-size:9px}.detail-subsection>div{grid-template-columns:repeat(2,minmax(0,1fr))}}

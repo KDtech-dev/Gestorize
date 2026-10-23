@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React from 'react';
 import { Card } from '@components/ui/card';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import {
@@ -31,7 +31,7 @@ export function NavButton({
   const scale = React.useRef(new Animated.Value(1)).current;
   const { colors, isDark } = useTheme();
 
-  const cardBg = colors.surface;
+  const cardBg = colors.card;
 
   const iconColor = disabled ? colors.muted : colors.primary;
 
@@ -66,20 +66,22 @@ export function NavButton({
       style={[styles.shadowWrapper, containerStyle, { transform: [{ scale }] }]}
     >
       <Card
-        onClick={disabled ? undefined : onClick}
         style={[
           styles.card,
           {
             backgroundColor: cardBg,
-            borderColor: isDark ? colors.border : '#E2E8F0',
+            borderColor: isDark ? colors.border : '#CBD5E1',
             shadowColor: '#000000',
-            shadowOpacity: isDark ? 0.04 : 0.06,
+            shadowOpacity: isDark ? 0.12 : 0.09,
             opacity: disabled ? 0.6 : 1,
           },
         ]}
       >
         <Pressable
           style={styles.inner}
+          accessibilityRole="button"
+          accessibilityState={{ disabled: !!disabled }}
+          accessibilityLabel={`${label}${description ? `. ${description}` : ''}. Abrir`}
           onPress={disabled ? undefined : onClick}
           onPressIn={handlePressIn}
           onPressOut={handlePressOut}
@@ -96,6 +98,10 @@ export function NavButton({
               {description}
             </Text>
           ) : null}
+          <View style={styles.actionHint}>
+            <Text style={[styles.actionText, { color: disabled ? colors.muted : colors.primary }]}>Abrir</Text>
+            <MaterialCommunityIcons name="arrow-right" size={15} color={disabled ? colors.muted : colors.primary} />
+          </View>
         </Pressable>
       </Card>
     </Animated.View>
@@ -107,17 +113,18 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   card: {
-    minHeight: 166,
+    minHeight: 178,
     width: '100%',
     borderWidth: 1,
     backgroundColor: '#ffffff',
     paddingVertical: 16,
     paddingHorizontal: 14,
-    borderRadius: 16,
+    borderRadius: 18,
   },
   inner: {
     alignItems: 'center',
-    gap: 8,
+    gap: 7,
+    flex: 1,
   },
   iconWrapper: {
     width: 52,
@@ -129,4 +136,6 @@ const styles = StyleSheet.create({
   textWrapper: { flex: 1 },
   title: { marginTop: 2, fontWeight: '800', fontSize: 15, textAlign: 'center' },
   subtitle: { marginTop: 1, fontSize: 12, lineHeight: 16, textAlign: 'center' },
+  actionHint: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 2 },
+  actionText: { fontSize: 11, fontWeight: '700' },
 });

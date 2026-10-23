@@ -22,10 +22,23 @@ function rowsFrom(payload: unknown): Row[] {
   return Array.isArray(current) ? current as Row[] : [];
 }
 
+function facetLabel(row: Row, module: string): string {
+  if (module === 'clientes') return String(row.tipo ?? '').toLowerCase() === 'pj' ? 'Pessoa jurídica' : 'Pessoa física';
+  if (module === 'produtos') return String(row.categoria_titulo ?? (row.categoria as Row | undefined)?.nome ?? 'Sem categoria');
+  if (module === 'fornecedores') return Array.isArray(row.categorias) ? String((row.categorias as Row[])[0]?.nome ?? 'Sem categoria') : 'Sem categoria';
+  if (module === 'orcamentos') return String(row.status ?? 'pendente').toLowerCase();
+  if (module === 'funcionarios') return String(row.role ?? 'funcionário').toLowerCase();
+  return '';
+}
+
+const facetTitles: Record<string, string> = { clientes: 'Tipo de cliente', produtos: 'Categoria', fornecedores: 'Ramo de atividade', orcamentos: 'Status', funcionarios: 'Perfil' };
+const prettyLabel = (key: string) => key.replaceAll('_', ' ').replace(/\b\w/g, (letter) => letter.toLocaleUpperCase());
+
 export function DataModule({ title, endpoint, module }: { title: string; endpoint: string; module: string }) {
   const { can } = useAuth();
   const [rows, setRows] = useState<Row[]>([]);
   const [search, setSearch] = useState('');
+  const [facet, setFacet] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Row | null>(null);
@@ -46,7 +59,40 @@ export function DataModule({ title, endpoint, module }: { title: string; endpoin
       .finally(() => setLoading(false));
   }, [endpoint, title]);
 
-  const filteredRows = useMemo(() => rows.filter((row) => definition.search.some((key) => String(row[key] ?? '').toLocaleLowerCase().includes(search.toLocaleLowerCase())) || (module === 'fornecedores' && Array.isArray(row.categorias) && (row.categorias as Row[]).some((category) => String(category.nome ?? '').toLocaleLowerCase().includes(search.toLocaleLowerCase())))), [definition, module, rows, search]);
+  const facetValues = useMemo(() => [...new Set(rows.flatMap((row) => module === 'fornecedores' && Array.isArray(row.categorias) ? (row.categorias as Row[]).map((category) => String(category.nome ?? '')).filter(Boolean) : [facetLabel(row, module)]).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR')), [module, rows]);
+  const filteredRows = useMemo(() => rows.filter((row) => {
+    const matchesSearch = definition.search.some((key) => String(row[key] ?? '').toLocaleLowerCase().includes(search.toLocaleLowerCase())) || (module === 'fornecedores' && Array.isArray(row.categorias) && (row.categorias as Row[]).some((category) => String(category.nome ?? '').toLocaleLowerCase().includes(search.toLocaleLowerCase())));
+    const matchesFacet = !facet || (module === 'fornecedores' && Array.isArray(row.categorias) ? (row.categorias as Row[]).some((category) => String(category.nome ?? '') === facet) : facetLabel(row, module) === facet);
+    return matchesSearch && matchesFacet;
+  }), [definition, facet, module, rows, search]);
+  const moduleMetrics = useMemo(() => {
+    if (module === 'produtos') return [
+      { label: 'Com estoque', value: rows.filter((row) => Number(row.estoque) > 0).length },
+      { label: 'Estoque zerado', value: rows.filter((row) => Number(row.estoque) <= 0).length },
+      { label: 'Categorias', value: facetValues.length },
+    ];
+    if (module === 'clientes') return [
+      { label: 'Pessoas físicas', value: rows.filter((row) => String(row.tipo).toLowerCase() !== 'pj').length },
+      { label: 'Pessoas jurídicas', value: rows.filter((row) => String(row.tipo).toLowerCase() === 'pj').length },
+      { label: 'Com e-mail', value: rows.filter((row) => !!row.email).length },
+    ];
+    if (module === 'fornecedores') return [
+      { label: 'Com e-mail', value: rows.filter((row) => !!row.email).length },
+      { label: 'Ramos cadastrados', value: facetValues.length },
+      { label: 'Com telefone', value: rows.filter((row) => !!row.telefone).length },
+    ];
+    if (module === 'funcionarios') return [
+      { label: 'Gestores', value: rows.filter((row) => String(row.role).toLowerCase() === 'gestor').length },
+      { label: 'Funcionários', value: rows.filter((row) => String(row.role).toLowerCase() !== 'gestor').length },
+      { label: 'Com e-mail', value: rows.filter((row) => !!row.email).length },
+    ];
+    if (module === 'orcamentos') return [
+      { label: 'Pendentes', value: rows.filter((row) => String(row.status).toLowerCase() === 'pendente').length },
+      { label: 'Aprovados', value: rows.filter((row) => String(row.status).toLowerCase() === 'aprovado').length },
+      { label: 'Valor total', value: currency(rows.reduce((total, row) => total + Number(row.valor_total ?? 0), 0)) },
+    ];
+    return [];
+  }, [facetValues.length, module, rows]);
   async function saveRecord(payload: Row, id?: string) {
     await apiFetch(id ? `${endpoint}/${id}` : endpoint, { method: id ? 'PUT' : 'POST', body: JSON.stringify(payload) });
     await reload();
@@ -61,9 +107,10 @@ export function DataModule({ title, endpoint, module }: { title: string; endpoin
     catch (reason) { setError(reason instanceof Error ? reason.message : 'Não foi possível aprovar o orçamento.'); }
   }
   return <>
-    <div className="page-heading"><div><span className="eyebrow">CADASTROS</span><h1>{title}</h1><p>Consulte e gerencie os registros sincronizados com o aplicativo Gestorize.</p></div><div className="heading-actions">{canCreate && <button className="primary-button" onClick={() => setEditing(null)}>+ Novo cadastro</button>}<div className="record-count"><strong>{loading ? '—' : rows.length}</strong><span>registros</span></div></div></div>
+    <div className="page-heading"><div><span className="eyebrow">GESTÃO DE CADASTROS</span><h1>{title}</h1><p>Pesquise, filtre e consulte os dados completos dos registros.</p></div><div className="heading-actions">{canCreate && <button className="primary-button" onClick={() => setEditing(null)}>+ Novo cadastro</button>}<div className="record-count"><strong>{loading ? '—' : rows.length}</strong><span>registros</span></div></div></div>
+    {!!moduleMetrics.length && <section className="module-metrics">{moduleMetrics.map((metric) => <article className="module-metric" key={metric.label}><span>{metric.label}</span><strong>{loading ? '—' : metric.value}</strong></article>)}</section>}
     <section className="data-panel">
-      <div className="table-toolbar"><label className="search-field"><span>⌕</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={`Buscar ${title.toLocaleLowerCase()}...`} /></label><span className="table-count">{filteredRows.length} resultado{filteredRows.length === 1 ? '' : 's'}</span></div>
+      <div className="table-toolbar"><label className="search-field"><span>⌕</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={`Buscar ${title.toLocaleLowerCase()}...`} /></label><div className="table-toolbar-actions">{facetValues.length > 1 && <label className="facet-field"><span>{facetTitles[module]}</span><select value={facet} onChange={(event) => setFacet(event.target.value)}><option value="">Todos</option>{facetValues.map((value) => <option key={value} value={value}>{prettyLabel(value)}</option>)}</select></label>}<span className="table-count">{filteredRows.length} de {rows.length} registros</span></div></div>
       {error && <div className="inline-error">{error}</div>}
       {loading ? <div className="table-loading"><span className="spinner" />Carregando dados da API…</div> : filteredRows.length === 0 ? <div className="empty-state compact"><span className="empty-icon">⌕</span><h2>{search ? 'Nenhum resultado encontrado' : 'Ainda não há registros'}</h2><p>{search ? 'Tente buscar por outro termo.' : 'Os dados cadastrados no mobile aparecerão aqui.'}</p></div> : <div className="table-scroll"><table><thead><tr>{definition.columns.map((column) => <th key={column.key}>{column.label}</th>)}<th> </th></tr></thead><tbody>
         {filteredRows.map((row, index) => <tr key={String(row.id ?? index)} onClick={() => setSelected(selected?.id === row.id ? null : row)} className={selected?.id === row.id ? 'row-selected' : ''}>
@@ -75,7 +122,14 @@ export function DataModule({ title, endpoint, module }: { title: string; endpoin
           </td>
         </tr>)}
       </tbody></table>
-      {selected && <div className="detail-drawer"><div><span className="eyebrow">DETALHES</span><strong>{String(selected.nome ?? selected.titulo ?? 'Registro')}</strong></div><button className="icon-button" onClick={() => setSelected(null)} aria-label="Fechar detalhes">×</button><div className="detail-grid">{Object.entries(selected).filter(([key, value]) => !['id', 'imagens', 'itens', 'endereco', 'pf', 'pj'].includes(key) && (typeof value !== 'object' || value === null)).map(([key, value]) => <div key={key}><span>{key.replaceAll('_', ' ')}</span><strong>{String(value ?? '—')}</strong></div>)}</div>
+      {selected && <div className="detail-drawer"><div className="detail-title"><span className="eyebrow">DETALHES DO CADASTRO</span><strong>{String(selected.nome ?? selected.name ?? selected.titulo ?? 'Registro')}</strong></div><button className="icon-button" onClick={() => setSelected(null)} aria-label="Fechar detalhes">×</button><div className="detail-grid">{Object.entries(selected).filter(([key, value]) => !['id', 'imagens', 'itens', 'endereco', 'pf', 'pj', 'categorias', 'categoria', 'fornecedor', 'cliente', 'unidade_medida'].includes(key) && (typeof value !== 'object' || value === null)).map(([key, value]) => <div key={key}><span>{prettyLabel(key)}</span><strong>{key.includes('preco') || key === 'valor_total' ? currency(value) : key.includes('data') || key.includes('_em') ? date(value) : String(value ?? '—')}</strong></div>)}</div>
+        {(['pf', 'pj', 'endereco'] as const).map((group) => Boolean(selected[group]) && <section className="detail-subsection" key={group}><h3>{group === 'pf' ? 'Pessoa física' : group === 'pj' ? 'Pessoa jurídica' : 'Endereço'}</h3><div>{Object.entries(selected[group] as Row).map(([key, value]) => <p key={key}><span>{prettyLabel(key)}</span><strong>{String(value ?? '—')}</strong></p>)}</div></section>)}
+        {(['categorias', 'categoria', 'fornecedor', 'cliente', 'unidade_medida'] as const).map((key) => {
+          const value = selected[key];
+          if (!value) return null;
+          const display = Array.isArray(value) ? value.map((item) => String((item as Row).nome ?? '')).filter(Boolean).join(', ') : typeof value === 'object' ? String((value as Row).nome ?? (value as Row).titulo ?? '—') : String(value);
+          return <div className="detail-relation" key={key}><span>{prettyLabel(key)}</span><strong>{display || '—'}</strong></div>;
+        })}
         {Array.isArray(selected.itens) && <div className="detail-items"><h3>Itens</h3>{(selected.itens as Row[]).map((item, index) => <div key={String(item.id ?? index)}><span>{String(item.produto_nome ?? item.produto?.nome ?? 'Produto')} × {String(item.quantidade ?? 1)}</span><strong>{currency(item.subtotal ?? item.preco_unitario)}</strong></div>)}</div>}
       </div>}
       </div>}

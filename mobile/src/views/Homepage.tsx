@@ -130,7 +130,7 @@ const Homepage = () => {
             keyExtractor={(item) => item.id}
             contentContainerStyle={styles.metricsList}
             renderItem={({ item }) => (
-              <View style={[styles.metricCard, { backgroundColor: colors.surface, borderColor: colors.border === '#ffffff' ? '#E2E8F0' : colors.border }]}>
+              <View style={[styles.metricCard, { backgroundColor: colors.surface, borderColor: colors.border === '#ffffff' ? '#D8DEE8' : colors.border }]}>
                 <View style={styles.metricCardTop}>
                   <View style={[styles.metricIcon, { backgroundColor: colors.elevated }]}>
                     <MaterialCommunityIcons name={item.icon} size={21} color={item.cores} />
@@ -237,16 +237,12 @@ const styles = StyleSheet.create({
   metricsList: { gap: 12, paddingVertical: 4, paddingRight: 16 },
   metricCard: {
     width: 190,
-    minHeight: 132,
-    borderRadius: 16,
+    minHeight: 122,
+    borderRadius: 13,
     borderWidth: 1,
     padding: 16,
     justifyContent: 'space-between',
-    elevation: 1,
-    shadowColor: '#000000',
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
+    elevation: 0,
   },
   metricCardTop: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   metricIcon: { width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
