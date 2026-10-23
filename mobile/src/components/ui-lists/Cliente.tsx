@@ -46,15 +46,9 @@ const Cliente = ({
 
   const circleColor = isDark
     ? colors.elevated
-    : 'rgba(6, 32, 70, 0.22)';9
+    : 'rgba(6, 32, 70, 0.12)';
 
   const arrowColor = isDark ? '#ffffff' : '#062046';
-
-  const badgeBg = isDark
-    ? 'rgba(255,255,255,0.12)'
-    : 'rgba(0,104,255,0.2)';
-
-  const badgeText = isDark ? '#ffffff' : '#062046';
 
   const iconName =
     tipo === 'PF' ? 'person-outline' : 'business-outline';
@@ -82,9 +76,9 @@ const Cliente = ({
             {
               backgroundColor: cardBg,
               shadowColor: isDark ? '#ffffff' : '#000000',
-              shadowOpacity: isDark ? 0.08 : 0.8,
-              borderWidth: selected ? 3 : 0,
-              borderColor: colors.accent,
+              shadowOpacity: isDark ? 0.08 : 0.12,
+              borderWidth: selected ? 2 : 1,
+              borderColor: selected ? colors.primary : colors.border,
             },
           ]}
         >
@@ -122,6 +116,16 @@ const Cliente = ({
             </TouchableOpacity>
 
             <View style={styles.info}>
+              <View style={styles.typeLine}>
+                <Ionicons name={iconName} size={12} color={colors.primary} />
+                <Text
+                  numberOfLines={1}
+                  style={[styles.typeText, { color: colors.primary }]}
+                >
+                  {tipo === 'PF' ? 'Pessoa física' : 'Pessoa jurídica'}
+                </Text>
+              </View>
+
               <View style={styles.header}>
                 <Text
                   numberOfLines={2}
@@ -133,39 +137,17 @@ const Cliente = ({
                 >
                   {nome}
                 </Text>
-
-                {!compactLists && (
-                  <View
-                    style={[
-                      styles.badge,
-                      { backgroundColor: badgeBg },
-                    ]}
-                  >
-                    <Text
-                      numberOfLines={2}
-                      style={[
-                        styles.badgeText,
-                        { color: badgeText },
-                      ]}
-                    >
-                      {tipo === 'PF'
-                        ? 'Pessoa física'
-                        : 'Pessoa jurídica'}
-                    </Text>
-                  </View>
-                )}
               </View>
 
-              <Text
-                numberOfLines={1}
-                style={[
-                  styles.subtitle,
-                  compactLists && styles.subtitleCompact,
-                  { color: subText },
-                ]}
-              >
-                {email || 'E-mail não informado'}
-              </Text>
+              <View style={styles.detailRow}>
+                <Ionicons name="mail-outline" size={14} color={subText} />
+                <Text
+                  numberOfLines={1}
+                  style={[styles.detailText, { color: subText }]}
+                >
+                  {email || 'E-mail não informado'}
+                </Text>
+              </View>
 
               {!compactLists && estado ? (
                 <View style={styles.detailRow}>
@@ -187,19 +169,6 @@ const Cliente = ({
                 </View>
               ) : null}
 
-              {compactLists && (
-                <Text
-                  numberOfLines={1}
-                  style={[
-                    styles.compactCategory,
-                    { color: subText },
-                  ]}
-                >
-                  {tipo === 'PF'
-                    ? 'Pessoa física'
-                    : 'Pessoa jurídica'}
-                </Text>
-              )}
             </View>
           </View>
 
@@ -267,15 +236,15 @@ export default Cliente;
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 20,
-    paddingVertical: 20,
-    paddingHorizontal: 15,
-    marginBottom: 14,
+    borderRadius: 18,
+    paddingVertical: 16,
+    paddingHorizontal: 14,
+    marginBottom: 11,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    shadowRadius: 8,
-    elevation: 5,
+    shadowRadius: 10,
+    elevation: 3,
   },
 
   cardCompact: {
@@ -299,17 +268,18 @@ const styles = StyleSheet.create({
   },
 
   circle: {
-    width: 65,
-    height: 65,
-    borderRadius: 50,
+    width: 64,
+    height: 64,
+    borderRadius: 15,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
   },
 
   circleCompact: {
-    width: 44,
-    height: 44,
+    width: 46,
+    height: 46,
+    borderRadius: 12,
   },
 
   image: {
@@ -318,46 +288,33 @@ const styles = StyleSheet.create({
   },
 
   header: {
-    flexDirection: 'column',
-    alignItems: 'flex-start',
-    gap: 4,
+    minWidth: 0,
+    marginBottom: 2,
+  },
+
+  typeLine: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
     minWidth: 0,
     marginBottom: 3,
   },
 
+  typeText: {
+    flexShrink: 1,
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.2,
+  },
+
   title: {
     flexShrink: 1,
-    fontSize: 18,
-    fontWeight: '900',
+    fontSize: 16,
+    fontWeight: '800',
   },
 
   titleCompact: {
     fontSize: 15,
-  },
-
-  badge: {
-    maxWidth: '100%',
-    paddingHorizontal: 9,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-
-  badgeText: {
-    fontSize: 11,
-    fontWeight: '700',
-    flexShrink: 1,
-    flexWrap: 'wrap',
-    width: '100%',
-  },
-
-  subtitle: {
-    fontSize: 16,
-    marginTop: 3,
-  },
-
-  subtitleCompact: {
-    fontSize: 12,
-    marginTop: 2,
   },
 
   detailRow: {
@@ -365,17 +322,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
     minWidth: 0,
-    marginTop: 5,
+    marginTop: 4,
   },
 
   detailText: {
     flex: 1,
     fontSize: 13,
-  },
-
-  compactCategory: {
-    fontSize: 12,
-    marginTop: 2,
   },
 
   modalOverlay: {
