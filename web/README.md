@@ -2,6 +2,8 @@
 
 Frontend responsivo em Next.js que usa a mesma API Laravel, autenticação Sanctum por token e banco de dados do aplicativo mobile.
 
+Para visão geral do projeto e configuração do backend, consulte o [README principal](../README.md) e o [README da API](../backend/README.md). O guia do [aplicativo mobile](../mobile/README.md) cobre a configuração Expo.
+
 ## Executar localmente
 
 Use Node.js 20.9 ou superior.
@@ -16,16 +18,6 @@ npm run dev
 Configure `BACKEND_API_URL` com o endereço acessível pelo processo Node do Next, incluindo `/api` (por exemplo, `http://127.0.0.1:8000/api`). Esse endereço é usado pelo proxy server-side; o navegador não recebe o token Sanctum nem precisa acessar a API diretamente.
 
 O backend deve estar em execução. A sessão web guarda o token em cookie `HttpOnly` por até três horas, no mesmo limite definido pelo backend. Em produção HTTPS, defina `COOKIE_SECURE=true`.
-
-## Aplicativo mobile
-
-O mobile pode apontar para essa mesma API com `EXPO_PUBLIC_API_URL`, por exemplo:
-
-```env
-EXPO_PUBLIC_API_URL=http://192.168.0.10:8000/api
-```
-
-No dispositivo físico, use o IP ou domínio do servidor Laravel acessível pela rede, não `localhost`. Os dois frontends compartilham os registros por meio da mesma API e do mesmo banco; não existe sincronização separada entre clientes.
 
 ## Escopo atual
 

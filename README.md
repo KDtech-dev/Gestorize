@@ -9,6 +9,8 @@ Sistema de gestão para micro e pequenas empresas, com uma API Laravel compartil
 - **Mobile (`mobile/`)**: React Native 0.86, Expo 57 e TypeScript.
 - **Banco de dados**: MySQL. As aplicações web e mobile usam a mesma API e os mesmos registros.
 
+Cada aplicação tem seu próprio guia de configuração: [API/backend](backend/README.md), [web](web/README.md) e [mobile](mobile/README.md).
+
 ## Funcionalidades
 
 - Cadastro e consulta de clientes, produtos, fornecedores e funcionários.
@@ -17,8 +19,19 @@ Sistema de gestão para micro e pequenas empresas, com uma API Laravel compartil
 - Caixa de vendas para pesquisar produtos, selecionar cliente ou orçamento, aplicar desconto em porcentagem ou valor, escolher forma de pagamento e concluir a venda. A conclusão atualiza o estoque.
 - Histórico de vendas, indicadores, movimentações e relatórios na versão web.
 - Leitura de código de barras pela câmera ou por leitor conectado no aplicativo mobile.
+- Geração e impressão de etiquetas de produtos com código de barras.
 - Controle de acesso por papel e permissão.
 
+## Organizações, papéis e acesso
+
+Cada empresa é uma organização. Usuários e dados operacionais (clientes, fornecedores, produtos, orçamentos, vendas e etiquetas) pertencem a uma organização, e o backend limita as consultas à empresa do usuário autenticado. Categorias, unidades de medida, papéis e permissões são globais e compartilhados entre organizações.
+
+- **Administrador global (`admin`)**: administra organizações e os padrões globais de permissões. A conta global não está vinculada a uma organização.
+- **Gestor (`gestor`)**: administra a operação e os funcionários da própria organização. Pode cadastrar funcionários com papel Gestor ou Funcionário e adicionar permissões individuais.
+- **Funcionário (`funcionario`)**: tem acesso operacional mais restrito, definido pelas permissões padrão e pelas permissões adicionais atribuídas à sua conta.
+- **Cliente (`cliente`)**: papel previsto no catálogo, com acesso padrão à visualização de orçamentos; não é um perfil de funcionário.
+
+O acesso efetivo combina permissões do papel com permissões individuais adicionais. Essas permissões controlam quais ações podem ser feitas; o vínculo à organização determina quais registros podem ser acessados. Consulte [organizações e permissões no guia do backend](backend/README.md#organizacoes-e-isolamento-dos-dados) para os detalhes.
 
 ## Requisitos
 
@@ -50,7 +63,7 @@ php artisan serve --host=0.0.0.0
 
 A API ficará disponível em `http://localhost:8000/api`. Para acessar em um celular ou por outro dispositivo, use o IP da máquina que executa o Laravel no lugar de `localhost`.
 
-O seeder principal cria permissões, papéis, usuários e dados demonstrativos, incluindo vendas feitas por mais de um usuário. As credenciais de demonstração são:
+O seeder principal cria permissões, papéis, usuários e dados demonstrativos, incluindo vendas feitas por mais de um usuário. Papéis, permissões, categorias e unidades de medida são globais e compartilhados entre organizações; os usuários e registros operacionais demonstrativos são associados à organização padrão. As credenciais de demonstração são:
 
 | Papel | E-mail | Senha |
 |---|---|---|

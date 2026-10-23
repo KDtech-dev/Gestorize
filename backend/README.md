@@ -1,59 +1,108 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Gestorize API
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+API REST do Gestorize, desenvolvida em Laravel 12 e compartilhada pelos aplicativos web e mobile. A API concentra autenticação, regras de negócio, autorização e acesso ao banco de dados.
 
-## About Laravel
+Consulte o [README principal](../README.md) para a visão geral do sistema e os guias de [web](../web/README.md) e [mobile](../mobile/README.md) para configurar os clientes.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Requisitos
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- PHP 8.2 ou superior com extensões exigidas pelo Laravel.
+- Composer.
+- MySQL.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Instalação local
 
-## Learning Laravel
+Na raiz do repositório:
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+```bash
+cd backend
+composer install
+cp .env.example .env
+```
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+No `.env`, informe a conexão MySQL (`DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME` e `DB_PASSWORD`). Crie o banco antes de executar:
 
-## Laravel Sponsors
+```bash
+php artisan key:generate
+php artisan migrate --seed
+php artisan storage:link
+php artisan serve --host=0.0.0.0
+```
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+A API ficará em `http://localhost:8000/api`. Use o IP da máquina no lugar de `localhost` quando um dispositivo da rede, como um celular, precisar acessar a API.
 
-### Premium Partners
+## Seeders
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+`DatabaseSeeder` executa os seeders na ordem definida em `database/seeders/DatabaseSeeder.php`:
 
-## Contributing
+1. `RolesSeeder`: cria permissões e papéis padrão (`admin`, `gestor`, `funcionario` e `cliente`) para o guard `api`.
+2. `UnidadesMedidaSeeder` e `CategoriasSeeder`: cadastram unidades e categorias de produto globais, compartilhadas entre organizações.
+3. Os demais seeders criam usuários de demonstração e registros operacionais da organização padrão: fornecedores, clientes, produtos, orçamentos e vendas.
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Papéis, permissões, categorias e unidades de medida não são vinculados a uma organização. Os dados de demonstração de usuários e operação são vinculados à organização padrão para formar um fluxo de uso coerente.
 
-## Code of Conduct
+Usuários de demonstração, todos com a senha `123456`:
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+| Perfil | E-mail |
+|---|---|
+| Administrador | `teste@email.com` |
+| Gestor | `gestor@example.com` |
+| Funcionário | `funcionario@example.com` |
 
-## Security Vulnerabilities
+As credenciais são exclusivas para desenvolvimento e demonstração. Não as use em produção. Para executar somente um seeder após preparar as dependências:
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```bash
+php artisan db:seed --class=VendasSeeder
+```
 
-## License
+## Autenticação e permissões
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+- O login é feito em `POST /api/login`; as rotas protegidas usam Laravel Sanctum.
+- O middleware de contexto da organização delimita os registros operacionais para a organização do usuário autenticado.
+- Rotas e ações verificam permissões como `produtos.ver`, `clientes.criar` e `users.editar`.
+- O Gestor tem permissões para administrar funcionários e pode atribuir permissões individuais; os papéis também definem permissões padrão.
+- O Funcionário pode consultar fornecedores, entre outras permissões padrão, para selecionar um fornecedor ao trabalhar com produtos.
+- Categorias, unidades de medida, papéis e permissões são globais, independentes da organização.
+
+O catálogo atual de permissões está em `app/Enums/PermissionEnum.php`, e os papéis padrão são montados por `database/seeders/RolesSeeder.php`.
+
+## Organizações e isolamento dos dados
+
+Cada empresa cadastrada é uma `Organization`. Usuários vinculados a ela carregam seu `organization_id`, e os registros operacionais também guardam esse identificador. O escopo global dos modelos e o middleware `tenant.context` restringem consultas e operações à organização do usuário autenticado; identificadores de outra organização não devem dar acesso aos respectivos registros. Assim, clientes, funcionários, fornecedores, produtos, orçamentos, vendas e operações de etiquetas pertencem a uma organização.
+
+Categorias, unidades de medida, papéis e permissões são catálogos globais, sem `organization_id`. Eles são compartilhados por todas as organizações: uma categoria criada no catálogo global, por exemplo, pode ser usada em produtos de empresas diferentes. O seeder de dados de demonstração usa uma organização chamada **Organização padrão**, sem tornar esses catálogos globais em dados dessa organização.
+
+O **Administrador global** é o usuário com papel `admin` e sem `organization_id`. Ele administra organizações e métricas globais e pode alterar as permissões padrão dos papéis. Não opera registros de uma empresa pelo fluxo normal da API; para isso, o usuário precisa estar vinculado à organização correspondente. Organizações inativas não podem usar as rotas operacionais.
+
+## Papéis e permissões
+
+Um papel define permissões padrão. As permissões nomeiam ações por área (`produtos.ver`, `clientes.criar`, `users.editar`, por exemplo). A API verifica a permissão em cada rota; a interface filtra menus e ações com base no mesmo acesso. O papel e o catálogo de permissões são globais, mas as permissões adicionais de usuário são atribuídas ao usuário dentro da sua organização.
+
+| Papel | Uso e permissões padrão |
+|---|---|
+| `admin` — Administrador global | Acesso administrativo global. O `Gate::before` concede todas as permissões ao papel `admin`; a administração de organizações e dos papéis globais também exige que a conta não tenha organização vinculada. |
+| `gestor` — Gestor | Administra a operação da própria organização: consulta, cria e edita clientes, produtos, fornecedores e orçamentos; consulta e registra vendas; administra usuários/funcionários; gerencia acessos e consulta relatórios. Pode cadastrar funcionários como `gestor` ou `funcionario`. |
+| `funcionario` — Funcionário | Acesso operacional mais restrito: consulta e cadastra clientes, consulta produtos e fornecedores, consulta e cadastra orçamentos, e registra vendas. Não recebe por padrão edição de cadastros nem administração de equipe. |
+| `cliente` — Cliente | Papel existente no catálogo; recebe `orcamentos.ver` como permissão padrão. Não é um perfil permitido no cadastro de funcionários da organização. |
+
+O Gestor com `acessos.gerenciar` pode enviar uma lista de permissões individuais ao criar ou editar um usuário. Essa lista adiciona permissões além das herdadas do papel; não remove permissões concedidas pelo papel. Alterar permissões de um papel muda o padrão para todos os usuários desse papel, em todas as organizações, e é reservado ao administrador global. O papel `admin` não pode ser editado pelo fluxo de alteração de permissões de papel.
+
+Em resumo, o acesso efetivo é a combinação das permissões do papel com as permissões individuais adicionais, enquanto o `organization_id` limita quais dados da empresa podem ser acessados. Ter uma permissão não permite atravessar o limite da organização.
+
+## Áreas da API
+
+As rotas estão em `routes/api.php`. Entre os recursos disponíveis estão autenticação e perfil, clientes, produtos, fornecedores, funcionários e acessos, orçamentos, vendas, relatórios, etiquetas, categorias e unidades de medida. A maioria das rotas exige autenticação e permissão correspondente.
+
+## Uploads
+
+Arquivos enviados são armazenados pelo Laravel. `php artisan storage:link` publica o disco configurado em `storage/app/public` por meio de `public/storage`. Ajuste os limites de upload no `php.ini` do servidor PHP, além das configurações do proxy web quando aplicável.
+
+## Estrutura relacionada
+
+```text
+backend/
+├── app/                 # modelos, controladores, middleware e regras de negócio
+├── database/migrations/ # estrutura do banco
+├── database/seeders/    # permissões e dados de demonstração
+└── routes/api.php       # endpoints da API
+```
