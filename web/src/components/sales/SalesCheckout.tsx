@@ -55,8 +55,8 @@ const paymentMethods: Array<{ value: PaymentMethod; label: string; icon: string 
 ];
 
 export function SalesCheckout(props: Props) {
-  return <Stack sx={{ minWidth: 0, minHeight: { lg: 'calc(100vh - 114px)' }, gap: 1.5 }}>
-    {props.canSelectCustomer && <Paper sx={{ ...panelSx, p: 2, flexShrink: 0 }}>
+  return <Stack className="sales-checkout" sx={{ minWidth: 0, minHeight: { lg: 'calc(100vh - 114px)' }, gap: 1.5 }}>
+    {props.canSelectCustomer && <Paper className="sales-checkout-card sales-context-card" sx={{ ...panelSx, p: 2, flexShrink: 0 }}>
       <Typography sx={{ mb: 1, fontSize: 14, fontWeight: 800 }}>Cliente</Typography>
       <Autocomplete
         options={props.customers}
@@ -69,7 +69,7 @@ export function SalesCheckout(props: Props) {
       />
     </Paper>}
 
-    {props.canSelectQuote && <Paper sx={{ ...panelSx, p: 2, flexShrink: 0 }}>
+    {props.canSelectQuote && <Paper className="sales-checkout-card sales-context-card" sx={{ ...panelSx, p: 2, flexShrink: 0 }}>
       <Typography sx={{ mb: 1, fontSize: 14, fontWeight: 800 }}>Orçamento</Typography>
       <Autocomplete
         options={props.availableQuotes}
@@ -84,7 +84,7 @@ export function SalesCheckout(props: Props) {
       {!props.approvedQuotesAvailable && <Typography sx={{ mt: 0.8, color: 'var(--muted)', fontSize: 11 }}>Nenhum orçamento aprovado e disponível para venda.</Typography>}
     </Paper>}
 
-    <Paper sx={{ ...panelSx, p: 2, flexShrink: 0 }}>
+    <Paper className="sales-checkout-card sales-summary-card" sx={{ ...panelSx, p: 2, flexShrink: 0 }}>
       <Typography sx={{ mb: 1.5, fontSize: 14, fontWeight: 800 }}>Resumo</Typography>
       <Stack sx={{ gap: 1 }}>
         <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}><Typography sx={{ color: 'var(--muted)', fontSize: 12 }}>Subtotal</Typography><Typography sx={{ color: 'var(--muted)', fontSize: 12 }}>{money(props.subtotal)}</Typography></Stack>
@@ -93,7 +93,7 @@ export function SalesCheckout(props: Props) {
       </Stack>
     </Paper>
 
-    <Paper sx={{ ...panelSx, p: 2, flexShrink: 0 }}>
+    <Paper className="sales-checkout-card sales-discount-card" sx={{ ...panelSx, p: 2, flexShrink: 0 }}>
       <Typography sx={{ mb: 1.1, fontSize: 14, fontWeight: 800 }}>Desconto</Typography>
       <Box role="group" aria-label="Formato do desconto" sx={{ display: 'grid', gridTemplateColumns: 'repeat(2,minmax(0,1fr))', gap: 0.75, mb: 1 }}>
         {([
@@ -128,7 +128,7 @@ export function SalesCheckout(props: Props) {
       </Typography>
     </Paper>
 
-    <Paper sx={{ ...panelSx, p: 2, flexShrink: 0 }}>
+    <Paper className="sales-checkout-card sales-payment-card" sx={{ ...panelSx, p: 2, flexShrink: 0 }}>
       <Typography sx={{ mb: 1.25, fontSize: 14, fontWeight: 800 }}>Forma de pagamento</Typography>
       <ToggleButtonGroup exclusive value={props.paymentMethod} onChange={(_, value: PaymentMethod | null) => { if (value) props.onPaymentMethodChange(value); }} sx={{ width: '100%', display: 'grid', gridTemplateColumns: 'repeat(2,minmax(0,1fr))', gap: 0.75, '& .MuiToggleButtonGroup-grouped': { m: 0, border: '1px solid var(--line) !important', borderRadius: '8px !important' } }}>
         {paymentMethods.map((method) => <ToggleButton key={method.value} value={method.value} sx={{ minHeight: 42, display: 'flex', gap: 0.7, color: 'var(--ink)', fontSize: 11, textTransform: 'none', '&.Mui-selected': { bgcolor: '#1d4ed81a', borderColor: '#1d4ed8 !important', color: '#1d4ed8' }, '&.Mui-selected:hover': { bgcolor: '#1d4ed826' } }}><Icon icon={method.icon} width={17} height={17} />{method.label}</ToggleButton>)}

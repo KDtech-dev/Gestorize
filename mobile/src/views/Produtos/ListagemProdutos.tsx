@@ -16,6 +16,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import Nav from '@components/utilities/Nav';
 import SearchBar from '@components/ui/SearchBar';
+import AnimatedListHeader from '@components/ui/AnimatedListHeader';
 import TooltipChip from '@components/botoes/TooltipChip';
 import Produto from '@components/ui-lists/Produto';
 
@@ -131,18 +132,6 @@ const Produtos = () => {
         [produtos],
     );
 
-    const opacity = scrollY.interpolate({
-        inputRange: [0, 100],
-        outputRange: [1, 0],
-        extrapolate: 'clamp',
-    });
-
-    const headerTranslate = scrollY.interpolate({
-        inputRange: [0, 120],
-        outputRange: [0, -120],
-        extrapolate: 'clamp',
-    });
-
     const handleScroll = useCallback(
         (event: NativeSyntheticEvent<NativeScrollEvent>) => {
             scrollY.setValue(event.nativeEvent.contentOffset.y);
@@ -180,16 +169,7 @@ const Produtos = () => {
                 }
             />
 
-            <Animated.View
-                pointerEvents="box-none"
-                style={[
-                    styles.headerFilters,
-                    {
-                        transform: [{ translateY: headerTranslate }],
-                        opacity,
-                    },
-                ]}
-            >
+            <AnimatedListHeader scrollY={scrollY} marginTop={8}>
                 <TouchableOpacity
                     accessibilityRole="button"
                     accessibilityLabel="Abrir Central de Impressão de Etiquetas"
@@ -292,7 +272,7 @@ const Produtos = () => {
                         )}
                     />
                 </View>
-            </Animated.View>
+            </AnimatedListHeader>
 
             <Animated.FlatList
                 data={visibleData}
@@ -336,15 +316,6 @@ export default Produtos;
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-    },
-
-    headerFilters: {
-        position: 'absolute',
-        top: 140,
-        left: 0,
-        right: 0,
-        marginTop: 8,
-        zIndex: 10,
     },
 
     filtersContainer: {

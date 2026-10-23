@@ -14,6 +14,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import Nav from '@components/utilities/Nav';
 import SearchBar from '@components/ui/SearchBar';
+import AnimatedListHeader from '@components/ui/AnimatedListHeader';
 import Fornecedor from '@components/ui-lists/Fornecedor';
 import TooltipChip from '@components/botoes/TooltipChip';
 
@@ -167,18 +168,6 @@ const Fornecedores = () => {
     const visibleData = useMemo(() => filteredData.slice(0, visibleCount), [filteredData, visibleCount]);
     const carregarMais = useCallback(() => setVisibleCount((atual) => Math.min(atual + PAGE_SIZE, filteredData.length)), [filteredData.length]);
 
-    const opacity = scrollY.interpolate({
-        inputRange: [0, 100],
-        outputRange: [1, 0],
-        extrapolate: 'clamp',
-    });
-
-    const headerTranslate = scrollY.interpolate({
-        inputRange: [0, 120],
-        outputRange: [0, -120],
-        extrapolate: 'clamp',
-    });
-
     const handleScroll = useCallback(
         (event: NativeSyntheticEvent<NativeScrollEvent>) => {
             scrollY.setValue(event.nativeEvent.contentOffset.y);
@@ -219,15 +208,7 @@ const Fornecedores = () => {
                 }
             />
 
-            <Animated.View
-                style={[
-                    styles.headerFilters,
-                    {
-                        transform: [{ translateY: headerTranslate }],
-                        opacity: opacity,
-                    },
-                ]}
-            >
+            <AnimatedListHeader scrollY={scrollY}>
                 <SearchBar
                     value={search}
                     onChangeText={setSearch}
@@ -265,7 +246,7 @@ const Fornecedores = () => {
                     )}
                     ItemSeparatorComponent={() => <View style={{ width: 8 }} />}
                 />
-            </Animated.View>
+            </AnimatedListHeader>
 
             <Animated.FlatList
                 data={visibleData}
@@ -308,15 +289,6 @@ export default Fornecedores;
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-    },
-
-    headerFilters: {
-        position: 'absolute',
-        top: 140,
-        left: 0,
-        right: 0,
-        marginTop: 12,
-        zIndex: 10,
     },
 
     filtersContainer: {

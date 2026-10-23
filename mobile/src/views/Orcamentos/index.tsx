@@ -12,6 +12,7 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Nav from '@components/utilities/Nav';
 import SearchBar from '@components/ui/SearchBar';
+import AnimatedListHeader from '@components/ui/AnimatedListHeader';
 import TooltipChip from '@components/botoes/TooltipChip';
 import Orcamento from '@components/ui-lists/Orcamento';
 import { useTheme } from '@context/ThemeContext';
@@ -96,8 +97,6 @@ const Orcamentos = () => {
   const visibleData = useMemo(() => filteredData.slice(0, visibleCount), [filteredData, visibleCount]);
   const carregarMais = useCallback(() => setVisibleCount((atual) => Math.min(atual + PAGE_SIZE, filteredData.length)), [filteredData.length]);
 
-  const opacity = scrollY.interpolate({ inputRange: [0, 100], outputRange: [1, 0], extrapolate: 'clamp' });
-  const headerTranslate = scrollY.interpolate({ inputRange: [0, 120], outputRange: [0, -120], extrapolate: 'clamp' });
   const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
     scrollY.setValue(event.nativeEvent.contentOffset.y);
   }, [scrollY]);
@@ -112,7 +111,7 @@ const Orcamentos = () => {
         onAddPress={() => navigation.navigate('NovoOrcamento', { modo: 'criar' })}
       />
 
-      <Animated.View pointerEvents="box-none" style={[styles.headerFilters, { transform: [{ translateY: headerTranslate }], opacity }]}>
+      <AnimatedListHeader scrollY={scrollY}>
         <SearchBar placeholder="Busque pelo cliente ou código" value={search} onChangeText={setSearch} />
         <View style={styles.filtersContainer}>
           <Text style={[styles.filterLabel, { color: colors.muted }]}>Período</Text>
@@ -148,7 +147,7 @@ const Orcamentos = () => {
             )}
           />
         </View>
-      </Animated.View>
+      </AnimatedListHeader>
 
       <Animated.FlatList
         data={visibleData}
@@ -183,7 +182,6 @@ export default Orcamentos;
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  headerFilters: { position: 'absolute', top: 140, left: 0, right: 0, marginTop: 12, zIndex: 10 },
   filtersContainer: { marginTop: 10 },
   filterLabel: { fontSize: 12, fontWeight: '700', letterSpacing: 0.4, marginHorizontal: 12, marginBottom: 7 },
   filtersContent: { paddingHorizontal: 10, gap: 8 },
