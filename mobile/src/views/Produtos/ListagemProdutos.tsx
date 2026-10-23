@@ -6,8 +6,10 @@ import {
     NativeSyntheticEvent,
     StyleSheet,
     Text,
+    TouchableOpacity,
     View,
 } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -178,6 +180,22 @@ const Produtos = () => {
                 }
             />
 
+            <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel="Abrir Central de Impressão de Etiquetas"
+                onPress={() => navigation.navigate('CentralEtiquetas')}
+                style={[styles.labelsAccess, { backgroundColor: colors.surface, borderColor: colors.border }]}
+            >
+                <View style={[styles.labelsIcon, { backgroundColor: `${colors.primary}18` }]}>
+                    <MaterialCommunityIcons name="tag-multiple-outline" size={21} color={colors.primary} />
+                </View>
+                <View style={styles.labelsCopy}>
+                    <Text style={[styles.labelsTitle, { color: colors.text }]}>Central de etiquetas</Text>
+                    <Text style={[styles.labelsSubtitle, { color: colors.muted }]}>Selecione, gere e acompanhe impressões</Text>
+                </View>
+                <MaterialCommunityIcons name="chevron-right" size={22} color={colors.muted} />
+            </TouchableOpacity>
+
             <Animated.View
                 pointerEvents="box-none"
                 style={[
@@ -318,7 +336,7 @@ const styles = StyleSheet.create({
 
     headerFilters: {
         position: 'absolute',
-        top: 140,
+        top: 174,
         left: 0,
         right: 0,
         marginTop: 12,
@@ -345,4 +363,9 @@ const styles = StyleSheet.create({
         padding: 10,
         paddingTop: 300,
     },
+    labelsAccess: { minHeight: 52, flexDirection: 'row', alignItems: 'center', gap: 10, marginHorizontal: 12, marginTop: 4, paddingHorizontal: 11, borderWidth: 1, borderRadius: 13 },
+    labelsIcon: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center', borderRadius: 10 },
+    labelsCopy: { flex: 1, gap: 2 },
+    labelsTitle: { fontSize: 13, fontWeight: '800' },
+    labelsSubtitle: { fontSize: 10 },
 });

@@ -16,6 +16,48 @@ const getProdutos = async (): Promise<
     return response.data;
 };
 
+export type EtiquetaOperationType = 'pendentes' | 'todos' | 'selecionados' | 'reimpressao';
+export type EtiquetaOperationItemInput = { produto_id: string; quantidade: number };
+export type EtiquetaOperation = {
+    id: string;
+    tipo: EtiquetaOperationType;
+    status: 'aguardando_confirmacao' | 'concluida' | 'cancelada' | 'falhou';
+    total_produtos: number;
+    total_etiquetas: number;
+    usuario_nome?: string | null;
+    erro?: string | null;
+    created_at: string;
+    updated_at?: string;
+  itens: Array<{ produto_id: string | null; produto_nome: string; codigo_barras: string | null; categoria_nome?: string | null; fornecedor_nome?: string | null; unidade_sigla?: string | null; preco_venda?: number | string | null; assinatura?: string; quantidade: number }>;
+};
+
+const chaveIdempotencia = () => 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (char) => {
+    const random = Math.floor(Math.random() * 16);
+    return (char === 'x' ? random : (random & 0x3) | 0x8).toString(16);
+});
+
+const getProdutosEtiquetas = async (): Promise<ArrayResponseType<ProdutoType>> =>
+    (await getAxios().get('/etiquetas/produtos')).data;
+
+const getHistoricoEtiquetas = async (): Promise<ResponseType<EtiquetaOperation[]>> =>
+    (await getAxios().get('/etiquetas/historico')).data;
+
+const criarOperacaoEtiquetas = async (
+    tipo: EtiquetaOperationType,
+    itens: EtiquetaOperationItemInput[] = [],
+    idempotencyKey = chaveIdempotencia(),
+): Promise<ResponseType<EtiquetaOperation>> => (await getAxios().post('/etiquetas/operacoes', {
+    tipo,
+    itens,
+    idempotency_key: idempotencyKey,
+})).data;
+
+const concluirOperacaoEtiquetas = async (id: string): Promise<ResponseType<EtiquetaOperation>> =>
+    (await getAxios().post(`/etiquetas/operacoes/${id}/concluir`)).data;
+
+const cancelarOperacaoEtiquetas = async (id: string): Promise<ResponseType<EtiquetaOperation>> =>
+    (await getAxios().post(`/etiquetas/operacoes/${id}/cancelar`)).data;
+
 const getProduto = async (
     id: string | undefined
 ): Promise<ResponseType<ProdutoType>> => {
@@ -170,4 +212,9 @@ export {
     removerImagemProduto,
     definirImagemPrincipal,
     substituirImagemPrincipal,
+    getProdutosEtiquetas,
+    getHistoricoEtiquetas,
+    criarOperacaoEtiquetas,
+    concluirOperacaoEtiquetas,
+    cancelarOperacaoEtiquetas,
 };

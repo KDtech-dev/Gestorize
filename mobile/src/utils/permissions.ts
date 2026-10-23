@@ -17,6 +17,7 @@ export const canSell = (user: UserType | null): boolean => !!user && (
 const routePermission: Partial<Record<keyof RootStackParamList, string>> = {
   Clientes: 'clientes.ver',
   Produtos: 'produtos.ver',
+  CentralEtiquetas: 'produtos.ver',
   Fornecedores: 'fornecedores.ver',
   Orcamentos: 'orcamentos.ver',
   Funcionarios: 'users.ver',

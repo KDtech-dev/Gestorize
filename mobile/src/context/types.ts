@@ -171,6 +171,8 @@ export type ProdutoType = {
   id: string;
   nome: string;
   codigo_barras?: string | null;
+  etiqueta_status?: 'pendente' | 'impresso';
+  etiqueta_impressa_em?: StringfiedDate | null;
   descricao: string | null;
   preco_custo: number | null;
   porcentagem_lucro: number | null;
@@ -283,6 +285,7 @@ export type RootStackParamList = {
   Funcionarios: { novoFuncionario: boolean } | undefined;
   Clientes: { novoCliente: boolean } | undefined;
   Produtos: { novoProduto: boolean } | undefined;
+  CentralEtiquetas: undefined;
   Fornecedores: { novoFornecedor: boolean } | undefined;
   NovoCliente: {
     modo: "criar" | "editar";

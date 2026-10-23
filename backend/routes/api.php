@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\UnidadeMedidaController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\VendaController;
 use App\Http\Controllers\Api\OrganizationController;
+use App\Http\Controllers\Api\EtiquetaController;
 
 Route::post('login', [AuthController::class, 'login']);
 
@@ -31,6 +32,13 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::middleware('tenant.context')->group(function () {
     Route::get('/dashboard/resumo', DashboardController::class);
+    Route::prefix('etiquetas')->middleware('permission:produtos.ver')->group(function () {
+        Route::get('/produtos', [EtiquetaController::class, 'produtos']);
+        Route::get('/historico', [EtiquetaController::class, 'historico']);
+        Route::post('/operacoes', [EtiquetaController::class, 'criarOperacao']);
+        Route::post('/operacoes/{id}/concluir', [EtiquetaController::class, 'concluir']);
+        Route::post('/operacoes/{id}/cancelar', [EtiquetaController::class, 'cancelar']);
+    });
     Route::post('/ajuda/contato', [AjudaController::class, 'contato'])->middleware('throttle:5,1');
 
     Route::get('/categorias', [CategoriaController::class, 'index'])->middleware('permission:produtos.ver');

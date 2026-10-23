@@ -17,6 +17,7 @@ import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import {
     Modal,
+    Alert,
     Pressable,
     StyleSheet,
     Text,
@@ -41,6 +42,9 @@ import {
     getProduto,
     removerImagemProduto,
     substituirImagemPrincipal,
+    criarOperacaoEtiquetas,
+    concluirOperacaoEtiquetas,
+    cancelarOperacaoEtiquetas,
     updateProduto,
 } from "@api/apiProdutos";
 import Toast from "react-native-toast-message";
@@ -57,7 +61,7 @@ import ClickableTextCard from "@components/ClickableTextCard";
 import ProdutoFornecedorPicker from "@components/produtos/ProdutoFornecedorPicker";
 import * as Print from "expo-print";
 import { ProdutoType } from "@context/types";
-import { etiquetaProdutoHtml } from "@utils/codigoBarras";
+import { ALTURA_ETIQUETA_PONTOS, etiquetaProdutoHtml, LARGURA_ETIQUETA_PONTOS } from "@utils/codigoBarras";
 type Navigation =
     NativeStackNavigationProp<RootStackParamList>;
 
@@ -120,9 +124,27 @@ export default function NovoProduto() {
     const imagensAlteradas = !imagensIguais(imagens, imagensOriginais);
     const imprimirEtiqueta = async () => {
         if (!produtoParaEtiqueta?.codigo_barras) return;
+        let operacao: Awaited<ReturnType<typeof criarOperacaoEtiquetas>>["data"] | null = null;
         try {
-            await Print.printAsync({ html: etiquetaProdutoHtml(produtoParaEtiqueta), width: 216, height: 142 });
-        } catch {
+            const criada = await criarOperacaoEtiquetas("reimpressao", [{ produto_id: produtoParaEtiqueta.id, quantidade: 1 }]);
+            operacao = criada.data;
+            const item = operacao.itens[0];
+            await Print.printAsync({ html: etiquetaProdutoHtml({
+                nome: item.produto_nome,
+                codigo_barras: item.codigo_barras,
+                categoria_titulo: item.categoria_nome,
+                fornecedor_razao_social: item.fornecedor_nome,
+                unidade_medida_sigla: item.unidade_sigla,
+                preco_venda: item.preco_venda,
+            }), width: LARGURA_ETIQUETA_PONTOS, height: ALTURA_ETIQUETA_PONTOS });
+            Alert.alert("A impressão foi concluída?", "Confirme somente se a etiqueta saiu corretamente.", [
+                { text: "Não consegui imprimir", style: "cancel", onPress: () => { void cancelarOperacaoEtiquetas(operacao!.id); } },
+                { text: "Sim, concluí", onPress: () => { void concluirOperacaoEtiquetas(operacao!.id).then(() => Toast.show({ type: "success", text1: "Impressão registrada" })).catch(() => Toast.show({ type: "error", text1: "Não foi possível registrar a impressão" })); } },
+            ], { cancelable: false });
+        } catch (error) {
+            if (operacao) {
+                try { await cancelarOperacaoEtiquetas(operacao.id); } catch { /* mantém o histórico aguardando resolução */ }
+            }
             Toast.show({ type: "error", text1: "Não foi possível abrir a impressão da etiqueta." });
         }
     };
