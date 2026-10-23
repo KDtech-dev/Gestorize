@@ -44,25 +44,12 @@ const Funcionario = ({
 
   const circleColor = isDark
     ? colors.elevated
-    : 'rgba(6, 32, 70, 0.22)';
-
+    : 'rgba(6, 32, 70, 0.12)';
 
   const arrowColor = isDark ? '#ffffff' : '#062046';
 
-  const badgeBg = isDark
-    ? role === 'Gestor'
-      ? 'rgba(255,215,0,0.3)'
-      : 'rgba(255,255,255,0.12)'
-    : role === 'Gestor'
-      ? 'rgba(255,215,0,0.25)'
-      : 'rgba(0,104,255,0.2)';
-
-  const badgeText = isDark ? '#ffffff' : '#062046';
-
   const iconName =
-    role === 'Gestor'
-      ? 'person-circle-outline'
-      : 'person-outline';
+    role === 'Gestor' ? 'person-circle-outline' : 'person-outline';
 
   const abrirAvatar = () => {
     if (avatar) {
@@ -87,7 +74,9 @@ const Funcionario = ({
             {
               backgroundColor: cardBg,
               shadowColor: isDark ? '#ffffff' : '#000000',
-              shadowOpacity: isDark ? 0.08 : 0.8,
+              shadowOpacity: isDark ? 0.08 : 0.12,
+              borderWidth: 1,
+              borderColor: colors.border,
             },
           ]}
         >
@@ -133,6 +122,16 @@ const Funcionario = ({
             </TouchableOpacity>
 
             <View style={styles.info}>
+              <View style={styles.roleLine}>
+                <Ionicons name={iconName} size={12} color={colors.primary} />
+                <Text
+                  numberOfLines={1}
+                  style={[styles.roleText, { color: colors.primary }]}
+                >
+                  {role}
+                </Text>
+              </View>
+
               <View style={styles.header}>
                 <Text
                   numberOfLines={1}
@@ -145,50 +144,17 @@ const Funcionario = ({
                 >
                   {nome}
                 </Text>
-
-                {!compactLists && (
-                  <View
-                    style={[
-                      styles.badge,
-                      { backgroundColor: badgeBg },
-                    ]}
-                  >
-                    <Text
-                      numberOfLines={1}
-                      style={[
-                        styles.badgeText,
-                        { color: badgeText },
-                      ]}
-                    >
-                      {role}
-                    </Text>
-                  </View>
-                )}
               </View>
 
-              <Text
-                numberOfLines={1}
-                style={[
-                  styles.subtitle,
-                  compactLists &&
-                  styles.subtitleCompact,
-                  { color: subText },
-                ]}
-              >
-                {email || 'E-mail não informado'}
-              </Text>
-
-              {compactLists && (
+              <View style={styles.detailRow}>
+                <Ionicons name="mail-outline" size={14} color={subText} />
                 <Text
                   numberOfLines={1}
-                  style={[
-                    styles.compactCategory,
-                    { color: subText },
-                  ]}
+                  style={[styles.detailText, { color: subText }]}
                 >
-                  {role}
+                  {email || 'E-mail não informado'}
                 </Text>
-              )}
+              </View>
             </View>
           </View>
 
@@ -258,15 +224,15 @@ export default Funcionario;
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 20,
-    paddingVertical: 20,
-    paddingHorizontal: 15,
-    marginBottom: 14,
+    borderRadius: 18,
+    paddingVertical: 16,
+    paddingHorizontal: 14,
+    marginBottom: 11,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    shadowRadius: 8,
-    elevation: 5,
+    shadowRadius: 10,
+    elevation: 3,
   },
 
   cardCompact: {
@@ -290,17 +256,18 @@ const styles = StyleSheet.create({
   },
 
   circle: {
-    width: 65,
-    height: 65,
-    borderRadius: 50,
+    width: 64,
+    height: 64,
+    borderRadius: 15,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
   },
 
   circleCompact: {
-    width: 44,
-    height: 44,
+    width: 46,
+    height: 46,
+    borderRadius: 12,
   },
 
   image: {
@@ -309,49 +276,46 @@ const styles = StyleSheet.create({
   },
 
   header: {
+    minWidth: 0,
+    marginBottom: 2,
+  },
+
+  roleLine: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 5,
     minWidth: 0,
     marginBottom: 3,
   },
 
+  roleText: {
+    flexShrink: 1,
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.2,
+  },
+
   title: {
     flexShrink: 1,
-    fontSize: 18,
-    fontWeight: '900',
+    fontSize: 16,
+    fontWeight: '800',
   },
 
   titleCompact: {
     fontSize: 15,
   },
 
-  badge: {
-    maxWidth: 115,
-    flexShrink: 1,
-    paddingHorizontal: 9,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-
-  badgeText: {
-    fontSize: 11,
-    fontWeight: '700',
-  },
-
-  subtitle: {
-    fontSize: 16,
+  detailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    minWidth: 0,
     marginTop: 3,
   },
 
-  subtitleCompact: {
-    fontSize: 12,
-    marginTop: 2,
-  },
-
-  compactCategory: {
-    fontSize: 12,
-    marginTop: 2,
+  detailText: {
+    flex: 1,
+    fontSize: 13,
   },
 
   modalOverlay: {
