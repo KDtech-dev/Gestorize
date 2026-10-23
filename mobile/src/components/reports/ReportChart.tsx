@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, Dimensions, ScrollView } from 'react-native';
 import { LineChart, BarChart, PieChart } from 'react-native-chart-kit';
 import { useTheme } from '@context/ThemeContext';
+import { REPORT_CATEGORY_COLORS, REPORT_SERIES_COLORS } from './palette';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -14,13 +15,36 @@ type ReportChartProps = {
 
 export const ReportChart = ({ type, data, total, dateRange }: ReportChartProps) => {
   const { colors, isDark } = useTheme();
+  const seriesColor = REPORT_SERIES_COLORS[type];
+  const rgba = (hex: string, opacity: number) => {
+    const value = hex.slice(1);
+    const red = Number.parseInt(value.slice(0, 2), 16);
+    const green = Number.parseInt(value.slice(2, 4), 16);
+    const blue = Number.parseInt(value.slice(4, 6), 16);
+    return `rgba(${red}, ${green}, ${blue}, ${opacity})`;
+  };
+  const coloredData = data?.datasets
+    ? {
+        ...data,
+        datasets: data.datasets.map((dataset: any) => ({
+          ...dataset,
+          color: (opacity = 1) => rgba(seriesColor, opacity),
+        })),
+      }
+    : data;
+  const coloredPieData = Array.isArray(data)
+    ? data.map((item, index) => ({
+        ...item,
+        color: REPORT_CATEGORY_COLORS[index % REPORT_CATEGORY_COLORS.length],
+        legendFontColor: colors.text,
+        legendFontSize: 12,
+      }))
+    : data;
 
   const chartConfig = {
     backgroundGradientFrom: colors.surface,
     backgroundGradientTo: colors.surface,
-    color: (opacity = 1) => {
-      return isDark ? `rgba(255, 255, 255, ${opacity})` : `rgba(13, 43, 82, ${opacity})`;
-    },
+    color: (opacity = 1) => rgba(seriesColor, opacity),
     labelColor: (opacity = 1) => {
       return isDark ? `rgba(255, 255, 255, ${opacity})` : `rgba(0, 0, 0, ${opacity})`;
     },
@@ -33,8 +57,8 @@ export const ReportChart = ({ type, data, total, dateRange }: ReportChartProps) 
     },
     propsForDots: {
       r: '6',
-      strokeWidth: '2',
-      stroke: colors.primary,
+      strokeWidth: '2.5',
+      stroke: seriesColor,
     },
     propsForBackgroundLines: {
       stroke: isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)',
@@ -77,7 +101,7 @@ export const ReportChart = ({ type, data, total, dateRange }: ReportChartProps) 
               contentContainerStyle={styles.chartScrollContainer}
             >
               <LineChart
-                data={data}
+                data={coloredData}
                 width={Math.max(screenWidth - 40, data.labels.length * 70)}
                 height={220}
                 chartConfig={chartConfig}
@@ -102,7 +126,7 @@ export const ReportChart = ({ type, data, total, dateRange }: ReportChartProps) 
               contentContainerStyle={styles.chartScrollContainer}
             >
               <BarChart
-                data={data}
+                data={coloredData}
                 width={Math.max(screenWidth - 40, data.labels.length * 70)}
                 height={220}
                 chartConfig={chartConfig}
@@ -123,7 +147,7 @@ export const ReportChart = ({ type, data, total, dateRange }: ReportChartProps) 
             {dateRange ? <Text style={[styles.dateRange, { color: colors.muted }]}>{dateRange}</Text> : null}
             <View style={styles.pieChartContainer}>
               <PieChart
-                data={data}
+                data={coloredPieData}
                 width={screenWidth - 40}
                 height={220}
                 chartConfig={chartConfig}

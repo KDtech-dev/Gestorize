@@ -178,37 +178,47 @@ export default function CentralEtiquetas() {
   const renderProduto = ({ item }: { item: ProdutoType }) => {
     const selecionado = Boolean(selecionados[item.id]);
     const impresso = item.etiqueta_status === 'impresso';
-    return <View style={[styles.productCard, { backgroundColor: colors.card, borderColor: selecionado ? colors.primary : colors.border, borderWidth: selecionado ? 2 : 1 }]}>
-      <Pressable disabled={operando} accessibilityRole="checkbox" accessibilityState={{ checked: selecionado, disabled: operando }} accessibilityLabel={`${selecionado ? 'Remover' : 'Selecionar'} ${item.nome}`} onPress={() => ajustarSelecao(item.id, selecionado ? -(selecionados[item.id] ?? 1) : 1)} style={styles.checkbox}>
-        <Ionicons name={selecionado ? 'checkbox' : 'square-outline'} size={23} color={selecionado ? colors.primary : colors.muted} />
-      </Pressable>
+    return <View style={[styles.productCard, { backgroundColor: colors.card, borderColor: selecionado ? colors.primary : colors.border, shadowColor: colors.text, borderWidth: selecionado ? 2 : 1 }]}>
+      <View style={[styles.productIcon, { backgroundColor: colors.elevated }]}>
+        <MaterialCommunityIcons name="package-variant" size={27} color={colors.primary} />
+      </View>
       <View style={styles.productInfo}>
+        {item.categoria_titulo ? <View style={styles.categoryLine}><Ionicons name="pricetag-outline" size={12} color={colors.primary} /><Text numberOfLines={1} style={[styles.categoryText, { color: colors.primary }]}>{item.categoria_titulo}</Text></View> : null}
         <Text numberOfLines={2} style={[styles.productName, { color: colors.text }]}>{item.nome}</Text>
-        <Text numberOfLines={1} style={[styles.productCode, { color: colors.muted }]}>{item.codigo_barras || `ID ${item.id.slice(0, 8)}`}</Text>
-        <View style={[styles.statusPill, { backgroundColor: impresso ? `${colors.success}20` : `${pendingColor}20` }]}> 
+        <View style={styles.codeLine}><MaterialCommunityIcons name="barcode" size={15} color={colors.muted} /><Text numberOfLines={1} style={[styles.productCode, { color: colors.muted }]}>{item.codigo_barras || `ID ${item.id.slice(0, 8)}`}</Text></View>
+        <View style={[styles.statusPill, { backgroundColor: impresso ? `${colors.success}20` : `${pendingColor}20` }]}>
           <Text style={{ color: impresso ? colors.success : pendingColor, fontSize: 11, fontWeight: '700' }}>{impresso ? 'Impresso' : 'Pendente'}</Text>
         </View>
       </View>
+      <View style={styles.productControls}>
+        <Pressable disabled={operando} accessibilityRole="checkbox" accessibilityState={{ checked: selecionado, disabled: operando }} accessibilityLabel={`${selecionado ? 'Remover' : 'Selecionar'} ${item.nome}`} onPress={() => ajustarSelecao(item.id, selecionado ? -(selecionados[item.id] ?? 1) : 1)} style={styles.checkbox}>
+          <Ionicons name={selecionado ? 'checkbox' : 'square-outline'} size={23} color={selecionado ? colors.primary : colors.muted} />
+        </Pressable>
       {selecionado ? <View style={styles.stepper}>
         <TouchableOpacity disabled={operando} accessibilityLabel="Diminuir etiquetas" onPress={() => ajustarSelecao(item.id, -1)} style={[styles.stepButton, { borderColor: colors.border, opacity: operando ? 0.5 : 1 }]}><MaterialCommunityIcons name="minus" size={18} color={colors.text} /></TouchableOpacity>
         <Text style={[styles.stepValue, { color: colors.text }]}>{selecionados[item.id]}</Text>
         <TouchableOpacity accessibilityLabel="Aumentar etiquetas" disabled={operando || selecionados[item.id] >= 50} onPress={() => ajustarSelecao(item.id, 1)} style={[styles.stepButton, { backgroundColor: `${colors.primary}18`, borderColor: colors.primary, opacity: operando || selecionados[item.id] >= 50 ? 0.5 : 1 }]}><MaterialCommunityIcons name="plus" size={18} color={colors.primary} /></TouchableOpacity>
       </View> : null}
+      </View>
     </View>;
   };
 
-  const renderHistorico = ({ item }: { item: EtiquetaOperation }) => <View style={[styles.historyCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+  const renderHistorico = ({ item }: { item: EtiquetaOperation }) => <View style={[styles.historyCard, { backgroundColor: colors.card, borderColor: colors.border, shadowColor: colors.text }]}>
     <View style={styles.historyHead}>
-      <View style={{ flex: 1 }}>
+      <View style={[styles.historyIcon, { backgroundColor: colors.elevated }]}><MaterialCommunityIcons name="printer-outline" size={21} color={colors.primary} /></View>
+      <View style={{ flex: 1, gap: 3 }}>
         <Text style={[styles.productName, { color: colors.text }]}>{item.tipo === 'todos' ? 'Impressão global' : item.tipo === 'pendentes' ? 'Impressão de pendentes' : item.tipo === 'reimpressao' ? 'Reimpressão individual' : 'Produtos selecionados'}</Text>
-        <Text style={[styles.productCode, { color: colors.muted }]}>{new Date(item.created_at).toLocaleString('pt-BR')} · {item.usuario_nome ?? 'Usuário'} · {item.total_produtos} produto(s) · {item.total_etiquetas} etiqueta(s)</Text>
+        <Text style={[styles.productCode, { color: colors.muted }]}>{new Date(item.created_at).toLocaleString('pt-BR')}</Text>
       </View>
-      <Text style={[styles.historyStatus, { color: item.status === 'concluida' ? colors.success : item.status === 'aguardando_confirmacao' ? pendingColor : colors.muted }]}>{item.status.replaceAll('_', ' ')}</Text>
+      <View style={[styles.historyStatus, { backgroundColor: item.status === 'concluida' ? `${colors.success}20` : item.status === 'aguardando_confirmacao' ? `${pendingColor}20` : `${colors.muted}20` }]}>
+        <Text style={{ color: item.status === 'concluida' ? colors.success : item.status === 'aguardando_confirmacao' ? pendingColor : colors.muted, fontSize: 10, fontWeight: '800' }}>{item.status.replaceAll('_', ' ')}</Text>
+      </View>
     </View>
-    <Text style={[styles.historyItems, { color: colors.muted }]} numberOfLines={3}>{item.itens.map((produto) => `${produto.produto_nome} × ${produto.quantidade}`).join(' · ')}</Text>
+    <Text style={[styles.historyMeta, { color: colors.muted }]}>{item.usuario_nome ?? 'Usuário'} · {item.total_produtos} produto(s) · {item.total_etiquetas} etiqueta(s)</Text>
+    <View style={[styles.historyItemsBox, { backgroundColor: colors.surface }]}><Text style={[styles.historyItems, { color: colors.text }]} numberOfLines={3}>{item.itens.map((produto) => `${produto.produto_nome} × ${produto.quantidade}`).join(' · ')}</Text></View>
     {item.status === 'aguardando_confirmacao' ? <View style={styles.historyActions}>
-      <TouchableOpacity disabled={operando} onPress={() => void mudarStatusHistorico(item, false)} style={[styles.historyAction, { borderColor: colors.border, opacity: operando ? 0.5 : 1 }]}><Text style={{ color: colors.text }}>Marcar cancelada</Text></TouchableOpacity>
-      <TouchableOpacity disabled={operando} onPress={() => void mudarStatusHistorico(item, true)} style={[styles.historyAction, { backgroundColor: colors.primary, opacity: operando ? 0.5 : 1 }]}><Text style={{ color: '#fff', fontWeight: '700' }}>Confirmar impressão</Text></TouchableOpacity>
+      <TooltipChip label="Marcar cancelada" disabled={operando} onPress={() => void mudarStatusHistorico(item, false)} />
+      <TooltipChip label="Confirmar impressão" active disabled={operando} onPress={() => void mudarStatusHistorico(item, true)} />
     </View> : null}
   </View>;
 
@@ -243,8 +253,8 @@ export default function CentralEtiquetas() {
       {carregando ? <ActivityIndicator style={{ marginTop: 30 }} color={colors.primary} /> : filtrados.length === 0 ? <View style={styles.empty}><MaterialCommunityIcons name="tag-off-outline" size={36} color={colors.muted} /><Text style={[styles.emptyText, { color: colors.muted }]}>{produtos.length ? 'Nenhum produto corresponde a esta pesquisa.' : 'Nenhum produto cadastrado.'}</Text></View> : <FlatList data={filtrados} keyExtractor={(item) => item.id} renderItem={renderProduto} contentContainerStyle={styles.list} showsVerticalScrollIndicator={false} onRefresh={() => { setCarregando(true); void carregarDados(); }} refreshing={carregando} />}
       <View style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.border }]}>
         <View style={styles.secondaryActions}>
-          <TouchableOpacity disabled={operando || pendentes.length === 0} onPress={() => void gerar('pendentes')} style={[styles.secondaryAction, { borderColor: colors.border, opacity: pendentes.length === 0 ? 0.45 : 1 }]}><MaterialCommunityIcons name="printer-outline" size={16} color={colors.primary} /><Text style={{ color: colors.primary, fontSize: 12, fontWeight: '700' }}>Pendentes</Text></TouchableOpacity>
-          <TouchableOpacity disabled={operando || produtos.length === 0} onPress={() => void gerar('todos')} style={[styles.secondaryAction, { borderColor: colors.border, opacity: produtos.length === 0 ? 0.45 : 1 }]}><MaterialCommunityIcons name="printer" size={16} color={colors.primary} /><Text style={{ color: colors.primary, fontSize: 12, fontWeight: '700' }}>Todas</Text></TouchableOpacity>
+          <TooltipChip label={`Pendentes (${pendentes.length})`} disabled={operando || pendentes.length === 0} onPress={() => void gerar('pendentes')} />
+          <TooltipChip label={`Todas (${produtos.length})`} disabled={operando || produtos.length === 0} onPress={() => void gerar('todos')} />
         </View>
         <Button
           title={operando ? 'Preparando impressão...' : 'Gerar impressão'}
@@ -263,7 +273,7 @@ const styles = StyleSheet.create({
   summaryRow: { flexDirection: 'row', gap: 8, paddingHorizontal: 12, paddingBottom: 8 }, summaryCard: { flex: 1, minHeight: 62, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderRadius: 12, paddingHorizontal: 4 }, summaryValue: { fontSize: 20, fontWeight: '900' }, summaryLabel: { marginTop: 2, fontSize: 10, fontWeight: '600' },
   filterRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 12, paddingVertical: 4 },
   selectRow: { minHeight: 54, flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12 }, selectAll: { flex: 1, minHeight: 46, flexDirection: 'row', alignItems: 'center', gap: 9, paddingHorizontal: 11, borderWidth: 1, borderRadius: 12 }, selectText: { flex: 1, fontSize: 12, fontWeight: '700' }, clearText: { fontSize: 11, fontWeight: '600' }, clearAll: { minHeight: 42, justifyContent: 'center', paddingHorizontal: 8 }, clearAllText: { fontSize: 12, fontWeight: '700' }, list: { paddingHorizontal: 11, paddingBottom: 10, gap: 8 },
-  productCard: { minHeight: 86, flexDirection: 'row', alignItems: 'center', gap: 10, padding: 11, borderRadius: 14 }, checkbox: { width: 34, height: 40, alignItems: 'center', justifyContent: 'center' }, productInfo: { flex: 1, minWidth: 0, gap: 3 }, productName: { fontSize: 14, fontWeight: '800' }, productCode: { fontSize: 11 }, statusPill: { alignSelf: 'flex-start', marginTop: 3, borderRadius: 10, paddingHorizontal: 8, paddingVertical: 3 }, stepper: { flexDirection: 'row', alignItems: 'center', gap: 6 }, stepButton: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderRadius: 10 }, stepValue: { minWidth: 18, textAlign: 'center', fontSize: 15, fontWeight: '800' },
-  footer: { paddingHorizontal: 12, paddingTop: 8, paddingBottom: 5, borderTopWidth: StyleSheet.hairlineWidth, gap: 8 }, secondaryActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 8 }, secondaryAction: { minHeight: 38, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingHorizontal: 12, borderWidth: 1, borderRadius: 10 },
-  empty: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 25, gap: 10 }, emptyText: { textAlign: 'center', fontSize: 14 }, historyCard: { padding: 13, borderWidth: 1, borderRadius: 14, gap: 9 }, historyHead: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 }, historyStatus: { maxWidth: 115, fontSize: 10, fontWeight: '800', textTransform: 'capitalize', textAlign: 'right' }, historyItems: { fontSize: 11, lineHeight: 16 }, historyActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 8 }, historyAction: { minHeight: 36, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 10, borderWidth: 1, borderRadius: 9 },
+  productCard: { minHeight: 94, flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderRadius: 16, elevation: 1, shadowOpacity: 0.08, shadowRadius: 4, shadowOffset: { width: 0, height: 2 } }, productIcon: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center', borderRadius: 15 }, checkbox: { width: 34, height: 36, alignItems: 'center', justifyContent: 'center' }, productControls: { alignItems: 'center', justifyContent: 'center', gap: 5 }, productInfo: { flex: 1, minWidth: 0, gap: 3 }, categoryLine: { flexDirection: 'row', alignItems: 'center', gap: 4 }, categoryText: { fontSize: 11, fontWeight: '700', flexShrink: 1 }, codeLine: { flexDirection: 'row', alignItems: 'center', gap: 4 }, productName: { fontSize: 14, fontWeight: '800' }, productCode: { fontSize: 11, flexShrink: 1 }, statusPill: { alignSelf: 'flex-start', marginTop: 3, borderRadius: 10, paddingHorizontal: 8, paddingVertical: 3 }, stepper: { flexDirection: 'row', alignItems: 'center', gap: 4 }, stepButton: { width: 30, height: 30, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderRadius: 10 }, stepValue: { minWidth: 18, textAlign: 'center', fontSize: 14, fontWeight: '800' },
+  footer: { paddingHorizontal: 12, paddingTop: 8, paddingBottom: 5, borderTopWidth: StyleSheet.hairlineWidth, gap: 8 }, secondaryActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 8 },
+  empty: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 25, gap: 10 }, emptyText: { textAlign: 'center', fontSize: 14 }, historyCard: { padding: 14, borderWidth: 1, borderRadius: 16, gap: 9, elevation: 1, shadowOpacity: 0.08, shadowRadius: 4, shadowOffset: { width: 0, height: 2 } }, historyHead: { flexDirection: 'row', alignItems: 'center', gap: 9 }, historyIcon: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderRadius: 13 }, historyStatus: { maxWidth: 125, borderRadius: 10, paddingHorizontal: 8, paddingVertical: 5, alignSelf: 'flex-start' }, historyMeta: { fontSize: 11 }, historyItemsBox: { borderRadius: 11, padding: 10 }, historyItems: { fontSize: 12, lineHeight: 17 }, historyActions: { flexDirection: 'row', justifyContent: 'flex-end', flexWrap: 'wrap', gap: 8 },
 });

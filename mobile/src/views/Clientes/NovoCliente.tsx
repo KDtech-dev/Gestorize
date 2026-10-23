@@ -25,6 +25,7 @@ import Toast from "react-native-toast-message";
 import DialogConfirmarAcao from "@components/dialogs/DialogConfirmarAcao";
 import { dateFromApi, formatCep, formatCnpj, formatCpf, formatDate, formatRg, formatTelefone, normalizeGenero, onlyLetters, onlyLettersAndNumbers, onlyNumbers } from "@core/utils/format";
 import Button from "@components/botoes/Button";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { InputError } from "@components/InputError";
 import GeneroSelector from "@components/GeneroSelector";
 import { getCep } from "@api/apiCep";
@@ -44,6 +45,32 @@ type Route = NativeStackScreenProps<
     RootStackParamList,
     "NovoCliente"
 >["route"];
+
+const nomesDosCampos: Record<string, string> = {
+    nome: "Nome",
+    email: "E-mail",
+    "pf.rg": "RG",
+    "pf.cpf": "CPF",
+    "pf.data_nascimento": "Data de nascimento",
+    "pj.cnpj": "CNPJ",
+    "pj.razao_social": "Razão social",
+    "pj.nome_responsavel": "Nome do responsável",
+    "pj.cpf_responsavel": "CPF do responsável",
+};
+
+const coletarErrosFormulario = (valor: unknown, caminho = ""): string[] => {
+    if (!valor || typeof valor !== "object") return [];
+
+    const erro = valor as Record<string, unknown>;
+    if (typeof erro.message === "string") {
+        const campo = nomesDosCampos[caminho] ?? caminho;
+        return [`${campo}: ${erro.message}`];
+    }
+
+    return Object.entries(erro)
+        .filter(([chave]) => !["ref", "type", "types"].includes(chave))
+        .flatMap(([chave, filho]) => coletarErrosFormulario(filho, caminho ? `${caminho}.${chave}` : chave));
+};
 
 export default function NovoCliente() {
     const navigation = useNavigation<Navigation>();
@@ -73,7 +100,6 @@ export default function NovoCliente() {
         setValue,
         formState: {
             isDirty,
-
         },
     } = useForm<FormData>({
         resolver: zodResolver(clienteSchema),
@@ -314,17 +340,30 @@ export default function NovoCliente() {
                 setAvatarOriginal(avatar);
             }
         } catch (error: any) {
-         
+            const errosApi = Object.values(error?.response?.data?.errors ?? {})
+                .flat()
+                .filter((mensagem: unknown): mensagem is string => typeof mensagem === "string");
             Toast.show({
                 type: "error",
-                text1: "Erro ao salvar cliente",
-                text2:
-                    error?.response?.data?.message ??
-                    "Não foi possível salvar as alterações.",
+                text1: errosApi.length ? "Confira os dados do cliente" : "Erro ao salvar cliente",
+                text2: errosApi.slice(0, 3).join(" · ")
+                    || error?.response?.data?.message
+                    || "Não foi possível salvar as alterações.",
             });
         } finally {
             setSaving(false);
         }
+    };
+
+    const avisarErrosValidacao = (erros: unknown) => {
+        const mensagens = coletarErrosFormulario(erros);
+        const visiveis = mensagens.slice(0, 3).join(" · ");
+        const restantes = mensagens.length > 3 ? ` · e mais ${mensagens.length - 3} campo(s)` : "";
+        Toast.show({
+            type: "error",
+            text1: isCriar ? "Confira os dados do cliente" : "Confira os campos destacados",
+            text2: visiveis ? `${visiveis}${restantes}` : "Preencha os campos obrigatórios antes de continuar.",
+        });
     };
     const tipoCliente = watch("tipo");
     const isPF = tipoCliente === "pf";
@@ -455,9 +494,12 @@ export default function NovoCliente() {
                     <Text style={[styles.sectionTitle, { color: colors.text, },]}>
                         Tipo de cliente
                     </Text>
+                    <Text style={[styles.tipoDescricao, { color: colors.muted }]}>
+                        {isCriar ? "Escolha como este cliente será cadastrado." : "Tipo definido no cadastro e não pode ser alterado."}
+                    </Text>
 
                     <View
-                        style={styles.tipoContainer}
+                        style={[styles.tipoContainer, !isCriar && styles.tipoContainerReadOnly]}
                     >
                         <Controller
                             control={control}
@@ -467,52 +509,59 @@ export default function NovoCliente() {
                                     value,
                                     onChange,
                                 },
-                            }) => (
-                                <>
-                                    <TouchableOpacity
-                                        disabled={!isCriar || !formCanEdit}
-                                        activeOpacity={0.8}
-                                        style={[styles.tipoButton, { backgroundColor: value === "pf" ? "#062046" : colors.surface, },]}
-                                        onPress={() => {
-                                            onChange("pf");
-
-                                            setValue("pj", {
-                                                cnpj: "",
-                                                razao_social: "",
-                                                nome_fantasia: null,
-                                                nome_responsavel: "",
-                                                cpf_responsavel: "",
-                                                cargo_responsavel: null,
-                                            });
-                                        }}
-                                    >
-                                        <Text style={[styles.tipoText, { color: value === "pf" ? "#fff" : colors.text, },]}>
-                                            Pessoa Física
-                                        </Text>
-                                    </TouchableOpacity>
-
-                                    <TouchableOpacity
-                                        disabled={!isCriar || !formCanEdit}
-                                        activeOpacity={0.8}
-                                        style={[styles.tipoButton, { backgroundColor: value === "pj" ? "#062046" : colors.surface, },]}
-                                        onPress={() => {
-                                            onChange("pj");
-
-                                            setValue("pf", {
-                                                genero: null,
-                                                rg: "",
-                                                cpf: "",
-                                                data_nascimento: "",
-                                            });
-                                        }}
-                                    >
-                                        <Text style={[styles.tipoText, { color: value === "pj" ? "#fff" : colors.text, },]}
+                                }) => isCriar ? (
+                                    <>
+                                        <TouchableOpacity
+                                            disabled={!formCanEdit}
+                                            activeOpacity={0.8}
+                                            accessibilityRole="radio"
+                                            accessibilityState={{ checked: value === "pf", disabled: !formCanEdit }}
+                                            style={[styles.tipoButton, { backgroundColor: value === "pf" ? colors.primary : colors.surface, borderColor: value === "pf" ? colors.primary : colors.border }]}
+                                            onPress={() => {
+                                                onChange("pf");
+                                                setValue("pj", {
+                                                    cnpj: "",
+                                                    razao_social: "",
+                                                    nome_fantasia: null,
+                                                    nome_responsavel: "",
+                                                    cpf_responsavel: "",
+                                                    cargo_responsavel: null,
+                                                });
+                                            }}
                                         >
-                                            Pessoa Jurídica
-                                        </Text>
-                                    </TouchableOpacity>
-                                </>
-                            )}
+                                            <Text style={[styles.tipoText, { color: value === "pf" ? "#fff" : colors.text }]}>Pessoa Física</Text>
+                                        </TouchableOpacity>
+                                        <TouchableOpacity
+                                            disabled={!formCanEdit}
+                                            activeOpacity={0.8}
+                                            accessibilityRole="radio"
+                                            accessibilityState={{ checked: value === "pj", disabled: !formCanEdit }}
+                                            style={[styles.tipoButton, { backgroundColor: value === "pj" ? colors.primary : colors.surface, borderColor: value === "pj" ? colors.primary : colors.border }]}
+                                            onPress={() => {
+                                                onChange("pj");
+                                                setValue("pf", {
+                                                    genero: null,
+                                                    rg: "",
+                                                    cpf: "",
+                                                    data_nascimento: "",
+                                                });
+                                            }}
+                                        >
+                                            <Text style={[styles.tipoText, { color: value === "pj" ? "#fff" : colors.text }]}>Pessoa Jurídica</Text>
+                                        </TouchableOpacity>
+                                    </>
+                                ) : (
+                                    <View style={[styles.tipoReadOnly, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                                        <View style={[styles.tipoReadOnlyIcon, { backgroundColor: `${colors.primary}20` }]}>
+                                            <MaterialCommunityIcons name={value === "pf" ? "account-outline" : "domain"} size={24} color={colors.primary} />
+                                        </View>
+                                        <View style={styles.tipoReadOnlyCopy}>
+                                            <Text style={[styles.tipoReadOnlyCaption, { color: colors.muted }]}>TIPO CADASTRADO</Text>
+                                            <Text style={[styles.tipoReadOnlyValue, { color: colors.text }]}>{value === "pf" ? "Pessoa Física" : "Pessoa Jurídica"}</Text>
+                                        </View>
+                                        <MaterialCommunityIcons name="lock-outline" size={19} color={colors.muted} />
+                                    </View>
+                                )}
                         />
                     </View>
                 </View>
@@ -554,15 +603,17 @@ export default function NovoCliente() {
                                 value,
                                 onChange,
                             },
+                            fieldState: { error },
                         }) => (
-                            <EditableTextCard
-                                label="E-mail"
-                                placeholder="Digite o e-mail"
-                                value={value ?? ""}
-                                onChangeText={
-                                    onChange
-                                }
-                            />
+                            <>
+                                <EditableTextCard
+                                    label="E-mail"
+                                    placeholder="Digite o e-mail"
+                                    value={value ?? ""}
+                                    onChangeText={onChange}
+                                />
+                                <InputError message={error?.message} />
+                            </>
                         )}
                     />
 
@@ -623,15 +674,18 @@ export default function NovoCliente() {
                                 control={control}
                                 name="pf.rg"
                                 render={({ field: { value, onChange }, fieldState: { error } }) => (
-                                    <EditableTextCard
-                                        label="RG"
-                                        placeholder="00-000.000"
-                                        value={formatRg(value ?? "")}
-                                        editable={true}
-                                        onChangeText={(text) => {
-                                            onChange(formatRg(text));
-                                        }}
-                                    />
+                                    <>
+                                        <EditableTextCard
+                                            label="RG"
+                                            placeholder="00.000.000-0"
+                                            value={formatRg(value ?? "")}
+                                            editable={true}
+                                            onChangeText={(text) => {
+                                                onChange(formatRg(text));
+                                            }}
+                                        />
+                                        <InputError message={error?.message} />
+                                    </>
                                 )}
                             />
 
@@ -980,10 +1034,8 @@ export default function NovoCliente() {
                         }
                         variant="contained"
                         color="primary"
-                        disabled={(!isDirty && !avatarAlterado) || saving}
-                        onPress={handleSubmit(
-                            onSubmit
-                        )}
+                        disabled={(isEditar && !isDirty && !avatarAlterado) || saving}
+                        onPress={handleSubmit(onSubmit, avisarErrosValidacao)}
                     />}
 
                     {isEditar && podeExcluir && (
@@ -1049,20 +1101,51 @@ const styles = StyleSheet.create({
         gap: 10,
         marginBottom: 10,
     },
+    tipoContainerReadOnly: {
+        flexDirection: "column",
+    },
+    tipoDescricao: {
+        fontSize: 13,
+        lineHeight: 18,
+        marginTop: -2,
+        marginBottom: 9,
+    },
 
     tipoButton: {
         flex: 1,
-        paddingVertical: 14,
+        minHeight: 54,
+        paddingVertical: 12,
         borderRadius: 14,
         alignItems: "center",
+        justifyContent: "center",
         borderWidth: 1,
-        borderColor: "#062046",
     },
 
     tipoText: {
         fontSize: 15,
         fontWeight: "700",
     },
+    tipoReadOnly: {
+        width: "100%",
+        minHeight: 68,
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 12,
+        paddingHorizontal: 13,
+        paddingVertical: 10,
+        borderRadius: 14,
+        borderWidth: 1,
+    },
+    tipoReadOnlyIcon: {
+        width: 42,
+        height: 42,
+        alignItems: "center",
+        justifyContent: "center",
+        borderRadius: 13,
+    },
+    tipoReadOnlyCopy: { flex: 1, gap: 2 },
+    tipoReadOnlyCaption: { fontSize: 10, fontWeight: "800", letterSpacing: 0.7 },
+    tipoReadOnlyValue: { fontSize: 18, lineHeight: 23, fontWeight: "900" },
 
     row: {
         flexDirection: "row",

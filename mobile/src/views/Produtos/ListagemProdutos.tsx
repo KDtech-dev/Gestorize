@@ -32,7 +32,7 @@ const PAGE_SIZE = 10;
 
 const Produtos = () => {
     const navigation = useNavigation<Navigation>();
-    const { colors } = useTheme();
+    const { colors, isDark } = useTheme();
     const { user } = useAuth();
     const podeCriar = can(user, 'produtos.criar');
 
@@ -193,20 +193,20 @@ const Produtos = () => {
                 <TouchableOpacity
                     accessibilityRole="button"
                     accessibilityLabel="Abrir Central de Impressão de Etiquetas"
-                    activeOpacity={0.86}
+                    activeOpacity={0.88}
                     onPress={() => navigation.navigate('CentralEtiquetas')}
-                    style={[styles.labelsAccess, { backgroundColor: colors.card, borderColor: colors.border }]}
+                    style={[styles.labelsAccess, { backgroundColor: isDark ? '#2563EB' : colors.primary }]}
                 >
-                    <View style={[styles.labelsIcon, { backgroundColor: colors.elevated }]}>
-                        <MaterialCommunityIcons name="tag-multiple-outline" size={22} color={colors.primary} />
+                    <View style={styles.labelsIcon}>
+                        <MaterialCommunityIcons name="tag-multiple-outline" size={22} color="#fff" />
                     </View>
                     <View style={styles.labelsCopy}>
-                        <Text style={[styles.labelsTitle, { color: colors.text }]}>Central de etiquetas</Text>
-                        <Text style={[styles.labelsSubtitle, { color: colors.muted }]}>Gerar e acompanhar impressões</Text>
+                        <Text style={styles.labelsTitle}>Central de etiquetas</Text>
+                        <Text style={styles.labelsSubtitle}>Gerar e acompanhar impressões</Text>
                     </View>
                     <View style={styles.labelsAction}>
-                        <Text style={[styles.labelsActionText, { color: colors.primary }]}>Abrir</Text>
-                        <MaterialCommunityIcons name="arrow-right" size={15} color={colors.primary} />
+                        <Text style={styles.labelsActionText}>Abrir</Text>
+                        <MaterialCommunityIcons name="arrow-right" size={17} color="#fff" />
                     </View>
                 </TouchableOpacity>
 
@@ -367,11 +367,11 @@ const styles = StyleSheet.create({
         padding: 10,
         paddingTop: 352,
     },
-    labelsAccess: { minHeight: 50, flexDirection: 'row', alignItems: 'center', gap: 10, marginHorizontal: 12, marginBottom: 8, paddingHorizontal: 11, borderWidth: 1, borderRadius: 15, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 5, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
-    labelsIcon: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center', borderRadius: 12 },
+    labelsAccess: { minHeight: 52, flexDirection: 'row', alignItems: 'center', gap: 10, marginHorizontal: 12, marginBottom: 8, paddingHorizontal: 15, borderRadius: 12, shadowColor: '#000', shadowOpacity: 0.16, shadowRadius: 4, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
+    labelsIcon: { width: 30, alignItems: 'center', justifyContent: 'center' },
     labelsCopy: { flex: 1, minWidth: 0, gap: 2 },
-    labelsTitle: { fontSize: 13, fontWeight: '800' },
-    labelsSubtitle: { fontSize: 10 },
+    labelsTitle: { color: '#fff', fontSize: 15, fontWeight: '800' },
+    labelsSubtitle: { color: '#ffffffd9', fontSize: 11 },
     labelsAction: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-    labelsActionText: { fontSize: 11, fontWeight: '700' },
+    labelsActionText: { color: '#fff', fontSize: 12, fontWeight: '800' },
 });

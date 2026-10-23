@@ -17,12 +17,12 @@ import { getVendas, VendaType } from '@api/apiVendas';
 const moeda = (valor: number) => valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
 const metricColors = {
-  clientes: '#6D5CE8',
-  aprovados: '#16845B',
-  pendentes: '#C36A1D',
-  estoque: '#3478C8',
-  vendas: '#16845B',
-  faturamento: '#087F8C',
+  clientes: '#9333EA',
+  aprovados: '#00A83B',
+  pendentes: '#F97316',
+  estoque: '#0EA5E9',
+  vendas: '#00B979',
+  faturamento: '#06B6D4',
 } as const;
 
 const Homepage = () => {
@@ -212,8 +212,8 @@ const Homepage = () => {
             renderItem={({ item }) => (
               <View style={[styles.metricCard, { backgroundColor: colors.surface, borderColor: colors.border === '#ffffff' ? '#D8DEE8' : colors.border }]}>
                 <View style={styles.metricCardTop}>
-                  <View style={[styles.metricIcon, { backgroundColor: colors.elevated }]}>
-                    <MaterialCommunityIcons name={item.icon} size={21} color={item.cores} />
+                  <View style={[styles.metricIcon, { backgroundColor: `${item.cores}24` }]}>
+                    <MaterialCommunityIcons name={item.icon} size={23} color={item.cores} />
                   </View>
                   <Text style={[styles.metricLabel, { color: colors.muted }]}>{item.titulo}</Text>
                 </View>
@@ -339,7 +339,7 @@ const styles = StyleSheet.create({
   metricsList: { gap: 12, paddingVertical: 4, paddingRight: 16 },
   metricCard: {
     width: 190,
-    minHeight: 128,
+    minHeight: 136,
     borderRadius: 13,
     borderWidth: 1,
     padding: 16,
@@ -350,7 +350,7 @@ const styles = StyleSheet.create({
   metricIcon: { width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   metricLabel: { fontSize: 14, fontWeight: '700', flex: 1, lineHeight: 19 },
   metricValue: { fontSize: 28, fontWeight: '800', marginTop: 8 },
-  metricFootnote: { fontSize: 12, lineHeight: 16, marginTop: 1 },
+  metricFootnote: { fontSize: 14, lineHeight: 19, fontWeight: '600', marginTop: 1 },
   grid: {
     width: '100%',
     flexDirection: 'row',

@@ -94,10 +94,6 @@ class EtiquetaController extends Controller
         if ($produtos->isEmpty()) {
             throw ValidationException::withMessages(['itens' => 'Não há produtos para gerar etiquetas nesta operação.']);
         }
-        if ($produtos->contains(fn (Produto $produto) => blank($produto->codigo_barras))) {
-            throw ValidationException::withMessages(['itens' => 'Todos os produtos precisam ter código de barras para gerar etiquetas.']);
-        }
-
         $quantidades = $produtos->mapWithKeys(fn (Produto $produto) => [
             $produto->id => in_array($dados['tipo'], ['selecionados', 'reimpressao'], true)
                 ? (int) $itensSolicitados[$produto->id]['quantidade']
@@ -110,6 +106,10 @@ class EtiquetaController extends Controller
 
         $operationId = (string) Str::uuid();
         DB::transaction(function () use ($operationId, $dados, $user, $organizationId, $produtos, $quantidades, $totalEtiquetas): void {
+            foreach ($produtos as $produto) {
+                $this->garantirCodigoBarras($produto, $organizationId);
+            }
+
             DB::table('etiqueta_operacoes')->insert([
                 'id' => $operationId,
                 'organization_id' => $organizationId,
@@ -210,5 +210,22 @@ class EtiquetaController extends Controller
             'unidade' => $produto->unidadeMedida?->sigla,
             'preco' => number_format((float) $produto->preco_venda, 2, '.', ''),
         ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+    }
+
+    private function garantirCodigoBarras(Produto $produto, string $organizationId): void
+    {
+        if (filled($produto->codigo_barras)) {
+            return;
+        }
+
+        do {
+            $codigo = 'PRD' . strtoupper(Str::random(9));
+        } while (DB::table('produtos')
+            ->where('organization_id', $organizationId)
+            ->where('codigo_barras', $codigo)
+            ->exists());
+
+        $produto->codigo_barras = $codigo;
+        $produto->save();
     }
 }

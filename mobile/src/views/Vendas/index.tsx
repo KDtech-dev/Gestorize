@@ -70,7 +70,7 @@ export default function Vendas() {
       <View style={styles.metrics}>
         {indicadores.map((item) => <View key={item.label} style={[styles.metricCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <View style={styles.metricTop}><Text style={[styles.metricLabel, { color: colors.muted }]}>{item.label}</Text><View style={[styles.metricIcon, { backgroundColor: colors.elevated }]}><MaterialCommunityIcons name={item.icon} size={18} color={colors.primary} /></View></View>
-          <Text numberOfLines={1} style={[styles.metricValue, { color: colors.text }]}>{carregando ? '—' : item.value}</Text>
+          <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85} style={[styles.metricValue, { color: colors.text }]}>{carregando ? '—' : item.value}</Text>
           <Text style={[styles.metricCaption, { color: colors.muted }]}>{item.caption}</Text>
         </View>)}
       </View>
@@ -85,7 +85,7 @@ export default function Vendas() {
           expanded={abertaId === venda.id}
           onPress={() => setAbertaId((atual) => atual === venda.id ? undefined : venda.id)}
           titleStyle={[styles.saleTitle, { color: colors.text }]}
-          descriptionStyle={{ color: colors.muted }}
+          descriptionStyle={[styles.saleDescription, { color: colors.muted }]}
           style={[styles.saleAccordion, { backgroundColor: colors.background, borderColor: colors.border }]}
           rippleColor={colors.border}
         >
@@ -103,11 +103,11 @@ export default function Vendas() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1 }, content: { padding: 16, paddingBottom: 36, gap: 14 }, intro: { gap: 4, marginBottom: 2 },
-  eyebrow: { fontSize: 10, fontWeight: '900', letterSpacing: 1 }, title: { fontSize: 24, fontWeight: '900' }, subtitle: { fontSize: 12, lineHeight: 18 },
-  metrics: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 }, metricCard: { flexBasis: '47%', flexGrow: 1, minHeight: 112, padding: 13, borderWidth: 1, borderRadius: 14, justifyContent: 'space-between' },
-  metricTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 6 }, metricLabel: { fontSize: 11, fontWeight: '700', flex: 1 }, metricIcon: { width: 30, height: 30, borderRadius: 9, justifyContent: 'center', alignItems: 'center' },
-  metricValue: { fontSize: 19, fontWeight: '900' }, metricCaption: { fontSize: 10, lineHeight: 14 }, panel: { borderWidth: 1, borderRadius: 16, padding: 14 }, panelHeading: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }, heading: { fontSize: 17, fontWeight: '900' },
-  empty: { paddingVertical: 18, fontSize: 13 }, error: { paddingVertical: 12, fontSize: 13 }, saleAccordion: { borderWidth: 1, borderRadius: 12, marginTop: 8, overflow: 'hidden' }, saleTitle: { fontWeight: '800' }, details: { padding: 12, borderTopWidth: StyleSheet.hairlineWidth, gap: 8 }, detailText: { fontSize: 12 },
-  itemRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 8, borderBottomWidth: StyleSheet.hairlineWidth }, itemCopy: { flex: 1, gap: 3 }, itemName: { fontSize: 13, fontWeight: '700' }, itemTotal: { fontSize: 13, fontWeight: '800' }, totalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }, totalLabel: { fontWeight: '800' }, totalValue: { fontSize: 17, fontWeight: '900' },
+  screen: { flex: 1 }, content: { padding: 18, paddingBottom: 40, gap: 16 }, intro: { gap: 6, marginBottom: 3 },
+  eyebrow: { fontSize: 12, fontWeight: '900', letterSpacing: 1.1 }, title: { fontSize: 28, lineHeight: 34, fontWeight: '900' }, subtitle: { fontSize: 14, lineHeight: 21 },
+  metrics: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 }, metricCard: { flexBasis: '47%', flexGrow: 1, minHeight: 136, padding: 15, borderWidth: 1, borderRadius: 14, justifyContent: 'space-between' },
+  metricTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 7 }, metricLabel: { fontSize: 15, fontWeight: '700', flex: 1, lineHeight: 20 }, metricIcon: { width: 36, height: 36, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
+  metricValue: { fontSize: 24, fontWeight: '900' }, metricCaption: { fontSize: 14, lineHeight: 19 }, panel: { borderWidth: 1, borderRadius: 16, padding: 15 }, panelHeading: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }, heading: { fontSize: 20, fontWeight: '900' },
+  empty: { paddingVertical: 20, fontSize: 16 }, error: { paddingVertical: 14, fontSize: 16 }, saleAccordion: { borderWidth: 1, borderRadius: 13, marginTop: 9, overflow: 'hidden' }, saleTitle: { fontSize: 19, lineHeight: 25, fontWeight: '800' }, saleDescription: { fontSize: 14, lineHeight: 20 }, details: { padding: 15, borderTopWidth: StyleSheet.hairlineWidth, gap: 10 }, detailText: { fontSize: 16, lineHeight: 23 },
+  itemRow: { flexDirection: 'row', alignItems: 'center', gap: 11, paddingVertical: 10, borderBottomWidth: StyleSheet.hairlineWidth }, itemCopy: { flex: 1, gap: 4 }, itemName: { fontSize: 17, lineHeight: 23, fontWeight: '700' }, itemTotal: { fontSize: 16, fontWeight: '800' }, totalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 }, totalLabel: { fontSize: 16, fontWeight: '800' }, totalValue: { fontSize: 21, fontWeight: '900' },
 });

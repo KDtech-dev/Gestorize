@@ -26,7 +26,7 @@ class UpdateClienteRequest extends FormRequest
             $data['pf']['cpf'] = preg_replace('/\D/', '', $data['pf']['cpf']);
         }
         if (isset($data['pf']['rg'])) {
-            $data['pf']['rg'] = preg_replace('/\D/', '', $data['pf']['rg']);
+            $data['pf']['rg'] = strtoupper(preg_replace('/[^0-9x]/i', '', $data['pf']['rg']));
         }
 
         if (isset($data['pj']['cnpj'])) {
@@ -120,7 +120,7 @@ class UpdateClienteRequest extends FormRequest
 
             'pf' => ['sometimes', 'array',],
             'pf.genero' => ['nullable', 'string', Rule::in(['masculino', 'feminino', 'outro',]),],
-            'pf.rg' => ['sometimes', 'nullable', 'string', 'max:30',],
+            'pf.rg' => ['sometimes', 'string', 'min:5', 'max:14', 'regex:/^\d{4,13}[0-9X]$/',],
             'pf.cpf' => [
                 'sometimes',
                 'string',

@@ -21,6 +21,7 @@ import { Text } from 'react-native-paper';
 import { getRelatorio, RelatorioResponse } from '@api/apiRelatorios';
 import Toast from 'react-native-toast-message';
 import { formatErrorMessage } from '@core/utils/format';
+import { REPORT_METRIC_COLORS } from '@components/reports/palette';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Relatorios'>;
 type ReportType = 'movimentacao' | 'orcamentos' | 'clientes' | 'produtos' | 'vendas';
@@ -294,12 +295,12 @@ const Relatorios = ({ navigation }: Props) => {
         {report && reports && <>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Visão geral</Text>
           <View style={styles.metricsGrid}>
-            <MetricCard value={moeda(report.metricas.valor_orcado.valor)} change={report.metricas.valor_orcado.variacao} title="Valor em orçamentos" icon="currency-brl" iconColor={colors.success} />
-            <MetricCard value={String(report.metricas.orcamentos.valor)} change={report.metricas.orcamentos.variacao} title="Orçamentos criados" icon="file-document-outline" />
-            <MetricCard value={String(report.metricas.clientes.valor)} change={report.metricas.clientes.variacao} title="Clientes novos" icon="account-group" />
-            <MetricCard value={String(report.metricas.vendas.valor)} change={report.metricas.vendas.variacao} title="Vendas concluídas" icon="cart-check" iconColor={colors.primary} />
-            <MetricCard value={moeda(report.metricas.faturamento_vendas.valor)} change={report.metricas.faturamento_vendas.variacao} title="Faturamento de vendas" icon="cash-multiple" iconColor={colors.success} />
-            <MetricCard value={String(reports.produtos.totais.produtos)} change={null} title="Produtos novos no período" icon="package-variant" />
+            <MetricCard value={moeda(report.metricas.valor_orcado.valor)} change={report.metricas.valor_orcado.variacao} title="Valor em orçamentos" icon="currency-brl" iconColor={REPORT_METRIC_COLORS.orcamentos} />
+            <MetricCard value={String(report.metricas.orcamentos.valor)} change={report.metricas.orcamentos.variacao} title="Orçamentos criados" icon="file-document-outline" iconColor={REPORT_METRIC_COLORS.orcamentos} />
+            <MetricCard value={String(report.metricas.clientes.valor)} change={report.metricas.clientes.variacao} title="Clientes novos" icon="account-group" iconColor={REPORT_METRIC_COLORS.clientes} />
+            <MetricCard value={String(report.metricas.vendas.valor)} change={report.metricas.vendas.variacao} title="Vendas concluídas" icon="cart-check" iconColor={REPORT_METRIC_COLORS.vendas} />
+            <MetricCard value={moeda(report.metricas.faturamento_vendas.valor)} change={report.metricas.faturamento_vendas.variacao} title="Faturamento de vendas" icon="cash-multiple" iconColor={REPORT_METRIC_COLORS.faturamento} />
+            <MetricCard value={String(reports.produtos.totais.produtos)} change={null} title="Produtos novos no período" icon="package-variant" iconColor={REPORT_METRIC_COLORS.produtos} />
           </View>
         </>}
 
@@ -336,10 +337,10 @@ const Relatorios = ({ navigation }: Props) => {
 
             <Text style={[styles.sectionTitle, { color: colors.text }]}>Orçamentos</Text>
             <View style={styles.metricsGrid}>
-              <MetricCard value={moeda(reports.movimentacao.totais.valor_orcado)} change={reports.movimentacao.metricas.valor_orcado.variacao} title="Valor orçado" icon="currency-brl" iconColor={colors.success} />
-              <MetricCard value={String(reports.orcamentos.totais.orcamentos)} change={reports.orcamentos.metricas.orcamentos.variacao} title="Criados no período" icon="file-document-outline" />
-              <MetricCard value={String(reports.orcamentos.totais.aprovacoes)} change={null} title="Aprovados" icon="check-circle-outline" iconColor={colors.success} />
-              <MetricCard value={String(reports.orcamentos.totais.pendentes)} change={null} title="Pendentes" icon="clock-outline" iconColor={colors.accent} />
+              <MetricCard value={moeda(reports.movimentacao.totais.valor_orcado)} change={reports.movimentacao.metricas.valor_orcado.variacao} title="Valor orçado" icon="currency-brl" iconColor={REPORT_METRIC_COLORS.orcamentos} />
+              <MetricCard value={String(reports.orcamentos.totais.orcamentos)} change={reports.orcamentos.metricas.orcamentos.variacao} title="Criados no período" icon="file-document-outline" iconColor={REPORT_METRIC_COLORS.orcamentos} />
+              <MetricCard value={String(reports.orcamentos.totais.aprovacoes)} change={null} title="Aprovados" icon="check-circle-outline" iconColor={REPORT_METRIC_COLORS.aprovados} />
+              <MetricCard value={String(reports.orcamentos.totais.pendentes)} change={null} title="Pendentes" icon="clock-outline" iconColor={REPORT_METRIC_COLORS.pendentes} />
             </View>
             <ReportChart
               type="movimentacao"
@@ -356,7 +357,7 @@ const Relatorios = ({ navigation }: Props) => {
 
             <Text style={[styles.sectionTitle, { color: colors.text }]}>Clientes</Text>
             <View style={styles.metricsGrid}>
-              <MetricCard value={String(reports.clientes.totais.clientes)} change={reports.clientes.metricas.clientes.variacao} title="Novos clientes" icon="account-group" />
+              <MetricCard value={String(reports.clientes.totais.clientes)} change={reports.clientes.metricas.clientes.variacao} title="Novos clientes" icon="account-group" iconColor={REPORT_METRIC_COLORS.clientes} />
             </View>
             <ReportChart
               type="clientes"
@@ -368,12 +369,9 @@ const Relatorios = ({ navigation }: Props) => {
             <Text style={[styles.sectionTitle, { color: colors.text }]}>Produtos</Text>
             <ReportChart
               type="produtos"
-              data={reports.produtos.serie.categorias.map((categoria, index) => ({
+              data={reports.produtos.serie.categorias.map((categoria) => ({
                 name: categoria.nome,
                 quantity: categoria.quantidade,
-                color: [colors.accent, colors.success, colors.primary, colors.error, '#64748B'][index % 5],
-                legendFontColor: colors.muted,
-                legendFontSize: 12,
               }))}
               total={`${reports.produtos.totais.produtos} produtos cadastrados no período`}
               dateRange={dateRange}

@@ -174,17 +174,15 @@ export function formatCnpj(cnpj: string) {
     .replace(/(\d{4})(\d{2})$/, '$1-$2');
 }
 export function formatRg(rg: string) {
-  const value = clearNumber(rg);
+  const value = rg.replace(/[^0-9x]/gi, '').toUpperCase().slice(0, 14);
 
   if (value.length <= 2) return value;
 
   let formattedText = value.slice(0, 2);
-  if (value.length > 2) {
-    formattedText += `.${value.slice(2, 5)}`;
-  }
-  if (value.length > 5) {
-    formattedText += `.${value.slice(5, 8)}`;
-  }
+  if (value.length > 2) formattedText += `.${value.slice(2, 5)}`;
+  if (value.length > 5) formattedText += `.${value.slice(5, 8)}`;
+  if (value.length === 9) formattedText += `-${value[8]}`;
+  else if (value.length > 9) return value;
 
   return formattedText;
 }

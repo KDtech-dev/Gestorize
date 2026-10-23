@@ -4,6 +4,9 @@ import { enderecoSchema } from "./EnderecoSchema";
 const onlyNumbers = (value: string) =>
   value.replace(/\D/g, "");
 
+const normalizarRg = (value: string) =>
+  value.replace(/[^0-9x]/gi, "").toUpperCase();
+
 const generoSchema = z.enum([
   "masculino",
   "feminino",
@@ -17,8 +20,11 @@ const pfSchema = z.object({
 
   rg: z
     .string()
-    .min(1, "Informe o RG")
-    .max(20, "RG muito longo"),
+    .transform(normalizarRg)
+    .pipe(z.string()
+      .min(5, "Informe um RG com pelo menos 5 caracteres")
+      .max(14, "RG muito longo")
+      .regex(/^\d{4,13}[0-9X]$/, "RG inválido. Use números e, se houver, X no final")),
 
   cpf: z
     .string()
@@ -29,7 +35,7 @@ const pfSchema = z.object({
 
   data_nascimento: z
     .string()
-    .nullable(),
+    .min(1, "Informe a data de nascimento"),
 });
 
 const pjSchema = z.object({
@@ -76,6 +82,7 @@ const pjSchema = z.object({
 const baseSchema = {
   nome: z
     .string()
+    .trim()
     .min(1, "Informe o nome")
     .max(255, "Nome muito longo"),
 
