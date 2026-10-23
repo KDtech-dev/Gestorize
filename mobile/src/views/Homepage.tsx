@@ -114,7 +114,35 @@ const Homepage = () => {
       label: 'Relatórios',
       description: 'Acompanhe resultados da operação',
     },
-  ].filter((item) => canAccessRoute(user, item.route));
+  ];
+
+  const routeSectionsByRole: Record<string, Array<{ title: string; routes: string[] }>> = {
+    admin: [
+      { title: 'Gestão e acompanhamento', routes: ['Vendas', 'Relatorios', 'Funcionarios'] },
+      { title: 'Operação e cadastros', routes: ['Orcamentos', 'Produtos', 'Clientes', 'Fornecedores'] },
+    ],
+    gestor: [
+      { title: 'Operação do negócio', routes: ['Vendas', 'Orcamentos', 'Produtos', 'Clientes'] },
+      { title: 'Equipe e resultados', routes: ['Funcionarios', 'Fornecedores', 'Relatorios'] },
+    ],
+    funcionario: [
+      { title: 'Vendas e atendimento', routes: ['Vendas', 'Clientes', 'Produtos'] },
+      { title: 'Orçamentos e acompanhamento', routes: ['Orcamentos', 'Relatorios'] },
+    ],
+    cliente: [
+      { title: 'Consultas disponíveis', routes: ['Orcamentos', 'Vendas', 'Produtos', 'Clientes'] },
+    ],
+  };
+  const routeSections = routeSectionsByRole[user?.role ?? ''] ?? [
+    { title: 'Seus acessos', routes: quickActions.map((item) => item.route) },
+  ];
+  const routeActionsGrouped = new Set(routeSections.flatMap((section) => section.routes));
+  const actionSections = routeSections.map((section) => ({
+    ...section,
+    actions: quickActions.filter((item) => section.routes.includes(item.route) && canAccessRoute(user, item.route)),
+  })).filter((section) => section.actions.length > 0);
+  const otherPermittedActions = quickActions.filter((item) => !routeActionsGrouped.has(item.route) && canAccessRoute(user, item.route));
+  if (otherPermittedActions.length) actionSections.push({ title: 'Outros acessos liberados', routes: otherPermittedActions.map((item) => item.route), actions: otherPermittedActions });
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -179,22 +207,26 @@ const Homepage = () => {
             )}
           />
 
-          <View style={styles.sectionHeading}>
-            <MaterialCommunityIcons name="lightning-bolt-outline" size={21} color={colors.primary} />
-            <Text variant="titleMedium" style={[styles.sectionTitle, { color: colors.text }]}>Acessos principais</Text>
-          </View>
-          <View style={styles.grid}>
-            {quickActions.map((item) => (
-              <NavButton
-                key={item.route}
-                icon={item.icon}
-                label={item.label}
-                description={item.description}
-                onClick={() => navigation.navigate(item.route)}
-                containerStyle={styles.gridItem}
-              />
-            ))}
-          </View>
+          {actionSections.map((section) => (
+            <React.Fragment key={section.title}>
+              <View style={styles.sectionHeading}>
+                <MaterialCommunityIcons name="lightning-bolt-outline" size={21} color={colors.primary} />
+                <Text variant="titleMedium" style={[styles.sectionTitle, { color: colors.text }]}>{section.title}</Text>
+              </View>
+              <View style={styles.grid}>
+                {section.actions.map((item) => (
+                  <NavButton
+                    key={item.route}
+                    icon={item.icon}
+                    label={item.label}
+                    description={item.description}
+                    onClick={() => navigation.navigate(item.route)}
+                    containerStyle={styles.gridItem}
+                  />
+                ))}
+              </View>
+            </React.Fragment>
+          ))}
 
           <View style={styles.sectionHeading}>
             <MaterialCommunityIcons name="dots-horizontal-circle-outline" size={21} color={colors.primary} />

@@ -1,11 +1,23 @@
 import React, { useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { Card, Divider, List, Text } from 'react-native-paper';
+import Toast from 'react-native-toast-message';
 import Nav from '@components/utilities/Nav';
+import Button from '@components/botoes/Button';
 import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '@context/ThemeContext';
+import { useAuth } from '@context/AuthContext';
+import { enviarContatoAjuda } from '@api/apiAjuda';
 
 const perguntas = [
+  {
+    titulo: 'Como registrar uma venda?',
+    texto: 'Na página inicial, toque em Vender +. No caixa, adicione produtos pela busca ou câmera, ou escolha um orçamento aprovado. Confira o cliente, aplique desconto se necessário, selecione a forma de pagamento e toque em Finalizar venda. O estoque é atualizado após a confirmação.',
+  },
+  {
+    titulo: 'Onde consulto o histórico e o faturamento das vendas?',
+    texto: 'Use o acesso rápido Vendas para abrir o painel de controle. Ele mostra vendas do dia, faturamento, ticket médio, operadores e o histórico detalhado. A visualização depende da permissão vendas.ver; registrar vendas depende do acesso de venda do seu perfil.',
+  },
   {
     titulo: 'Como cadastro um cliente, produto ou fornecedor?',
     texto: 'Abra a área correspondente em Acesso Rápido. Use o botão de adicionar para preencher os dados e salvar. Os campos obrigatórios são indicados no próprio formulário.',
@@ -28,10 +40,55 @@ const perguntas = [
   },
 ];
 
+const etapas = [
+  {
+    titulo: 'Abra a função que precisa',
+    texto: 'Na página inicial, use Acessos principais para abrir cadastros e relatórios. Toque em Vender + para registrar uma venda ou em Vendas para consultar histórico e faturamento.',
+  },
+  {
+    titulo: 'Escolha como iniciar a venda',
+    texto: 'No caixa, adicione produtos pela busca ou pela câmera. Se a venda partir de uma proposta já aprovada, selecione o orçamento para carregar os itens e o cliente.',
+  },
+  {
+    titulo: 'Revise os itens e o cliente',
+    texto: 'Confira os produtos, quantidades e estoque disponível. Associe ou confirme o cliente antes de continuar.',
+  },
+  {
+    titulo: 'Defina desconto e pagamento',
+    texto: 'Informe o desconto como percentual ou valor em reais, escolha Pix, dinheiro, débito ou crédito e confira o total final.',
+  },
+  {
+    titulo: 'Finalize e acompanhe',
+    texto: 'Toque em Finalizar venda para registrar a operação e atualizar o estoque. Depois, abra Vendas para consultar faturamento do dia, ticket médio e detalhes do histórico. Nos relatórios, escolha o período para analisar ou exportar os dados.',
+  },
+];
+
 const Ajuda = () => {
   const navigation = useNavigation();
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
+  const corEtapa = isDark ? '#2563EB' : colors.primary;
+  const { user } = useAuth();
   const [perguntaAberta, setPerguntaAberta] = useState<string | undefined>();
+  const [mensagem, setMensagem] = useState('');
+  const [enviando, setEnviando] = useState(false);
+
+  const enviarMensagem = async () => {
+    const texto = mensagem.trim();
+    if (texto.length < 10) {
+      Toast.show({ type: 'info', text1: 'Conte um pouco mais', text2: 'A mensagem precisa ter ao menos 10 caracteres.' });
+      return;
+    }
+    setEnviando(true);
+    try {
+      await enviarContatoAjuda(texto);
+      setMensagem('');
+      Toast.show({ type: 'success', text1: 'Mensagem enviada', text2: 'O suporte Gestorize recebeu seu report de ajuda.' });
+    } catch (error: any) {
+      Toast.show({ type: 'error', text1: 'Não foi possível enviar', text2: error?.response?.data?.message ?? 'Verifique sua conexão e tente novamente.' });
+    } finally {
+      setEnviando(false);
+    }
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -48,7 +105,7 @@ const Ajuda = () => {
             <Text style={[styles.eyebrow, { color: colors.primary }]}>GESTORIZE</Text>
             <Text style={[styles.introTitle, { color: colors.text }]}>Encontre orientação para cada etapa</Text>
             <Text style={[styles.body, { color: colors.muted }]}>
-              Consulte os passos principais e as respostas para dúvidas comuns sobre cadastros, orçamentos, relatórios e acesso.
+              Consulte os passos principais e as respostas para dúvidas comuns sobre cadastros, orçamentos, vendas, relatórios e acesso.
             </Text>
           </Card.Content>
         </Card>
@@ -56,29 +113,16 @@ const Ajuda = () => {
         <Text style={[styles.sectionTitle, { color: colors.text }]}>Comece por aqui</Text>
         <Card mode="outlined" style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <Card.Content style={styles.steps}>
-            <View style={styles.stepRow}>
-              <Text style={[styles.stepNumber, { backgroundColor: colors.primary }]}>1</Text>
-              <View style={styles.stepCopy}>
-                <Text style={[styles.stepTitle, { color: colors.text }]}>Acesse uma área</Text>
-                <Text style={[styles.body, { color: colors.muted }]}>Use os atalhos da página inicial para abrir clientes, produtos, fornecedores, orçamentos ou relatórios.</Text>
+            {etapas.map((etapa, index) => <React.Fragment key={etapa.titulo}>
+              {index > 0 ? <Divider style={{ backgroundColor: colors.border }} /> : null}
+              <View style={styles.stepRow}>
+                <Text style={[styles.stepNumber, { backgroundColor: corEtapa }]}>{index + 1}</Text>
+                <View style={styles.stepCopy}>
+                  <Text style={[styles.stepTitle, { color: colors.text }]}>{etapa.titulo}</Text>
+                  <Text style={[styles.body, { color: colors.muted }]}>{etapa.texto}</Text>
+                </View>
               </View>
-            </View>
-            <Divider style={{ backgroundColor: colors.border }} />
-            <View style={styles.stepRow}>
-              <Text style={[styles.stepNumber, { backgroundColor: colors.primary }]}>2</Text>
-              <View style={styles.stepCopy}>
-                <Text style={[styles.stepTitle, { color: colors.text }]}>Consulte ou preencha</Text>
-                <Text style={[styles.body, { color: colors.muted }]}>Use a busca e os filtros das listagens. Ao criar ou editar, confira os dados antes de salvar.</Text>
-              </View>
-            </View>
-            <Divider style={{ backgroundColor: colors.border }} />
-            <View style={styles.stepRow}>
-              <Text style={[styles.stepNumber, { backgroundColor: colors.primary }]}>3</Text>
-              <View style={styles.stepCopy}>
-                <Text style={[styles.stepTitle, { color: colors.text }]}>Acompanhe os resultados</Text>
-                <Text style={[styles.body, { color: colors.muted }]}>A página inicial resume indicadores. Relatórios permitem escolher período e visualizar os dados em gráficos ou PDF.</Text>
-              </View>
-            </View>
+            </React.Fragment>)}
           </Card.Content>
         </Card>
 
@@ -102,12 +146,33 @@ const Ajuda = () => {
           ))}
         </View>
 
-        <Card mode="contained" style={[styles.supportCard, { backgroundColor: colors.elevated }]}>
+        <Card mode="outlined" style={[styles.supportCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <Card.Content>
-            <Text style={[styles.stepTitle, { color: colors.text }]}>Precisa de mais ajuda?</Text>
+            <Text style={[styles.stepTitle, { color: colors.text }]}>Fale com o suporte</Text>
             <Text style={[styles.body, { color: colors.muted, marginTop: 5 }]}>
-              Entre em contato com o administrador da sua empresa. Ele pode orientar sobre o uso do sistema e solicitar ajustes de acesso.
+              Envie um report de ajuda Gestorize. Sua mensagem e o e-mail da sua conta serão encaminhados para kennedy@kdtech.dev.
             </Text>
+            <Text style={[styles.fieldLabel, { color: colors.text }]}>Seu e-mail</Text>
+            <TextInput
+              value={user?.email ?? ''}
+              editable={false}
+              accessibilityLabel="E-mail associado ao report"
+              style={[styles.input, styles.emailInput, { color: colors.muted, borderColor: colors.border, backgroundColor: colors.elevated }]}
+            />
+            <Text style={[styles.fieldLabel, { color: colors.text }]}>Mensagem</Text>
+            <TextInput
+              value={mensagem}
+              onChangeText={setMensagem}
+              placeholder="Descreva sua dúvida ou problema"
+              placeholderTextColor={colors.muted}
+              multiline
+              maxLength={5000}
+              textAlignVertical="top"
+              accessibilityLabel="Mensagem para o suporte Gestorize"
+              style={[styles.input, styles.messageInput, { color: colors.text, borderColor: colors.border, backgroundColor: colors.background }]}
+            />
+            <Text style={[styles.characterCount, { color: colors.muted }]}>{mensagem.length}/5000</Text>
+            <Button title={enviando ? 'Enviando...' : 'Enviar mensagem'} onPress={enviarMensagem} disabled={enviando || mensagem.trim().length < 10 || !user?.email} />
           </Card.Content>
         </Card>
       </ScrollView>
@@ -135,4 +200,9 @@ const styles = StyleSheet.create({
   question: { fontSize: 14, fontWeight: '700' },
   answer: { fontSize: 14, lineHeight: 21, paddingHorizontal: 16, paddingBottom: 17, paddingTop: 2 },
   supportCard: { borderRadius: 16, marginTop: 5 },
+  fieldLabel: { fontSize: 14, fontWeight: '800', marginTop: 15, marginBottom: 6 },
+  input: { borderWidth: 1, borderRadius: 11, paddingHorizontal: 12, fontSize: 15 },
+  emailInput: { minHeight: 46, paddingVertical: 11 },
+  messageInput: { minHeight: 140, paddingTop: 12, paddingBottom: 12 },
+  characterCount: { textAlign: 'right', fontSize: 12, marginTop: 5, marginBottom: 8 },
 });

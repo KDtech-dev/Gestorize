@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AcessoController;
+use App\Http\Controllers\Api\AjudaController;
 use App\Http\Controllers\Api\DashboardController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\ProdutoController;
@@ -20,6 +21,7 @@ Route::post('login', [AuthController::class, 'login']);
 Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/dashboard/resumo', DashboardController::class);
+    Route::post('/ajuda/contato', [AjudaController::class, 'contato'])->middleware('throttle:5,1');
 
     Route::get('/categorias', [CategoriaController::class, 'index'])->middleware('permission:produtos.ver');
     Route::post('/categorias', [CategoriaController::class, 'store'])->middleware('permission:produtos.criar');;
