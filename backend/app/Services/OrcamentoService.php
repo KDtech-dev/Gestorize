@@ -52,6 +52,9 @@ class OrcamentoService
     {
         return DB::transaction(function () use ($id, $dados) {
             $orcamento = Orcamento::with('itens')->findOrFail($id);
+            if ($orcamento->status === 'vendido') {
+                abort(422, 'Orçamentos vendidos não podem ser alterados.');
+            }
             $campos = Arr::only($dados, ['titulo', 'cliente_id']);
             $camposAlterados = collect($campos)->contains(
                 fn ($valor, $campo) => $orcamento->{$campo} !== $valor
@@ -113,6 +116,10 @@ class OrcamentoService
     {
         $orcamento = Orcamento::findOrFail($id);
 
+        if ($orcamento->status === 'vendido') {
+            abort(422, 'Orçamentos vendidos não podem ser aprovados novamente.');
+        }
+
         if ($orcamento->status !== 'aprovado') {
             $orcamento->status = 'aprovado';
             $orcamento->aprovado_por = $usuarioId;
@@ -126,7 +133,11 @@ class OrcamentoService
     public function deletar(string $id): array
     {
         DB::transaction(function () use ($id) {
-            Orcamento::findOrFail($id)->delete();
+            $orcamento = Orcamento::findOrFail($id);
+            if ($orcamento->status === 'vendido') {
+                abort(422, 'Orçamentos vendidos não podem ser excluídos.');
+            }
+            $orcamento->delete();
         });
 
         return ['message' => 'Orçamento removido com sucesso.'];

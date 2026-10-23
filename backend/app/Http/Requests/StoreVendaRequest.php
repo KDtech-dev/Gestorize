@@ -20,6 +20,7 @@ class StoreVendaRequest extends FormRequest
             'cliente_id' => ['nullable', 'uuid', 'exists:clientes,id'],
             'orcamento_id' => ['nullable', 'uuid', 'exists:orcamentos,id'],
             'forma_pagamento' => ['nullable', 'in:pix,dinheiro,debito,credito'],
+            'desconto' => ['sometimes', 'numeric', 'min:0'],
         ];
     }
 }

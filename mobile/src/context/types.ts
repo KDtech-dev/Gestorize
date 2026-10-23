@@ -86,7 +86,7 @@ export type ClienteType = {
 export type OrcamentoResumoType = {
   id: string;
   titulo: string;
-  status: 'pendente' | 'aprovado';
+  status: 'pendente' | 'aprovado' | 'vendido';
   valor_total: number | string;
   data_orcamento: StringfiedDate;
 };
@@ -195,7 +195,7 @@ export type OrcamentoType = {
   titulo: string;
   cliente_id: string;
   valor_total: number | string;
-  status: 'pendente' | 'aprovado';
+  status: 'pendente' | 'aprovado' | 'vendido';
   aprovado_por?: string | null;
   aprovado_em?: StringfiedDate | null;
   aprovador_nome?: string | null;

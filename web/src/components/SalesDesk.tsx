@@ -3,15 +3,17 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { Icon } from '@iconify/react';
-import { Alert, Box, Button, ButtonBase, Collapse, IconButton, Paper, Stack, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
+import { Alert, Box, Button, ButtonBase, Collapse, IconButton, Paper, Stack, Typography } from '@mui/material';
 import { useAuth } from '@/context/AuthContext';
 import { apiFetch } from '@/lib/api';
+import { SalesCheckout, type DiscountMode, type SaleCustomer, type SaleQuote } from '@/components/sales/SalesCheckout';
+import type { PaymentMethod } from '@/components/sales/types';
 
 type Product = { id: string; nome: string; codigo_barras?: string; preco_venda: number | string; estoque: number };
-type Customer = { id: string; nome: string };
-type PaymentMethod = 'pix' | 'dinheiro' | 'debito' | 'credito';
-type Sale = { id: string; valor_total: number | string; vendido_em: string; vendedor?: string; cliente_nome?: string; forma_pagamento?: PaymentMethod | null; itens?: Array<{ id: string; produto_nome: string; quantidade: number; preco_unitario: number | string; subtotal: number | string }> };
-type CartRow = { produto: Product; quantidade: number };
+type Customer = SaleCustomer;
+type Quote = SaleQuote & { itens: Array<SaleQuote['itens'][number] & { produto?: Product | null }> };
+type Sale = { id: string; valor_total: number | string; vendido_em: string; vendedor?: string; cliente_nome?: string; orcamento_id?: string | null; forma_pagamento?: PaymentMethod | null; itens?: Array<{ id: string; produto_nome: string; quantidade: number; preco_unitario: number | string; subtotal: number | string }> };
+type CartRow = { produto: Product; quantidade: number; precoUnitario?: number };
 
 function list<T>(payload: unknown): T[] {
   let node = payload as { data?: unknown };
@@ -20,24 +22,21 @@ function list<T>(payload: unknown): T[] {
 }
 
 const money = (value: unknown) => Number(value ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-const paymentMethods: Array<{ value: PaymentMethod; label: string; icon: string }> = [
-  { value: 'pix', label: 'Pix', icon: 'mdi:lightning-bolt-outline' },
-  { value: 'dinheiro', label: 'Dinheiro', icon: 'mdi:cash' },
-  { value: 'debito', label: 'Débito', icon: 'mdi:card-outline' },
-  { value: 'credito', label: 'Crédito', icon: 'mdi:credit-card-outline' },
-];
-
 const panelSx = { border: '1px solid var(--line)', borderRadius: '14px', bgcolor: 'var(--card)', color: 'var(--ink)', boxShadow: '0 5px 18px #0f172a0a' };
 
 export function SalesDesk() {
   const { can, user } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [quotes, setQuotes] = useState<Quote[]>([]);
   const [sales, setSales] = useState<Sale[]>([]);
   const [cart, setCart] = useState<CartRow[]>([]);
   const [search, setSearch] = useState('');
   const [showResults, setShowResults] = useState(false);
   const [customerId, setCustomerId] = useState('');
+  const [quoteId, setQuoteId] = useState('');
+  const [discountMode, setDiscountMode] = useState<DiscountMode>('percent');
+  const [discountInput, setDiscountInput] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('pix');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -47,11 +46,17 @@ export function SalesDesk() {
   const [dateLabel, setDateLabel] = useState('');
 
   const load = async () => {
-    const [productData, salesData, customerData] = await Promise.all([
+    const [productData, salesData, customerData, quoteData] = await Promise.all([
       apiFetch<unknown>('/produtos'), apiFetch<unknown>('/vendas'),
       can('clientes.ver') ? apiFetch<unknown>('/clientes') : Promise.resolve([]),
+      can('orcamentos.ver') ? apiFetch<unknown>('/orcamentos') : Promise.resolve([]),
     ]);
-    setProducts(list<Product>(productData)); setSales(list<Sale>(salesData)); setCustomers(list<Customer>(customerData));
+    const loadedSales = list<Sale>(salesData);
+    const soldQuoteIds = new Set(loadedSales.map((sale) => sale.orcamento_id).filter((id): id is string => Boolean(id)));
+    setProducts(list<Product>(productData));
+    setSales(loadedSales);
+    setCustomers(list<Customer>(customerData));
+    setQuotes(list<Quote>(quoteData).filter((quote) => quote.status === 'aprovado' && !soldQuoteIds.has(quote.id)));
   };
 
   useEffect(() => {
@@ -60,8 +65,21 @@ export function SalesDesk() {
   }, []);
 
   const matchingProducts = useMemo(() => products.filter((product) => product.estoque > 0 && `${product.nome} ${product.codigo_barras ?? ''}`.toLocaleLowerCase().includes(search.toLocaleLowerCase())).slice(0, 8), [products, search]);
-  const subtotal = cart.reduce((sum, row) => sum + Number(row.produto.preco_venda) * row.quantidade, 0);
+  const rowPrice = (row: CartRow) => row.precoUnitario ?? Number(row.produto.preco_venda);
+  const subtotal = cart.reduce((sum, row) => sum + rowPrice(row) * row.quantidade, 0);
+  const rawDiscount = Math.max(0, Number(discountInput) || 0);
+  const appliedPercentage = Math.min(rawDiscount, 100);
+  const appliedDiscount = Math.min(subtotal, discountMode === 'percent' ? subtotal * appliedPercentage / 100 : rawDiscount);
+  const total = Math.max(0, subtotal - appliedDiscount);
+  const discountDescription = discountMode === 'percent'
+    ? `${appliedPercentage.toLocaleString('pt-BR')}% · ${money(appliedDiscount)}`
+    : money(appliedDiscount);
   const itemCount = cart.reduce((sum, item) => sum + item.quantidade, 0);
+  const selectedQuote = quotes.find((quote) => quote.id === quoteId);
+  const selectedCustomer = customers.find((customer) => customer.id === customerId) ?? null;
+  const availableQuotes = quotes.filter((quote) => !customerId || quote.cliente_id === customerId);
+  const quoteItemsComplete = !selectedQuote || cart.length === selectedQuote.itens.length;
+  const quoteStockAvailable = cart.every((row) => row.quantidade <= row.produto.estoque);
 
   const addProduct = (product: Product) => {
     setCart((current) => {
@@ -74,12 +92,50 @@ export function SalesDesk() {
 
   const changeQuantity = (productId: string, delta: number) => setCart((items) => items.map((item) => item.produto.id === productId ? { ...item, quantidade: Math.min(item.produto.estoque, Math.max(1, item.quantidade + delta)) } : item));
 
+  const selectQuote = (id: string) => {
+    setQuoteId(id);
+    setSearch('');
+    setShowResults(false);
+    setError('');
+    const quote = quotes.find((item) => item.id === id);
+    if (!quote) {
+      setCart([]);
+      return;
+    }
+    const quoteRows = quote.itens.map((item) => {
+      const product = products.find((candidate) => candidate.id === item.produto_id) ?? item.produto;
+      return product ? { produto: product, quantidade: Number(item.quantidade), precoUnitario: Number(item.preco_unitario) } : null;
+    }).filter((row): row is { produto: Product; quantidade: number; precoUnitario: number } => row !== null);
+    const groupedRows = new Map<string, CartRow & { total: number }>();
+    for (const row of quoteRows) {
+      const current = groupedRows.get(row.produto.id) ?? { produto: row.produto, quantidade: 0, total: 0, precoUnitario: 0 };
+      current.quantidade += row.quantidade;
+      current.total += row.precoUnitario * row.quantidade;
+      current.precoUnitario = current.total / current.quantidade;
+      groupedRows.set(row.produto.id, current);
+    }
+    const cartRows = [...groupedRows.values()].map(({ total: _total, ...row }) => row);
+    setCart(cartRows);
+    setCustomerId(quote.cliente_id);
+    if (quoteRows.length !== quote.itens.length) setError('Um ou mais produtos deste orçamento não estão disponíveis para venda.');
+    else if (cartRows.some((row) => row.quantidade > row.produto.estoque)) setError('O estoque atual não cobre todos os itens do orçamento selecionado.');
+  };
+
+  const selectCustomer = (customer: Customer | null) => {
+    const nextCustomerId = customer?.id ?? '';
+    setCustomerId(nextCustomerId);
+    if (quoteId && quotes.find((quote) => quote.id === quoteId)?.cliente_id !== nextCustomerId) {
+      setQuoteId('');
+      setCart([]);
+    }
+  };
+
   async function registerSale() {
     if (!cart.length || !can('vendas.criar')) return;
     setBusy(true); setError('');
     try {
-      await apiFetch('/vendas', { method: 'POST', body: JSON.stringify({ cliente_id: customerId || null, forma_pagamento: paymentMethod, itens: cart.map(({ produto, quantidade }) => ({ produto_id: produto.id, quantidade })) }) });
-      setCart([]); setCustomerId(''); setPaymentMethod('pix'); await load();
+      await apiFetch('/vendas', { method: 'POST', body: JSON.stringify({ cliente_id: customerId || null, orcamento_id: quoteId || null, forma_pagamento: paymentMethod, desconto: appliedDiscount, itens: cart.map(({ produto, quantidade }) => ({ produto_id: produto.id, quantidade })) }) });
+      setCart([]); setCustomerId(''); setQuoteId(''); setDiscountInput(''); setDiscountMode('percent'); setPaymentMethod('pix'); await load();
     } catch (reason) { setError(reason instanceof Error ? reason.message : 'Não foi possível registrar a venda.'); }
     finally { setBusy(false); }
   }
@@ -120,9 +176,9 @@ export function SalesDesk() {
           <Box sx={{ position: 'relative', display: 'flex', gap: 1, mb: 1.75 }}>
             <Box sx={{ minWidth: 0, flex: 1, height: 46, px: 1.5, display: 'flex', alignItems: 'center', gap: 1.1, border: '1px solid #1d4ed8', borderRadius: '10px', bgcolor: 'var(--card)' }}>
               <Icon icon="mdi:magnify" width={20} height={20} color="#1d4ed8" />
-              <Box component="input" value={search} onChange={(event: React.ChangeEvent<HTMLInputElement>) => { setSearch(event.target.value); setShowResults(Boolean(event.target.value)); }} onKeyDown={(event: React.KeyboardEvent<HTMLInputElement>) => { if (event.key === 'Enter') { event.preventDefault(); setShowResults(Boolean(search.trim())); } }} placeholder="Buscar produto por nome ou código..." sx={{ width: '100%', minWidth: 0, border: 0, outline: 0, bgcolor: 'transparent', color: 'var(--ink)', fontSize: 14, '&::placeholder': { color: 'var(--muted)', opacity: 0.8 } }} />
+              <Box component="input" disabled={Boolean(quoteId)} value={search} onChange={(event: React.ChangeEvent<HTMLInputElement>) => { setSearch(event.target.value); setShowResults(Boolean(event.target.value)); }} onKeyDown={(event: React.KeyboardEvent<HTMLInputElement>) => { if (event.key === 'Enter') { event.preventDefault(); setShowResults(Boolean(search.trim())); } }} placeholder={quoteId ? 'Itens carregados do orçamento selecionado' : 'Buscar produto por nome ou código...'} sx={{ width: '100%', minWidth: 0, border: 0, outline: 0, bgcolor: 'transparent', color: 'var(--ink)', fontSize: 14, '&::placeholder': { color: 'var(--muted)', opacity: 0.8 }, '&:disabled': { opacity: 0.7 } }} />
             </Box>
-            <Button variant="contained" onClick={() => setShowResults(Boolean(search.trim()))} sx={{ minWidth: 82, borderRadius: '9px', bgcolor: '#1d4ed8', textTransform: 'none', fontWeight: 700, '&:hover': { bgcolor: '#1e40af' } }}>Buscar</Button>
+            <Button variant="contained" disabled={Boolean(quoteId)} onClick={() => setShowResults(Boolean(search.trim()))} sx={{ minWidth: 82, borderRadius: '9px', bgcolor: '#1d4ed8', textTransform: 'none', fontWeight: 700, '&:hover': { bgcolor: '#1e40af' } }}>Buscar</Button>
             {showResults && search.trim() && <Paper sx={{ ...panelSx, position: 'absolute', zIndex: 5, top: 52, left: 0, right: 90, maxHeight: 300, overflowY: 'auto', p: 0.75 }}>
               {matchingProducts.map((product) => <ButtonBase key={product.id} onClick={() => addProduct(product)} sx={{ width: '100%', minHeight: 58, px: 1, display: 'flex', justifyContent: 'flex-start', textAlign: 'left', borderRadius: '8px', '&:hover': { bgcolor: 'var(--surface-soft)' } }}>
                 <Icon icon="mdi:package-variant-closed" width={21} height={21} color="#1d4ed8" />
@@ -145,50 +201,51 @@ export function SalesDesk() {
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'minmax(0,1fr) auto auto', md: '36px minmax(0,1fr) 104px 120px 120px 28px' }, alignItems: 'center', minHeight: 34, px: 1.5, bgcolor: 'color-mix(in srgb, var(--primary) 8%, var(--card))', color: 'var(--muted)', fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.4 }}>
               <Box sx={{ display: { xs: 'none', md: 'block' } }}>#</Box><Box>Produto</Box><Box sx={{ textAlign: 'center' }}>Qtd.</Box><Box sx={{ display: { xs: 'none', md: 'block' }, textAlign: 'right' }}>Valor unit.</Box><Box sx={{ textAlign: 'right' }}>Subtotal</Box><Box />
             </Box>
-            {cart.map(({ produto, quantidade }, index) => <Box key={produto.id} sx={{ display: 'grid', gridTemplateColumns: { xs: 'minmax(0,1fr) auto auto', md: '36px minmax(0,1fr) 104px 120px 120px 28px' }, alignItems: 'center', gap: 0.5, minHeight: 58, px: 1.5, borderBottom: '1px solid var(--line)', '&:nth-of-type(even)': { bgcolor: 'color-mix(in srgb, var(--surface-soft) 55%, var(--card))' } }}>
+            {cart.map((row, index) => { const { produto, quantidade } = row; return <Box key={`${produto.id}-${index}`} sx={{ display: 'grid', gridTemplateColumns: { xs: 'minmax(0,1fr) auto auto', md: '36px minmax(0,1fr) 104px 120px 120px 28px' }, alignItems: 'center', gap: 0.5, minHeight: 58, px: 1.5, borderBottom: '1px solid var(--line)', '&:nth-of-type(even)': { bgcolor: 'color-mix(in srgb, var(--surface-soft) 55%, var(--card))' } }}>
               <Typography sx={{ display: { xs: 'none', md: 'block' }, color: 'var(--muted)', fontSize: 11 }}>{String(index + 1).padStart(2, '0')}</Typography>
               <Box sx={{ minWidth: 0 }}><Typography sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 13, fontWeight: 700 }}>{produto.nome}</Typography><Typography sx={{ color: 'var(--muted)', fontSize: 10 }}>Cód. {produto.codigo_barras || '—'}</Typography></Box>
               <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'center', gap: 0.3, px: 0.25, py: 0.2, border: '1px solid #bfdbfe', borderRadius: 99 }}>
-                <IconButton size="small" aria-label={`Diminuir quantidade de ${produto.nome}`} onClick={() => changeQuantity(produto.id, -1)} sx={{ width: 22, height: 22, color: '#1d4ed8', fontSize: 14 }}>−</IconButton>
+                {!quoteId && <IconButton size="small" aria-label={`Diminuir quantidade de ${produto.nome}`} onClick={() => changeQuantity(produto.id, -1)} sx={{ width: 22, height: 22, color: '#1d4ed8', fontSize: 14 }}>−</IconButton>}
                 <Typography sx={{ minWidth: 15, textAlign: 'center', fontSize: 11, fontWeight: 700 }}>{quantidade}</Typography>
-                <IconButton size="small" aria-label={`Aumentar quantidade de ${produto.nome}`} onClick={() => changeQuantity(produto.id, 1)} sx={{ width: 22, height: 22, color: '#1d4ed8', fontSize: 14 }}>+</IconButton>
+                {!quoteId && <IconButton size="small" aria-label={`Aumentar quantidade de ${produto.nome}`} onClick={() => changeQuantity(produto.id, 1)} sx={{ width: 22, height: 22, color: '#1d4ed8', fontSize: 14 }}>+</IconButton>}
               </Stack>
-              <Typography sx={{ display: { xs: 'none', md: 'block' }, textAlign: 'right', fontSize: 12 }}>{money(produto.preco_venda)}</Typography>
-              <Typography sx={{ textAlign: 'right', fontSize: 12, fontWeight: 700 }}>{money(Number(produto.preco_venda) * quantidade)}</Typography>
-              <IconButton size="small" aria-label={`Remover ${produto.nome}`} onClick={() => setCart((items) => items.filter((item) => item.produto.id !== produto.id))} sx={{ color: 'var(--muted)' }}><Icon icon="mdi:close" width={17} height={17} /></IconButton>
-            </Box>)}
+              <Typography sx={{ display: { xs: 'none', md: 'block' }, textAlign: 'right', fontSize: 12 }}>{money(rowPrice(row))}</Typography>
+              <Typography sx={{ textAlign: 'right', fontSize: 12, fontWeight: 700 }}>{money(rowPrice(row) * quantidade)}</Typography>
+              <IconButton size="small" disabled={Boolean(quoteId)} aria-label={`Remover ${produto.nome}`} onClick={() => setCart((items) => items.filter((item) => item.produto.id !== produto.id))} sx={{ color: 'var(--muted)' }}><Icon icon="mdi:close" width={17} height={17} /></IconButton>
+            </Box>; })}
             {!cart.length && <Box sx={{ minHeight: 190, display: 'grid', placeItems: 'center', px: 2, color: 'var(--muted)', textAlign: 'center' }}><Box><Icon icon="mdi:cart-plus" width={32} height={32} /><Typography sx={{ mt: 0.75, fontSize: 13 }}>Adicione produtos para iniciar a venda.</Typography></Box></Box>}
           </Box>
           {error && <Alert severity="error" sx={{ mt: 1.5 }}>{error}</Alert>}
         </Paper>
 
-        <Stack sx={{ minWidth: 0, minHeight: { lg: 'calc(100vh - 114px)' }, gap: 1.5 }}>
-          <Paper sx={{ ...panelSx, p: 2, flexShrink: 0 }}>
-            <Typography sx={{ mb: 1.5, fontSize: 14, fontWeight: 800 }}>Resumo</Typography>
-            <Stack sx={{ gap: 1 }}>
-              <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}><Typography sx={{ color: 'var(--muted)', fontSize: 12 }}>Subtotal</Typography><Typography sx={{ color: 'var(--muted)', fontSize: 12 }}>{money(subtotal)}</Typography></Stack>
-              <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}><Typography sx={{ color: 'var(--muted)', fontSize: 12 }}>Desconto</Typography><Typography sx={{ color: 'var(--muted)', fontSize: 12 }}>{money(0)}</Typography></Stack>
-              <Stack direction="row" sx={{ alignItems: 'baseline', justifyContent: 'space-between', pt: 1.25, mt: 0.5, borderTop: '1px solid var(--line)' }}><Typography sx={{ fontSize: 13, fontWeight: 800 }}>Total</Typography><Typography sx={{ color: '#1d4ed8', font: '800 29px Manrope,sans-serif' }}>{money(subtotal)}</Typography></Stack>
-            </Stack>
-          </Paper>
-
-          {can('clientes.ver') && <Paper sx={{ ...panelSx, p: 2, flexShrink: 0 }}>
-            <Typography sx={{ mb: 1, fontSize: 14, fontWeight: 800 }}>Cliente</Typography>
-            <Box component="select" value={customerId} onChange={(event: React.ChangeEvent<HTMLSelectElement>) => setCustomerId(event.target.value)} sx={{ width: '100%', height: 38, px: 1.25, border: '1px solid var(--line)', borderRadius: '8px', bgcolor: 'var(--card)', color: 'var(--ink)', fontSize: 12 }}><option value="">Venda sem cliente</option>{customers.map((customer) => <option value={customer.id} key={customer.id}>{customer.nome}</option>)}</Box>
-          </Paper>}
-
-          <Paper sx={{ ...panelSx, p: 2, flexShrink: 0 }}>
-            <Typography sx={{ mb: 1.25, fontSize: 14, fontWeight: 800 }}>Forma de pagamento</Typography>
-            <ToggleButtonGroup exclusive value={paymentMethod} onChange={(_, value: PaymentMethod | null) => { if (value) setPaymentMethod(value); }} sx={{ width: '100%', display: 'grid', gridTemplateColumns: 'repeat(2,minmax(0,1fr))', gap: 0.75, '& .MuiToggleButtonGroup-grouped': { m: 0, border: '1px solid var(--line) !important', borderRadius: '8px !important' } }}>
-              {paymentMethods.map((method) => <ToggleButton key={method.value} value={method.value} sx={{ minHeight: 42, display: 'flex', gap: 0.7, color: 'var(--ink)', fontSize: 11, textTransform: 'none', '&.Mui-selected': { bgcolor: '#1d4ed81a', borderColor: '#1d4ed8 !important', color: '#1d4ed8' }, '&.Mui-selected:hover': { bgcolor: '#1d4ed826' } }}><Icon icon={method.icon} width={17} height={17} />{method.label}</ToggleButton>)}
-            </ToggleButtonGroup>
-          </Paper>
-
-          <Box sx={{ mt: 'auto', display: 'grid', gap: 1 }}>
-            <Button variant="contained" disabled={!cart.length || busy || !can('vendas.criar')} onClick={() => void registerSale()} startIcon={<Icon icon="mdi:check" width={19} height={19} />} sx={{ minHeight: 50, borderRadius: '10px', bgcolor: '#1d4ed8', fontWeight: 800, textTransform: 'none', boxShadow: '0 6px 15px #1d4ed833', '&:hover': { bgcolor: '#1e40af' } }}>{busy ? 'Registrando venda…' : 'Finalizar venda'}</Button>
-            <Button variant="outlined" disabled={busy} onClick={() => { setCart([]); setCustomerId(''); setError(''); }} sx={{ minHeight: 40, borderColor: 'var(--line)', borderRadius: '9px', color: 'var(--ink)', fontSize: 12, textTransform: 'none' }}>Cancelar venda</Button>
-          </Box>
-        </Stack>
+        <SalesCheckout
+          canSelectCustomer={can('clientes.ver')}
+          canSelectQuote={can('orcamentos.ver')}
+          customers={customers}
+          selectedCustomer={selectedCustomer}
+          availableQuotes={availableQuotes}
+          selectedQuote={selectedQuote ?? null}
+          approvedQuotesAvailable={quotes.length > 0}
+          subtotal={subtotal}
+          appliedDiscount={appliedDiscount}
+          total={total}
+          discountMode={discountMode}
+          discountInput={discountInput}
+          discountDescription={discountDescription}
+          paymentMethod={paymentMethod}
+          busy={busy}
+          canCreateSale={can('vendas.criar')}
+          cartCount={cart.length}
+          quoteItemsComplete={quoteItemsComplete}
+          quoteStockAvailable={quoteStockAvailable}
+          onSelectCustomer={selectCustomer}
+          onSelectQuote={(quote) => selectQuote(quote?.id ?? '')}
+          onDiscountModeChange={setDiscountMode}
+          onDiscountChange={setDiscountInput}
+          onPaymentMethodChange={setPaymentMethod}
+          onFinish={() => void registerSale()}
+          onCancel={() => { setCart([]); setCustomerId(''); setQuoteId(''); setDiscountInput(''); setDiscountMode('percent'); setError(''); }}
+        />
       </Box>
 
     </Box>

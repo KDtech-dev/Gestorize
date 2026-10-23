@@ -23,7 +23,7 @@ import { can } from '@utils/permissions';
 
 type Navigation = NativeStackNavigationProp<RootStackParamList>;
 type Filtro = '24h' | '7d' | 'mes' | null;
-type FiltroStatus = 'pendente' | 'aprovado' | null;
+type FiltroStatus = 'pendente' | 'aprovado' | 'vendido' | null;
 const PAGE_SIZE = 10;
 
 const filtros: { id: Exclude<Filtro, null>; label: string }[] = [
@@ -134,7 +134,7 @@ const Orcamentos = () => {
         <View style={styles.filtersContainer}>
           <Text style={[styles.filterLabel, { color: colors.muted }]}>Status</Text>
           <FlatList
-            data={[{ id: null, label: 'Todos os status' }, { id: 'pendente', label: 'Pendentes' }, { id: 'aprovado', label: 'Aprovados' }] as { id: FiltroStatus; label: string }[]}
+            data={[{ id: null, label: 'Todos os status' }, { id: 'pendente', label: 'Pendentes' }, { id: 'aprovado', label: 'Aprovados' }, { id: 'vendido', label: 'Vendidos' }] as { id: FiltroStatus; label: string }[]}
             horizontal
             showsHorizontalScrollIndicator={false}
             keyExtractor={(item) => item.id ?? 'todos'}

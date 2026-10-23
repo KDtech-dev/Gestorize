@@ -14,7 +14,7 @@ class UpdateOrcamentoRequest extends FormRequest
         }
 
         return Orcamento::whereKey($this->route('id'))
-            ->value('status') !== 'aprovado';
+            ->value('status') === 'pendente';
     }
 
     public function rules(): array

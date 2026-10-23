@@ -93,11 +93,11 @@ export default function NovoOrcamento() {
   const [itens, setItens] = useState<OrcamentoItemForm[]>([]);
   const [criadoEm, setCriadoEm] = useState('');
   const [atualizadoEm, setAtualizadoEm] = useState('');
-  const [statusOrcamento, setStatusOrcamento] = useState<'pendente' | 'aprovado'>('pendente');
+  const [statusOrcamento, setStatusOrcamento] = useState<'pendente' | 'aprovado' | 'vendido'>('pendente');
   const [aprovadorNome, setAprovadorNome] = useState('');
   const [aprovadoEm, setAprovadoEm] = useState('');
   const [snapshotOriginal, setSnapshotOriginal] = useState<string | null>(null);
-  const bloqueado = editando && statusOrcamento === 'aprovado';
+  const bloqueado = editando && statusOrcamento !== 'pendente';
   const [modalProdutosVisivel, setModalProdutosVisivel] = useState(false);
   const [modalClientesVisivel, setModalClientesVisivel] = useState(false);
   const [carregando, setCarregando] = useState(true);
@@ -307,9 +307,9 @@ export default function NovoOrcamento() {
         <EditableTextCard label="Criado em" value={criadoEm || 'Automático ao salvar'} editable={false} />
         {editando && <EditableTextCard label="Atualizado em" value={atualizadoEm} editable={false} />}
         {editando && (
-          <View style={[styles.approvalCard, { borderColor: statusOrcamento === 'aprovado' ? '#16a34a' : '#d97706' }]}>
-            <Text style={[styles.approvalTitle, { color: statusOrcamento === 'aprovado' ? '#15803d' : '#b45309' }]}>
-              {statusOrcamento === 'aprovado' ? '✓ Orçamento aprovado' : '◷ Aguardando aprovação'}
+          <View style={[styles.approvalCard, { borderColor: statusOrcamento === 'pendente' ? '#d97706' : statusOrcamento === 'vendido' ? '#2563eb' : '#16a34a' }]}>
+            <Text style={[styles.approvalTitle, { color: statusOrcamento === 'pendente' ? '#b45309' : statusOrcamento === 'vendido' ? '#1d4ed8' : '#15803d' }]}>
+              {statusOrcamento === 'vendido' ? '✓ Orçamento vendido' : statusOrcamento === 'aprovado' ? '✓ Orçamento aprovado' : '◷ Aguardando aprovação'}
             </Text>
             {statusOrcamento === 'aprovado' && (
               <Text style={styles.approvalDetail}>

@@ -67,7 +67,7 @@ class VendasSeeder extends Seeder
                 ],
             );
             $orcamento->forceFill([
-                'status' => 'aprovado',
+                'status' => 'vendido',
                 'aprovado_por' => $funcionario->id,
                 'aprovado_em' => now(),
             ])->save();

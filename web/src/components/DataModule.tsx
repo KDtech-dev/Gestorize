@@ -98,7 +98,7 @@ export function DataModule({ title, endpoint, module }: { title: string; endpoin
     if (module === 'orcamentos') return [
       { label: 'Pendentes', value: rows.filter((row) => String(row.status).toLowerCase() === 'pendente').length },
       { label: 'Aprovados', value: rows.filter((row) => String(row.status).toLowerCase() === 'aprovado').length },
-      { label: 'Valor total', value: currency(rows.reduce((total, row) => total + Number(row.valor_total ?? 0), 0)) },
+      { label: 'Vendidos', value: rows.filter((row) => String(row.status).toLowerCase() === 'vendido').length },
     ];
     return [];
   }, [facetValues.length, module, rows]);
@@ -124,9 +124,9 @@ export function DataModule({ title, endpoint, module }: { title: string; endpoin
       {loading ? <div className="table-loading"><span className="spinner" />Carregando registros…</div> : filteredRows.length === 0 ? <div className="empty-state compact"><span className="empty-icon">⌕</span><h2>{search ? 'Nenhum resultado encontrado' : 'Ainda não há registros'}</h2><p>{search ? 'Tente buscar por outro termo.' : 'Os dados cadastrados no mobile aparecerão aqui.'}</p></div> : <div className="table-scroll"><table><thead><tr>{definition.columns.map((column) => <th key={column.key}>{column.label}</th>)}<th> </th></tr></thead><tbody>
         {filteredRows.map((row, index) => <tr key={String(row.id ?? index)} onClick={() => setSelected(selected?.id === row.id ? null : row)} className={selected?.id === row.id ? 'row-selected' : ''}>
           {definition.columns.map((column) => <td key={column.key}>{column.key === 'status' ? <span className={`status-pill ${String(row.status ?? 'pendente').toLowerCase()}`}>{column.format?.(row) ?? String(row[column.key] ?? '—')}</span> : column.format?.(row) ?? String(row[column.key] ?? '—')}</td>)}<td className="table-actions" onClick={(event) => event.stopPropagation()}>
-            {module === 'orcamentos' && row.status !== 'aprovado' && (can('orcamentos.criar') || can('orcamentos.editar') || can('orcamentos.aprovar')) && <button className="small-action approve-action" onClick={() => void approveBudget(row)}>Aprovar</button>}
-            {canEdit && !(module === 'orcamentos' && row.status === 'aprovado') && <button className="small-action" onClick={() => setEditing(row)}>Editar</button>}
-            {canDelete && !(module === 'orcamentos' && row.status === 'aprovado') && <button className="small-action delete-action" onClick={() => void removeRecord(row)}>Excluir</button>}
+            {module === 'orcamentos' && row.status === 'pendente' && (can('orcamentos.criar') || can('orcamentos.editar') || can('orcamentos.aprovar')) && <button className="small-action approve-action" onClick={() => void approveBudget(row)}>Aprovar</button>}
+            {canEdit && !(module === 'orcamentos' && ['aprovado', 'vendido'].includes(String(row.status))) && <button className="small-action" onClick={() => setEditing(row)}>Editar</button>}
+            {canDelete && !(module === 'orcamentos' && ['aprovado', 'vendido'].includes(String(row.status))) && <button className="small-action delete-action" onClick={() => void removeRecord(row)}>Excluir</button>}
             <button className="row-action" aria-label="Ver detalhes" onClick={() => setSelected(selected?.id === row.id ? null : row)}>{selected?.id === row.id ? '⌃' : '⌄'}</button>
           </td>
         </tr>)}

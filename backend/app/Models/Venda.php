@@ -9,11 +9,11 @@ class Venda extends Model
 {
     use HasUuids;
 
-    protected $fillable = ['usuario_id', 'cliente_id', 'orcamento_id', 'cliente_nome', 'forma_pagamento', 'valor_total', 'vendido_em'];
+    protected $fillable = ['usuario_id', 'cliente_id', 'orcamento_id', 'cliente_nome', 'forma_pagamento', 'desconto', 'valor_total', 'vendido_em'];
 
     protected function casts(): array
     {
-        return ['valor_total' => 'decimal:2', 'vendido_em' => 'datetime'];
+        return ['valor_total' => 'decimal:2', 'desconto' => 'decimal:2', 'vendido_em' => 'datetime'];
     }
 
     public function usuario()

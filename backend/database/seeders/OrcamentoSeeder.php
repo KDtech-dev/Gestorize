@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Orcamento;
 use App\Models\OrcamentoItem;
 use App\Models\Cliente;
+use App\Models\Produto;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -42,9 +43,19 @@ class OrcamentoSeeder extends Seeder
             ])->save();
 
             $orcamento->itens()->delete();
-            $itens = OrcamentoItem::factory(2 + ($indice % 4))->make([
-                'orcamento_id' => $orcamento->id,
-            ]);
+            $itens = Produto::query()->inRandomOrder()->limit(2 + ($indice % 4))->get()
+                ->map(function (Produto $produto) use ($orcamento) {
+                    $quantidade = random_int(1, 10);
+                    $precoUnitario = (float) $produto->preco_venda;
+
+                    return new OrcamentoItem([
+                        'orcamento_id' => $orcamento->id,
+                        'produto_id' => $produto->id,
+                        'quantidade' => $quantidade,
+                        'preco_unitario' => $precoUnitario,
+                        'subtotal' => round($quantidade * $precoUnitario, 2),
+                    ]);
+                });
 
             $orcamento->itens()->saveMany($itens);
 

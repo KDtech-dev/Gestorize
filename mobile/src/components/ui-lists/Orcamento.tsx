@@ -6,7 +6,7 @@ type props = {
   title: string;
   cliente: string;
   valor: number;
-  status: 'pendente' | 'aprovado';
+  status: 'pendente' | 'aprovado' | 'vendido';
   onPress?: () => void;
 };
 
@@ -21,9 +21,11 @@ const Orcamento = ({ title, cliente, valor, status, onPress }: props) => {
 
   const circleColor = isDark ? colors.elevated : 'rgba(6, 32, 70, 0.12)';
   const arrowColor = isDark ? '#ffffff' : '#062046';
-  const statusColor = isDark
-    ? (status === 'aprovado' ? '#bbf7d0' : '#fde68a')
-    : (status === 'aprovado' ? '#15803d' : '#b45309');
+  const statusColor = status === 'vendido'
+    ? (isDark ? '#bfdbfe' : '#1d4ed8')
+    : isDark
+      ? (status === 'aprovado' ? '#bbf7d0' : '#fde68a')
+      : (status === 'aprovado' ? '#15803d' : '#b45309');
   const valorFormatado = Number(valor).toLocaleString('pt-BR', {
     style: 'currency',
     currency: 'BRL',
@@ -61,9 +63,9 @@ const Orcamento = ({ title, cliente, valor, status, onPress }: props) => {
 
           <View style={styles.details}>
             <View style={styles.statusLine}>
-              <Ionicons name={status === 'aprovado' ? 'checkmark-circle' : 'time-outline'} size={13} color={statusColor} />
+              <Ionicons name={status === 'vendido' ? 'cart' : status === 'aprovado' ? 'checkmark-circle' : 'time-outline'} size={13} color={statusColor} />
               <Text style={[styles.statusText, { color: statusColor }]}>
-                {status === 'aprovado' ? 'Aprovado' : 'Pendente'}
+                {status === 'vendido' ? 'Vendido' : status === 'aprovado' ? 'Aprovado' : 'Pendente'}
               </Text>
             </View>
 
