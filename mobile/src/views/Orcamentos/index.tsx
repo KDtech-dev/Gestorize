@@ -187,5 +187,5 @@ const styles = StyleSheet.create({
   filtersContainer: { marginTop: 10 },
   filterLabel: { fontSize: 12, fontWeight: '700', letterSpacing: 0.4, marginHorizontal: 12, marginBottom: 7 },
   filtersContent: { paddingHorizontal: 10, gap: 8 },
-  listContent: { padding: 10, paddingTop: 225 },
+  listContent: { padding: 10, paddingTop: 230 },
 });
