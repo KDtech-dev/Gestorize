@@ -114,6 +114,7 @@
 .login-form-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center}
 .login-card{margin:auto}
 .login-card .login-field>label{color:var(--ink);font-size:14px;font-weight:600}
+.login-card>.muted{font-size:clamp(15px,1.15vw,17px);line-height:1.55}
 .login-card .login-field input{width:100%;height:auto;padding:0;border:0;border-radius:0;outline:0;background:transparent;color:inherit;font-size:18px;box-shadow:none}
 .login-card .login-field input:focus{border:0;box-shadow:none}
 .login-options{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:4px}

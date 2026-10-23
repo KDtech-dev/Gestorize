@@ -10,7 +10,7 @@ import { LoginInput } from '@/components/LoginInput';
 
 export default function LoginPage() {
   const { signIn, user, loading } = useAuth();
-  const { mode, toggle } = useTheme();
+  const { mode } = useTheme();
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -34,7 +34,7 @@ export default function LoginPage() {
       <div className="login-pitch"><span className="eyebrow">GESTÃO DO SEU NEGÓCIO</span><h1>Mais clareza para cuidar de cada parte da sua operação.</h1><p>Clientes, produtos, orçamentos e vendas em um só lugar.</p></div>
       <div className="aside-bottom">Uma experiência integrada ao aplicativo Gestorize.</div>
     </section>
-    <section className="login-form-wrap"><button className="theme-toggle login-theme-toggle" onClick={toggle} aria-label={mode === 'dark' ? 'Ativar tema claro' : 'Ativar tema escuro'} title={mode === 'dark' ? 'Tema claro' : 'Tema escuro'}>{mode === 'dark' ? '☀' : '☾'}</button><form className="login-card" onSubmit={submit}>
+    <section className="login-form-wrap"><form className="login-card" onSubmit={submit}>
       <div className="mobile-brand brand"><Image src={mode === 'dark' ? '/images/LogoLight.png' : '/images/Logo.png'} alt="Gestorize" width={58} height={50} /><span>Gestorize</span></div>
       <span className="eyebrow">BEM-VINDO DE VOLTA</span><h2>Acesse sua conta</h2><p className="muted">Entre com as credenciais usadas no aplicativo.</p>
       <div className="field login-field"><label htmlFor="login-email">E-mail</label><LoginInput id="login-email" type="email" autoComplete="username" value={email} onChange={setEmail} placeholder="seu@email.com" /></div>
