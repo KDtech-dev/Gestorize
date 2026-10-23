@@ -235,6 +235,6 @@ const styles = StyleSheet.create({
 
   listContent: {
     padding: 10,
-    paddingTop: 155,
+    paddingTop: 165,
   },
 });
