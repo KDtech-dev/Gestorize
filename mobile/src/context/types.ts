@@ -123,7 +123,8 @@ export type FornecedorType = {
   id: string;
   nome: string;
   cnpj: string;
-  ramo_atividade: string;
+  categorias: CategoriaType[];
+  ramo_atividade?: string | null;
   telefone: string;
   email: string;
   endereco: EnderecoType | null;
@@ -135,7 +136,7 @@ export type FornecedorType = {
 };
 
 export type CategoriaType = {
-  id: number;
+  id: string;
   nome: string;
 };
 
@@ -168,6 +169,7 @@ export type ProdutoType = {
   validade: StringfiedDate | null;
   categoria_id: string;
   categoria_titulo: string | null;
+  categoria?: CategoriaType | null;
   fornecedor_id: string;
   fornecedor_razao_social: string | null;
   unidade_medida_id: string;

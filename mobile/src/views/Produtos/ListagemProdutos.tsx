@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     Animated,
     FlatList,
@@ -26,6 +26,7 @@ import { useAuth } from '@context/AuthContext';
 import { can } from '@utils/permissions';
 
 type Navigation = NativeStackNavigationProp<RootStackParamList>;
+const PAGE_SIZE = 10;
 
 const Produtos = () => {
     const navigation = useNavigation<Navigation>();
@@ -36,11 +37,13 @@ const Produtos = () => {
     const [produtos, setProdutos] = useState<ProdutoType[]>([]);
     const [search, setSearch] = useState('');
     const [loading, setLoading] = useState(true);
+    const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
     const [selectedFiltro, setSelectedFiltro] = useState<
         'estoque' | 'sem_estoque' | null
     >(null);
     const [selectedCategoria, setSelectedCategoria] = useState<string | null>(null);
+    const [selectedValidade, setSelectedValidade] = useState<'vencidos' | 'em_dia' | 'sem_validade' | null>(null);
 
     const scrollY = useRef(new Animated.Value(0)).current;
 
@@ -51,6 +54,7 @@ const Produtos = () => {
             const response = await getProdutos();
 
             setProdutos(response.data);
+            setVisibleCount(PAGE_SIZE);
         } catch (error) {
             Toast.show({
                 type: 'error',
@@ -69,6 +73,8 @@ const Produtos = () => {
 
     const filteredData = useMemo(() => {
         const normalizedSearch = search.trim().toLowerCase();
+        const agora = new Date();
+        const hoje = `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, '0')}-${String(agora.getDate()).padStart(2, '0')}`;
 
         return produtos.filter((item) => {
             const matchSearch =
@@ -91,10 +97,31 @@ const Produtos = () => {
 
             const categoriaProduto = item.categoria_titulo?.trim() || 'Sem categoria';
             const matchCategoria = !selectedCategoria || categoriaProduto === selectedCategoria;
+            const validade = item.validade?.slice(0, 10) || null;
+            const matchValidade = selectedValidade === null
+                ? true
+                : selectedValidade === 'sem_validade'
+                    ? !validade
+                    : selectedValidade === 'vencidos'
+                        ? Boolean(validade && validade < hoje)
+                        : Boolean(validade && validade >= hoje);
 
-            return matchSearch && matchEstoque && matchCategoria;
+            return matchSearch && matchEstoque && matchCategoria && matchValidade;
         });
-    }, [produtos, search, selectedFiltro, selectedCategoria]);
+    }, [produtos, search, selectedFiltro, selectedCategoria, selectedValidade]);
+
+    useEffect(() => {
+        setVisibleCount(PAGE_SIZE);
+    }, [search, selectedFiltro, selectedCategoria, selectedValidade]);
+
+    const visibleData = useMemo(
+        () => filteredData.slice(0, visibleCount),
+        [filteredData, visibleCount],
+    );
+
+    const carregarMais = useCallback(() => {
+        setVisibleCount((atual) => Math.min(atual + PAGE_SIZE, filteredData.length));
+    }, [filteredData.length]);
 
     const categorias = useMemo(
         () => [...new Set(produtos.map((item) => item.categoria_titulo?.trim() || 'Sem categoria'))]
@@ -204,6 +231,28 @@ const Produtos = () => {
                     />
                 </View>
                 <View style={styles.filtersContainer}>
+                    <Text style={[styles.filterLabel, { color: colors.muted }]}>Validade</Text>
+                    <FlatList
+                        data={[
+                            { id: 'todas', label: 'Todas' },
+                            { id: 'vencidos', label: 'Já venceu' },
+                            { id: 'em_dia', label: 'Em dia' },
+                            { id: 'sem_validade', label: 'Sem validade' },
+                        ]}
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        keyExtractor={(item) => item.id}
+                        contentContainerStyle={styles.filtersContent}
+                        renderItem={({ item }) => (
+                            <TooltipChip
+                                label={item.label}
+                                active={item.id === 'todas' ? selectedValidade === null : selectedValidade === item.id}
+                                onPress={() => setSelectedValidade(item.id === 'todas' || selectedValidade === item.id ? null : item.id as 'vencidos' | 'em_dia' | 'sem_validade')}
+                            />
+                        )}
+                    />
+                </View>
+                <View style={styles.filtersContainer}>
                     <Text style={[styles.filterLabel, { color: colors.muted }]}>Categorias</Text>
                     <FlatList
                         data={[{ id: 'todas', label: 'Todas' }, ...categorias.map((categoria) => ({ id: categoria, label: categoria }))]}
@@ -223,7 +272,7 @@ const Produtos = () => {
             </Animated.View>
 
             <Animated.FlatList
-                data={filteredData}
+                data={visibleData}
                 keyExtractor={(item) => item.id}
                 contentContainerStyle={styles.listContent}
                 showsVerticalScrollIndicator={false}
@@ -236,6 +285,7 @@ const Produtos = () => {
                         estoque={item.estoque}
                         unidade={item.unidade_medida_sigla}
                         categoria={item.categoria_titulo}
+                        validade={item.validade}
                         imagem={item.imagem_principal?.url ?? null}
                         onPress={() =>
                             navigation.navigate('NovoProduto', {
@@ -246,6 +296,8 @@ const Produtos = () => {
                     />
                 )}
                 onScroll={handleScroll}
+                onEndReached={carregarMais}
+                onEndReachedThreshold={0.45}
                 scrollEventThrottle={16}
                 initialNumToRender={10}
                 maxToRenderPerBatch={10}
@@ -290,6 +342,6 @@ const styles = StyleSheet.create({
 
     listContent: {
         padding: 10,
-        paddingTop: 205,
+        paddingTop: 270,
     },
 });

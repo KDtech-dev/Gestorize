@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     Animated,
     FlatList,
@@ -26,6 +26,7 @@ import { can } from '@utils/permissions';
 
 type Navigation = NativeStackNavigationProp<RootStackParamList>;
 type OrdemAlfabetica = 'asc' | 'desc';
+const PAGE_SIZE = 10;
 
 const Fornecedores = () => {
     const navigation = useNavigation<Navigation>();
@@ -36,6 +37,7 @@ const Fornecedores = () => {
     const [fornecedores, setFornecedores] = useState<FornecedorType[]>([]);
     const [search, setSearch] = useState('');
     const [loading, setLoading] = useState(true);
+    const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
     const [ordemAlfabetica, setOrdemAlfabetica] = useState<'asc' | 'desc'>('asc');
     const [ramoSelecionado, setRamoSelecionado] = useState<string | null>(null);
@@ -49,6 +51,7 @@ const Fornecedores = () => {
             const response = await getFornecedores();
 
             setFornecedores(response.data);
+            setVisibleCount(PAGE_SIZE);
         } catch (error) {
             Toast.show({
                 type: 'error',
@@ -73,11 +76,9 @@ const Fornecedores = () => {
     const ramosAtividade = useMemo(() => {
         const contagem = fornecedores.reduce<Record<string, number>>(
             (acc, fornecedor) => {
-                const ramo = fornecedor.ramo_atividade?.trim();
-
-                if (ramo) {
-                    acc[ramo] = (acc[ramo] ?? 0) + 1;
-                }
+                const ramos = fornecedor.categorias?.map((categoria) => categoria.nome) ?? [];
+                if (!ramos.length && fornecedor.ramo_atividade?.trim()) ramos.push(fornecedor.ramo_atividade.trim());
+                ramos.forEach((ramo) => { acc[ramo] = (acc[ramo] ?? 0) + 1; });
 
                 return acc;
             },
@@ -107,7 +108,7 @@ const Fornecedores = () => {
             .filter((item) => {
                 // Filtro por ramo de atividade
                 const matchRamoSelecionado = ramoSelecionado
-                    ? item.ramo_atividade?.trim() === ramoSelecionado
+                    ? item.categorias?.some((categoria) => categoria.nome === ramoSelecionado) || item.ramo_atividade?.trim() === ramoSelecionado
                     : true;
 
                 if (!matchRamoSelecionado) {
@@ -133,9 +134,8 @@ const Fornecedores = () => {
                         .replace(/\D/g, '')
                         .includes(normalizedNumbers);
 
-                const matchRamo = item.ramo_atividade
-                    ?.toLowerCase()
-                    .includes(normalizedSearch);
+                const matchRamo = [...(item.categorias?.map((categoria) => categoria.nome) ?? []), item.ramo_atividade ?? '']
+                    .some((ramo) => ramo.toLowerCase().includes(normalizedSearch));
 
                 const matchResponsavel = item.nome_responsavel
                     ?.toLowerCase()
@@ -161,6 +161,10 @@ const Fornecedores = () => {
                     : -comparacao;
             });
     }, [fornecedores, search, ramoSelecionado, ordemAlfabetica]);
+
+    useEffect(() => setVisibleCount(PAGE_SIZE), [search, ramoSelecionado, ordemAlfabetica]);
+    const visibleData = useMemo(() => filteredData.slice(0, visibleCount), [filteredData, visibleCount]);
+    const carregarMais = useCallback(() => setVisibleCount((atual) => Math.min(atual + PAGE_SIZE, filteredData.length)), [filteredData.length]);
 
     const opacity = scrollY.interpolate({
         inputRange: [0, 100],
@@ -262,7 +266,7 @@ const Fornecedores = () => {
             </Animated.View>
 
             <Animated.FlatList
-                data={filteredData}
+                data={visibleData}
                 keyExtractor={(item) => item.id}
                 contentContainerStyle={styles.listContent}
                 showsVerticalScrollIndicator={false}
@@ -273,7 +277,7 @@ const Fornecedores = () => {
                         nome={item.nome}
                         email={item.email}
                         telefone={item.telefone}
-                        ramo_atividade={item.ramo_atividade}
+                        ramo_atividade={item.categorias?.map((categoria) => categoria.nome).join(', ') || item.ramo_atividade}
                         nome_responsavel={item.nome_responsavel}
                         avatar={item.avatar_url}
                         onPress={() =>
@@ -285,6 +289,8 @@ const Fornecedores = () => {
                     />
                 )}
                 onScroll={handleScroll}
+                onEndReached={carregarMais}
+                onEndReachedThreshold={0.45}
                 scrollEventThrottle={16}
                 initialNumToRender={10}
                 maxToRenderPerBatch={10}

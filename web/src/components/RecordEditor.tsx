@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState } from 'react';
 import { apiFetch } from '@/lib/api';
+import { fornecedorSchema, produtoSchema, validadeObrigatoria } from '@/schemas/records';
 
 type Row = Record<string, any>;
 type Option = { id: string; nome?: string; titulo?: string; sigla?: string };
@@ -9,7 +10,7 @@ type Props = { module: string; row: Row | null; onClose: () => void; onSave: (da
 
 const blank = (module: string): Row => {
   if (module === 'clientes') return { nome: '', tipo: 'pf', email: '', telefone: '', pf: { genero: '', rg: '', cpf: '', data_nascimento: '' }, pj: { cnpj: '', razao_social: '', nome_fantasia: '', nome_responsavel: '', cpf_responsavel: '', cargo_responsavel: '' }, endereco: { cep: '', logradouro: '', numero: '', complemento: '', bairro: '', cidade: '', estado: '' } };
-  if (module === 'fornecedores') return { nome: '', cnpj: '', email: '', telefone: '', ramo_atividade: '', nome_responsavel: '', chave_pix: '' };
+  if (module === 'fornecedores') return { nome: '', cnpj: '', email: '', telefone: '', categoria_ids: [], nome_responsavel: '', chave_pix: '' };
   if (module === 'produtos') return { nome: '', descricao: '', preco_custo: '', porcentagem_lucro: '', preco_venda: '', estoque: '', data_entrada: new Date().toISOString().slice(0, 10), validade: '', categoria_id: '', fornecedor_id: '', unidade_medida_id: '' };
   if (module === 'funcionarios') return { name: '', email: '', password: '', password_confirmation: '', telefone: '', cpf: '', data_nascimento: '', role: 'funcionario' };
   if (module === 'orcamentos') return { titulo: '', cliente_id: '', itens: [] };
@@ -22,6 +23,9 @@ function initialForm(module: string, row: Row | null): Row {
   if (module === 'produtos') {
     values.data_entrada = dateOnly(values.data_entrada);
     values.validade = dateOnly(values.validade);
+  }
+  if (module === 'fornecedores' && Array.isArray(values.categorias)) {
+    values.categoria_ids = values.categorias.map((category: Option) => category.id);
   }
   if (module === 'funcionarios') values.data_nascimento = dateOnly(values.data_nascimento);
   if (module === 'clientes' && values.pf) values.pf = { ...values.pf, data_nascimento: dateOnly(values.pf.data_nascimento) };
@@ -44,7 +48,8 @@ export function RecordEditor({ module, row, onClose, onSave }: Props) {
     let active = true;
     const load = async () => {
       const needed: Record<string, string> = {};
-      if (module === 'produtos') { needed.categories = '/categorias'; needed.suppliers = '/fornecedores'; needed.units = '/unidades-medida'; }
+      if (module === 'produtos' || module === 'fornecedores') needed.categories = '/categorias';
+      if (module === 'produtos') { needed.suppliers = '/fornecedores'; needed.units = '/unidades-medida'; }
       if (module === 'orcamentos') { needed.clients = '/clientes'; needed.products = '/produtos'; }
       const entries = await Promise.all(Object.entries(needed).map(async ([key, endpoint]) => {
         try { return [key, await apiFetch<unknown>(endpoint)] as const; } catch { return [key, []] as const; }
@@ -88,10 +93,19 @@ export function RecordEditor({ module, row, onClose, onSave }: Props) {
     event.preventDefault(); setSaving(true); setError('');
     try {
       const payload = { ...form };
+      if (module === 'fornecedores') {
+        const parsed = fornecedorSchema.safeParse(payload);
+        if (!parsed.success) throw new Error(parsed.error.issues[0]?.message ?? 'Revise os dados do fornecedor.');
+        Object.assign(payload, parsed.data);
+      }
       if (module === 'produtos') {
         ['preco_custo', 'porcentagem_lucro', 'preco_venda', 'estoque'].forEach((key) => payload[key] = Number(payload[key]));
         ['categoria_id', 'fornecedor_id'].forEach((key) => payload[key] ||= null);
         payload.validade ||= null;
+        const parsed = produtoSchema.safeParse({ ...payload, categoria_id: payload.categoria_id || null });
+        if (!parsed.success) throw new Error(parsed.error.issues[0]?.message ?? 'Revise os dados do produto.');
+        const categoryName = options.categories?.find((category) => category.id === payload.categoria_id)?.nome;
+        if (validadeObrigatoria(parsed.data, categoryName)) throw new Error('A validade é obrigatória para esta categoria.');
       }
       if (module === 'funcionarios' && !payload.password) { delete payload.password; delete payload.password_confirmation; }
       if (module === 'clientes') {
@@ -120,7 +134,7 @@ export function RecordEditor({ module, row, onClose, onSave }: Props) {
         {form.tipo === 'pf' ? <><TextInput label="CPF (somente números)" name="pf.cpf" value={form.pf?.cpf} onChange={change} required /><TextInput label="RG" name="pf.rg" value={form.pf?.rg} onChange={change} required /><TextInput label="Nascimento" name="pf.data_nascimento" value={form.pf?.data_nascimento} onChange={change} type="date" required /></> : <><TextInput label="CNPJ (somente números)" name="pj.cnpj" value={form.pj?.cnpj} onChange={change} required /><TextInput label="Razão social" name="pj.razao_social" value={form.pj?.razao_social} onChange={change} required /><TextInput label="Nome fantasia" name="pj.nome_fantasia" value={form.pj?.nome_fantasia} onChange={change} /><TextInput label="Responsável" name="pj.nome_responsavel" value={form.pj?.nome_responsavel} onChange={change} required /><TextInput label="CPF do responsável" name="pj.cpf_responsavel" value={form.pj?.cpf_responsavel} onChange={change} required /></>}
         <TextInput label="CEP" name="endereco.cep" value={form.endereco?.cep} onChange={change} /><TextInput label="Logradouro" name="endereco.logradouro" value={form.endereco?.logradouro} onChange={change} /><TextInput label="Número" name="endereco.numero" value={form.endereco?.numero} onChange={change} /><TextInput label="Cidade" name="endereco.cidade" value={form.endereco?.cidade} onChange={change} /><TextInput label="UF" name="endereco.estado" value={form.endereco?.estado} onChange={change} />
       </>}
-      {module === 'fornecedores' && <><TextInput label="Nome" name="nome" value={form.nome} onChange={change} required /><TextInput label="CNPJ" name="cnpj" value={form.cnpj} onChange={change} required /><TextInput label="E-mail" name="email" value={form.email} onChange={change} type="email" /><TextInput label="Telefone" name="telefone" value={form.telefone} onChange={change} required /><TextInput label="Ramo de atividade" name="ramo_atividade" value={form.ramo_atividade} onChange={change} /><TextInput label="Responsável" name="nome_responsavel" value={form.nome_responsavel} onChange={change} /><TextInput label="Chave PIX" name="chave_pix" value={form.chave_pix} onChange={change} /></>}
+      {module === 'fornecedores' && <><TextInput label="Nome" name="nome" value={form.nome} onChange={change} required /><TextInput label="CNPJ" name="cnpj" value={form.cnpj} onChange={change} required /><TextInput label="E-mail" name="email" value={form.email} onChange={change} type="email" /><TextInput label="Telefone" name="telefone" value={form.telefone} onChange={change} required /><label className="editor-field"><span>Ramos de atividade</span><select multiple value={form.categoria_ids ?? []} onChange={(event) => setForm((current) => ({ ...current, categoria_ids: Array.from(event.target.selectedOptions, (option) => option.value) }))}>{(options.categories ?? []).map((category) => <option value={category.id} key={category.id}>{category.nome}</option>)}</select></label><TextInput label="Responsável" name="nome_responsavel" value={form.nome_responsavel} onChange={change} /><TextInput label="Chave PIX" name="chave_pix" value={form.chave_pix} onChange={change} /></>}
       {module === 'produtos' && <><TextInput label="Nome" name="nome" value={form.nome} onChange={change} required /><TextInput label="Descrição" name="descricao" value={form.descricao} onChange={change} /><TextInput label="Preço de custo" name="preco_custo" value={form.preco_custo} onChange={change} type="number" required /><TextInput label="Margem de lucro (%)" name="porcentagem_lucro" value={form.porcentagem_lucro} onChange={change} type="number" required /><TextInput label="Preço de venda" name="preco_venda" value={form.preco_venda} onChange={change} type="number" required /><TextInput label="Estoque" name="estoque" value={form.estoque} onChange={change} type="number" required /><TextInput label="Entrada" name="data_entrada" value={form.data_entrada} onChange={change} type="date" required /><TextInput label="Validade" name="validade" value={form.validade} onChange={change} type="date" />{select('Categoria', 'categoria_id', options.categories ?? [])}{select('Fornecedor', 'fornecedor_id', options.suppliers ?? [])}{select('Unidade de medida', 'unidade_medida_id', options.units ?? [], true, (option) => `${option.nome ?? option.titulo ?? ''}${option.sigla ? ` (${option.sigla})` : ''}`)}</>}
       {module === 'funcionarios' && <><TextInput label="Nome" name="name" value={form.name ?? form.nome} onChange={change} required /><TextInput label="E-mail" name="email" value={form.email} onChange={change} type="email" required /><TextInput label={edit ? 'Nova senha (opcional)' : 'Senha'} name="password" value={form.password} onChange={change} type="password" required={!edit} /><TextInput label="Confirmar senha" name="password_confirmation" value={form.password_confirmation} onChange={change} type="password" /><TextInput label="Telefone" name="telefone" value={form.telefone} onChange={change} /><TextInput label="CPF (somente números)" name="cpf" value={form.cpf} onChange={change} required /><TextInput label="Nascimento" name="data_nascimento" value={form.data_nascimento} onChange={change} type="date" required /><label className="editor-field"><span>Perfil</span><select value={form.role ?? 'funcionario'} onChange={(event) => change('role', event.target.value)}><option value="funcionario">Funcionário</option><option value="gestor">Gestor</option></select></label></>}
       {module === 'orcamentos' && <><TextInput label="Título do orçamento" name="titulo" value={form.titulo} onChange={change} required />{select('Cliente', 'cliente_id', options.clients ?? [], true)}<div className="quote-items-editor"><div className="quote-items-heading"><strong>Produtos</strong><button type="button" className="text-button" onClick={() => setForm((current) => ({ ...current, itens: [...(current.itens ?? []), { produto_id: '', quantidade: 1 }] }))}>+ Adicionar produto</button></div>{(form.itens ?? []).map((item: Row, index: number) => <div className="quote-item-row" key={index}><select value={item.produto_id ?? ''} onChange={(event) => setForm((current) => ({ ...current, itens: current.itens.map((entry: Row, entryIndex: number) => entryIndex === index ? { ...entry, produto_id: event.target.value } : entry) }))}><option value="">Produto</option>{(options.products ?? []).map((product) => <option key={product.id} value={product.id}>{product.nome}</option>)}</select><input type="number" min="1" value={item.quantidade ?? 1} onChange={(event) => setForm((current) => ({ ...current, itens: current.itens.map((entry: Row, entryIndex: number) => entryIndex === index ? { ...entry, quantidade: event.target.value } : entry) }))} /><button type="button" className="remove-item" onClick={() => setForm((current) => ({ ...current, itens: current.itens.filter((_: Row, entryIndex: number) => entryIndex !== index) }))}>×</button></div>)}</div></>}

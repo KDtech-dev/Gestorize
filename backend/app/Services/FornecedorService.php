@@ -15,7 +15,7 @@ class FornecedorService
 
     public function listar()
     {
-        return Fornecedor::with('endereco')
+        return Fornecedor::with(['endereco', 'categorias'])
             ->orderBy('nome')
             ->get();
     }
@@ -34,16 +34,20 @@ class FornecedorService
 
             unset($dados['endereco']);
 
+            $categoriaIds = $dados['categoria_ids'] ?? [];
+            unset($dados['categoria_ids'], $dados['ramo_atividade']);
+
             $fornecedor = Fornecedor::create([
                 'nome' => $dados['nome'],
                 'cnpj' => $dados['cnpj'],
                 'email' => $dados['email'] ?? null,
                 'telefone' => $dados['telefone'],
-                'ramo_atividade' => $dados['ramo_atividade'] ?? null,
                 'nome_responsavel' => $dados['nome_responsavel'] ?? null,
                 'chave_pix' => $dados['chave_pix'] ?? null,
                 'endereco_id' => $endereco?->id,
             ]);
+
+            $fornecedor->categorias()->sync($categoriaIds);
 
             if ($avatar instanceof UploadedFile) {
                 $this->fornecedorImagemService->salvar(
@@ -52,13 +56,13 @@ class FornecedorService
                 );
             }
 
-            return $fornecedor->load('endereco');
+            return $fornecedor->load(['endereco', 'categorias']);
         });
     }
 
     public function buscar(string $id): Fornecedor
     {
-        return Fornecedor::with('endereco')
+        return Fornecedor::with(['endereco', 'categorias'])
             ->findOrFail($id);
     }
 
@@ -74,7 +78,6 @@ class FornecedorService
                 'cnpj',
                 'email',
                 'telefone',
-                'ramo_atividade',
                 'nome_responsavel',
                 'chave_pix',
             ];
@@ -84,6 +87,10 @@ class FornecedorService
                     ->only($campos)
                     ->all()
             );
+
+            if (array_key_exists('categoria_ids', $dados)) {
+                $fornecedor->categorias()->sync($dados['categoria_ids'] ?? []);
+            }
 
             if (is_array($dados['endereco'] ?? null)) {
                 if ($fornecedor->endereco_id) {
@@ -101,7 +108,7 @@ class FornecedorService
                 }
             }
 
-            return $fornecedor->fresh('endereco');
+            return $fornecedor->fresh(['endereco', 'categorias']);
         });
     }
 

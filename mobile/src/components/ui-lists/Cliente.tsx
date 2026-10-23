@@ -12,7 +12,6 @@ import {
 } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
-
 import { useTheme, useThemeToggle } from '@context/ThemeContext';
 
 type Props = {
@@ -47,7 +46,7 @@ const Cliente = ({
 
   const circleColor = isDark
     ? colors.elevated
-    : 'rgba(6, 32, 70, 0.22)';
+    : 'rgba(6, 32, 70, 0.22)';9
 
   const arrowColor = isDark ? '#ffffff' : '#062046';
 

@@ -38,6 +38,10 @@ class RelatorioService
         return [
             'periodo' => $periodo,
             'tipo' => $tipo,
+            'intervalo' => [
+                'inicio' => $inicio->toDateString(),
+                'fim' => $fim->toDateString(),
+            ],
             'nota' => 'Este relatório resume orçamentos. Consulte vendas registradas e baixas de estoque no histórico de vendas.',
             'metricas' => [
                 'valor_orcado' => [
@@ -70,21 +74,22 @@ class RelatorioService
         $agora = CarbonImmutable::now();
 
         return match ($periodo) {
-            'semana' => (function () use ($agora) {
-                $inicio = $agora->startOfWeek(CarbonImmutable::MONDAY);
-                return [$inicio, $agora, $inicio->subWeek(), $agora->subWeek()];
-            })(),
-            'mes' => (function () use ($agora) {
-                $inicio = $agora->startOfMonth();
-                $anteriorInicio = $inicio->subMonthNoOverflow()->startOfMonth();
-                return [$inicio, $agora, $anteriorInicio, $agora->subMonthNoOverflow()];
-            })(),
-            'ano' => (function () use ($agora) {
-                $inicio = $agora->startOfYear();
-                return [$inicio, $agora, $inicio->subYearNoOverflow(), $agora->subYearNoOverflow()];
-            })(),
+            'semana' => $this->intervaloMovel($agora, $agora->subDays(6)->startOfDay(), 7, 'days'),
+            'mes' => $this->intervaloMovel($agora, $agora->subMonthNoOverflow()->startOfDay(), 1, 'months'),
+            'ano' => $this->intervaloMovel($agora, $agora->subYearNoOverflow()->startOfDay(), 1, 'years'),
             default => [$agora->startOfDay(), $agora, $agora->subDay()->startOfDay(), $agora->subDay()],
         };
+    }
+
+    private function intervaloMovel(CarbonImmutable $fim, CarbonImmutable $inicio, int $quantidade, string $unidade): array
+    {
+        $inicioAnterior = match ($unidade) {
+            'days' => $inicio->subDays($quantidade),
+            'months' => $inicio->subMonthNoOverflow(),
+            'years' => $inicio->subYearNoOverflow(),
+        };
+
+        return [$inicio, $fim, $inicioAnterior, $inicio->subSecond()];
     }
 
     private function serie(string $periodo, string $tipo, $orcamentos, $clientes, $produtos): array
@@ -99,7 +104,7 @@ class RelatorioService
             return ['rotulos' => [], 'valores' => [], 'categorias' => $categorias];
         }
 
-        [$buckets, $labels] = $this->buckets($periodo);
+        [$buckets, $labels] = $this->buckets($periodo, CarbonImmutable::now());
         $valores = array_fill(0, count($buckets), 0);
         $eventos = match ($tipo) {
             'orcamentos' => $orcamentos,
@@ -111,7 +116,7 @@ class RelatorioService
             $data = CarbonImmutable::parse($evento->created_at);
             $chave = match ($periodo) {
                 'hoje' => sprintf('%02d', intdiv((int) $data->format('G'), 4) * 4),
-                'ano' => $data->format('m'),
+                'ano' => $data->format('m-Y'),
                 default => $data->format('Y-m-d'),
             };
             $indice = array_search($chave, $buckets, true);
@@ -125,11 +130,12 @@ class RelatorioService
         return ['rotulos' => $labels, 'valores' => $valores, 'categorias' => []];
     }
 
-    private function buckets(string $periodo): array
+    private function buckets(string $periodo, CarbonImmutable $agora): array
     {
         if ($periodo === 'hoje') {
             $chaves = $labels = [];
-            for ($hora = 0; $hora < 24; $hora += 4) {
+            $ultimaFaixa = intdiv((int) $agora->format('G'), 4) * 4;
+            for ($hora = 0; $hora <= $ultimaFaixa; $hora += 4) {
                 $chaves[] = sprintf('%02d', $hora);
                 $labels[] = sprintf('%02dh', $hora);
             }
@@ -137,22 +143,35 @@ class RelatorioService
         }
 
         if ($periodo === 'semana') {
-            $inicio = CarbonImmutable::now()->startOfWeek(CarbonImmutable::MONDAY);
-            $labels = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
-            return [collect(range(0, 6))->map(fn ($dia) => $inicio->addDays($dia)->format('Y-m-d'))->all(), $labels];
+            $inicio = $agora->subDays(6)->startOfDay();
+            $datas = collect(range(0, 6))->map(fn ($dia) => $inicio->addDays($dia));
+            return [$datas->map(fn ($data) => $data->format('Y-m-d'))->all(), $datas->map(fn ($data) => $data->format('d/m'))->all()];
         }
 
         if ($periodo === 'mes') {
-            $inicio = CarbonImmutable::now()->startOfMonth();
-            $dias = $inicio->daysInMonth;
+            $inicio = $agora->subMonthNoOverflow()->startOfDay();
+            $fim = $agora->startOfDay();
+            $datas = [];
+            for ($data = $inicio; $data <= $fim; $data = $data->addDay()) {
+                $datas[] = $data;
+            }
             return [
-                collect(range(0, $dias - 1))->map(fn ($dia) => $inicio->addDays($dia)->format('Y-m-d'))->all(),
-                collect(range(1, $dias))->map(fn ($dia) => sprintf('%02d', $dia))->all(),
+                collect($datas)->map(fn ($data) => $data->format('Y-m-d'))->all(),
+                collect($datas)->map(fn ($data) => $data->format('d/m'))->all(),
             ];
         }
 
         $meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-        return [collect(range(1, 12))->map(fn ($mes) => sprintf('%02d', $mes))->all(), $meses];
+        $inicio = $agora->subYearNoOverflow()->startOfMonth();
+        $fim = $agora->startOfMonth();
+        $datas = [];
+        for ($data = $inicio; $data <= $fim; $data = $data->addMonth()) {
+            $datas[] = $data;
+        }
+        return [
+            collect($datas)->map(fn ($data) => $data->format('m-Y'))->all(),
+            collect($datas)->map(fn ($data) => $meses[(int) $data->format('n') - 1] . '/' . $data->format('y'))->all(),
+        ];
     }
 
     private function variacao(float|int $atual, float|int $anterior): ?float

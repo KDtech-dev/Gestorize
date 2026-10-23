@@ -52,6 +52,11 @@ const formatCurrency = (value: number) => value.toLocaleString('pt-BR', {
   currency: 'BRL',
 });
 
+const formatarDataCurta = (data: string) => {
+  const [ano, mes, dia] = data.slice(0, 10).split('-');
+  return `${dia}/${mes}/${ano}`;
+};
+
 const obterDetalheErro = (error: unknown) => {
   const mensagemApi = formatErrorMessage(error, '');
   if (mensagemApi) return mensagemApi;
@@ -137,7 +142,7 @@ const gerarHtmlRelatorio = (report: RelatorioResponse, periodo: PeriodType, tipo
     <h1>${escapeHtml(tipoLabel)}</h1>
     <p class="subtitle">Resumo das movimentações registradas no sistema</p>
     <div class="rule"></div>
-    <div class="meta"><span>Período: <strong>${escapeHtml(periodoLabel)}</strong></span><span>Gerado em: ${new Date().toLocaleString('pt-BR')}</span></div>
+    <div class="meta"><span>Período: <strong>${escapeHtml(periodoLabel)} · ${formatarDataCurta(report.intervalo.inicio)} a ${formatarDataCurta(report.intervalo.fim)}</strong></span><span>Gerado em: ${new Date().toLocaleString('pt-BR')}</span></div>
     <div class="grid">
       <div class="metric"><div class="metric-label">Valor em orçamentos</div><div class="metric-value">${formatCurrency(report.metricas.valor_orcado.valor)}</div><div class="metric-change">${escapeHtml(formatarVariacao(report.metricas.valor_orcado.variacao))}</div></div>
       <div class="metric"><div class="metric-label">Orçamentos criados</div><div class="metric-value">${report.metricas.orcamentos.valor}</div><div class="metric-change">${escapeHtml(formatarVariacao(report.metricas.orcamentos.variacao))}</div></div>
@@ -229,6 +234,9 @@ const Relatorios = ({ navigation }: Props) => {
   }, [selectedReportType, report, colors]);
 
   const moeda = formatCurrency;
+  const dateRange = report
+    ? `${formatarDataCurta(report.intervalo.inicio)} a ${formatarDataCurta(report.intervalo.fim)}`
+    : undefined;
 
   const gerarPdfRelatorio = useCallback(async () => {
     if (!report) return;
@@ -340,6 +348,7 @@ const Relatorios = ({ navigation }: Props) => {
             type={selectedReportType}
             data={chartData.data}
             total={chartData.total}
+            dateRange={dateRange}
           />
         )}
 

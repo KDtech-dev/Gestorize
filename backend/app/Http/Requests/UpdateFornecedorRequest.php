@@ -24,6 +24,8 @@ class UpdateFornecedorRequest extends FormRequest
             'email' => ['sometimes', 'nullable', 'email', 'max:255', Rule::unique('fornecedores', 'email')->ignore($fornecedorId),],
             'telefone' => ['sometimes', 'required', 'string', 'max:20',],
             'ramo_atividade' => ['sometimes', 'nullable', 'string', 'max:255',],
+            'categoria_ids' => ['sometimes', 'array'],
+            'categoria_ids.*' => ['uuid', 'distinct', 'exists:categorias,id'],
             'nome_responsavel' => ['sometimes', 'nullable', 'string', 'max:255',],
             'chave_pix' => ['sometimes', 'nullable', 'string', 'max:255',],
             'endereco_id' => ['sometimes', 'nullable', 'uuid', 'exists:enderecos,id',],

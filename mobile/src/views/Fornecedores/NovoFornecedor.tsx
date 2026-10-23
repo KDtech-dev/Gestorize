@@ -11,8 +11,12 @@ import { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import {
     ActivityIndicator,
+    Modal,
+    Pressable,
     StyleSheet,
     Text,
+    TextInput,
+    TouchableOpacity,
     View,
 } from "react-native";
 
@@ -31,6 +35,10 @@ import { RootStackParamList } from "@context/types";
 import { useTheme } from "@context/ThemeContext";
 
 import { fornecedorSchema } from "@schemas/FornecedorSchema";
+import { createCategoria, getCategorias } from "@api/apiCategoria";
+import { CategoriaType } from "@context/types";
+import ModalSelecaoCategorias from "@components/ModalSelecaoCategorias";
+import ClickableTextCard from "@components/ClickableTextCard";
 
 import {
     createFornecedor,
@@ -75,6 +83,11 @@ export default function NovoFornecedor() {
 
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
+    const [categorias, setCategorias] = useState<CategoriaType[]>([]);
+    const [showCategoriasModal, setShowCategoriasModal] = useState(false);
+    const [showNovaCategoriaModal, setShowNovaCategoriaModal] = useState(false);
+    const [nomeNovaCategoria, setNomeNovaCategoria] = useState("");
+    const [salvandoCategoria, setSalvandoCategoria] = useState(false);
 
     const modo = route.params?.modo ?? "criar";
     const fornecedorId = route.params?.fornecedorId;
@@ -103,7 +116,7 @@ export default function NovoFornecedor() {
             cnpj: "",
             email: null,
             telefone: null,
-            ramo_atividade: null,
+            categoria_ids: [],
             nome_responsavel: null,
             chave_pix: null,
             endereco: {
@@ -125,6 +138,36 @@ export default function NovoFornecedor() {
     });
 
     const nomeFornecedor = watch("nome");
+    const categoriaIdsSelecionadas = watch("categoria_ids") ?? [];
+
+    useEffect(() => {
+        getCategorias().then((response) => setCategorias(response.data)).catch(() => setCategorias([]));
+    }, []);
+
+    const handleCreateCategoria = async () => {
+        const nome = nomeNovaCategoria.trim();
+        if (!nome) {
+            Toast.show({ type: "error", text1: "Nome obrigatório", text2: "Informe o nome da categoria." });
+            return;
+        }
+
+        try {
+            setSalvandoCategoria(true);
+            const response = await createCategoria(nome);
+            const novaCategoria = response.data;
+            const id = String(novaCategoria.id);
+            setCategorias((atuais) => [...atuais.filter((categoria) => String(categoria.id) !== id), novaCategoria]);
+            setValue("categoria_ids", [...new Set([...categoriaIdsSelecionadas, id])], { shouldDirty: true, shouldValidate: true });
+            setNomeNovaCategoria("");
+            setShowNovaCategoriaModal(false);
+            setShowCategoriasModal(true);
+            Toast.show({ type: "success", text1: "Categoria cadastrada", text2: "A categoria foi criada e selecionada." });
+        } catch (error: any) {
+            Toast.show({ type: "error", text1: "Erro ao cadastrar categoria", text2: error?.response?.data?.message ?? "Não foi possível cadastrar a categoria." });
+        } finally {
+            setSalvandoCategoria(false);
+        }
+    };
 
     const handleDelete = () => {
         if (!fornecedorId) {
@@ -191,7 +234,7 @@ export default function NovoFornecedor() {
                 cnpj: fornecedor.cnpj ?? "",
                 email: fornecedor.email ?? null,
                 telefone: fornecedor.telefone ?? null,
-                ramo_atividade: fornecedor.ramo_atividade ?? null,
+                categoria_ids: fornecedor.categorias?.map((categoria: CategoriaType) => String(categoria.id)) ?? [],
                 nome_responsavel: fornecedor.nome_responsavel ?? null,
                 chave_pix: fornecedor.chave_pix ?? null,
 
@@ -306,7 +349,7 @@ export default function NovoFornecedor() {
                 cnpj: data.cnpj,
                 email: data.email || null,
                 telefone: data.telefone || null,
-                ramo_atividade: data.ramo_atividade || null,
+                categoria_ids: data.categoria_ids,
                 nome_responsavel: data.nome_responsavel || null,
                 chave_pix: data.chave_pix || null,
                 endereco: data.endereco,
@@ -526,31 +569,17 @@ export default function NovoFornecedor() {
                         )}
                     />
 
-                    <Controller
-                        control={control}
-                        name="ramo_atividade"
-                        render={({
-                            field: {
-                                value,
-                                onChange,
-                            },
-                            fieldState: {
-                                error,
-                            },
-                        }) => (
-                            <>
-                                <EditableTextCard
-                                    label="Ramo de atividade"
-                                    placeholder="Ex.: Alimentos, vestuário..."
-                                    value={value ?? ""}
-                                    editable
-                                    onChangeText={onChange}
-                                />
-
-                                <InputError message={error?.message} />
-                            </>
-                        )}
-                    />
+                    <Controller control={control} name="categoria_ids" render={({ fieldState: { error } }) => (
+                        <View style={{ gap: 8 }}>
+                            <ClickableTextCard
+                                label="Ramos de atividade"
+                                placeholder="Selecione uma ou mais categorias"
+                                value={categorias.filter((categoria) => categoriaIdsSelecionadas.includes(String(categoria.id))).map((categoria) => categoria.nome).join(", ")}
+                                onPress={() => setShowCategoriasModal(true)}
+                            />
+                            <InputError message={error?.message} />
+                        </View>
+                    )} />
 
                     <Controller
                         control={control}
@@ -898,6 +927,50 @@ export default function NovoFornecedor() {
                 titulo="Tem certeza que deseja excluir este fornecedor?"
                 onSuccess={confirmarExclusao}
             />
+            <ModalSelecaoCategorias
+                visible={showCategoriasModal}
+                categorias={categorias}
+                selecionadas={categoriaIdsSelecionadas}
+                onChange={(ids) => setValue("categoria_ids", ids, { shouldDirty: true, shouldValidate: true })}
+                onAdd={() => {
+                    setShowCategoriasModal(false);
+                    setShowNovaCategoriaModal(true);
+                }}
+                onClose={() => setShowCategoriasModal(false)}
+            />
+            <Modal
+                visible={showNovaCategoriaModal}
+                transparent
+                animationType="fade"
+                onRequestClose={() => { if (!salvandoCategoria) setShowNovaCategoriaModal(false); }}
+            >
+                <Pressable style={styles.categoryDialogOverlay} onPress={() => { if (!salvandoCategoria) setShowNovaCategoriaModal(false); }}>
+                    <Pressable style={[styles.categoryDialog, { backgroundColor: colors.card }]} onPress={(event) => event.stopPropagation()}>
+                        <Text style={[styles.categoryDialogTitle, { color: colors.accentText }]}>Nova categoria</Text>
+                        <Text style={[styles.categoryDialogDescription, { color: colors.muted }]}>Informe o nome da categoria que deseja cadastrar.</Text>
+                        <TextInput
+                            style={[styles.categoryDialogInput, { color: colors.text, borderColor: colors.border, backgroundColor: colors.surface }]}
+                            placeholder="Ex.: Bebidas"
+                            placeholderTextColor={colors.muted}
+                            value={nomeNovaCategoria}
+                            onChangeText={(texto) => setNomeNovaCategoria(texto.slice(0, 255))}
+                            maxLength={255}
+                            autoCapitalize="sentences"
+                            editable={!salvandoCategoria}
+                            returnKeyType="done"
+                            onSubmitEditing={handleCreateCategoria}
+                        />
+                        <View style={styles.categoryDialogActions}>
+                            <TouchableOpacity style={[styles.categoryDialogButton, { backgroundColor: colors.elevated }]} disabled={salvandoCategoria} onPress={() => { setShowNovaCategoriaModal(false); setNomeNovaCategoria(""); }}>
+                                <Text style={[styles.categoryDialogCancelText, { color: colors.text }]}>Cancelar</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={[styles.categoryDialogButton, { backgroundColor: colors.accentText }, salvandoCategoria && styles.categoryDialogDisabled]} disabled={salvandoCategoria} onPress={handleCreateCategoria}>
+                                <Text style={styles.categoryDialogSaveText}>{salvandoCategoria ? "Salvando..." : "Cadastrar"}</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </Pressable>
+                </Pressable>
+            </Modal>
             {unsavedGuard.dialog}
         </View>
         </FormAccessProvider>
@@ -950,5 +1023,61 @@ const styles = StyleSheet.create({
         width: "100%",
         gap: 12,
         marginBottom: 5,
+    },
+    categoryDialogOverlay: {
+        flex: 1,
+        backgroundColor: "rgba(0, 0, 0, 0.45)",
+        justifyContent: "center",
+        alignItems: "center",
+        padding: 20,
+    },
+    categoryDialog: {
+        width: "100%",
+        maxWidth: 400,
+        borderRadius: 20,
+        padding: 22,
+    },
+    categoryDialogTitle: {
+        fontSize: 21,
+        fontWeight: "700",
+        marginBottom: 8,
+    },
+    categoryDialogDescription: {
+        fontSize: 14,
+        marginBottom: 20,
+        lineHeight: 20,
+    },
+    categoryDialogInput: {
+        borderWidth: 1,
+        borderRadius: 10,
+        paddingHorizontal: 14,
+        paddingVertical: 12,
+        fontSize: 16,
+        marginBottom: 20,
+    },
+    categoryDialogActions: {
+        flexDirection: "row",
+        justifyContent: "flex-end",
+        gap: 10,
+    },
+    categoryDialogButton: {
+        minWidth: 105,
+        minHeight: 44,
+        paddingHorizontal: 16,
+        borderRadius: 10,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    categoryDialogCancelText: {
+        fontSize: 14,
+        fontWeight: "600",
+    },
+    categoryDialogSaveText: {
+        color: "#FFFFFF",
+        fontSize: 14,
+        fontWeight: "600",
+    },
+    categoryDialogDisabled: {
+        opacity: 0.6,
     },
 });

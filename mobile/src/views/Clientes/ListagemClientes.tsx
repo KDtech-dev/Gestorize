@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Animated,
   FlatList,
@@ -23,6 +23,7 @@ import { can } from '@utils/permissions';
 
 
 type Navigation = NativeStackNavigationProp<RootStackParamList>;
+const PAGE_SIZE = 10;
 
 const tiposCliente = [
   {
@@ -46,6 +47,7 @@ const Clientes = () => {
   );
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const scrollY = useRef(new Animated.Value(0)).current;
 
   const carregarClientes = useCallback(async () => {
@@ -53,6 +55,7 @@ const Clientes = () => {
       setLoading(true);
       const response = await getClientes();
       setClientes(response.data);
+      setVisibleCount(PAGE_SIZE);
     } catch (error) {
       Toast.show({
         type: "error",
@@ -85,6 +88,10 @@ const Clientes = () => {
       return matchTipo && matchSearch;
     });
   }, [clientes, search, selectedTipo]);
+
+  useEffect(() => setVisibleCount(PAGE_SIZE), [search, selectedTipo]);
+  const visibleData = useMemo(() => filteredData.slice(0, visibleCount), [filteredData, visibleCount]);
+  const carregarMais = useCallback(() => setVisibleCount((atual) => Math.min(atual + PAGE_SIZE, filteredData.length)), [filteredData.length]);
 
   const opacity = scrollY.interpolate({
     inputRange: [0, 100],
@@ -165,7 +172,7 @@ const Clientes = () => {
       </Animated.View>
 
       <Animated.FlatList
-        data={filteredData}
+        data={visibleData}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
@@ -186,6 +193,8 @@ const Clientes = () => {
           />
         )}
         onScroll={handleScroll}
+        onEndReached={carregarMais}
+        onEndReachedThreshold={0.45}
         scrollEventThrottle={16}
         initialNumToRender={10}
         maxToRenderPerBatch={10}

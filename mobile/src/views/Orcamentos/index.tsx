@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
   FlatList,
@@ -23,6 +23,7 @@ import { can } from '@utils/permissions';
 type Navigation = NativeStackNavigationProp<RootStackParamList>;
 type Filtro = '24h' | '7d' | 'mes' | null;
 type FiltroStatus = 'pendente' | 'aprovado' | null;
+const PAGE_SIZE = 10;
 
 const filtros: { id: Exclude<Filtro, null>; label: string }[] = [
   { id: '24h', label: 'Últimas 24h' },
@@ -43,6 +44,7 @@ const Orcamentos = () => {
   const [selectedFiltro, setSelectedFiltro] = useState<Filtro>(null);
   const [selectedStatus, setSelectedStatus] = useState<FiltroStatus>(null);
   const [loading, setLoading] = useState(true);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const scrollY = useRef(new Animated.Value(0)).current;
 
   const carregarOrcamentos = useCallback(async () => {
@@ -50,6 +52,7 @@ const Orcamentos = () => {
       setLoading(true);
       const response = await getOrcamentos();
       setOrcamentos(response.data ?? []);
+      setVisibleCount(PAGE_SIZE);
     } catch (error: any) {
       Toast.show({
         type: 'error',
@@ -87,6 +90,10 @@ const Orcamentos = () => {
       return correspondeBusca && correspondeFiltro && correspondeStatus;
     });
   }, [orcamentos, search, selectedFiltro, selectedStatus]);
+
+  useEffect(() => setVisibleCount(PAGE_SIZE), [search, selectedFiltro, selectedStatus]);
+  const visibleData = useMemo(() => filteredData.slice(0, visibleCount), [filteredData, visibleCount]);
+  const carregarMais = useCallback(() => setVisibleCount((atual) => Math.min(atual + PAGE_SIZE, filteredData.length)), [filteredData.length]);
 
   const opacity = scrollY.interpolate({ inputRange: [0, 100], outputRange: [1, 0], extrapolate: 'clamp' });
   const headerTranslate = scrollY.interpolate({ inputRange: [0, 120], outputRange: [0, -120], extrapolate: 'clamp' });
@@ -141,7 +148,7 @@ const Orcamentos = () => {
       </Animated.View>
 
       <Animated.FlatList
-        data={filteredData}
+        data={visibleData}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
@@ -157,6 +164,8 @@ const Orcamentos = () => {
           />
         )}
         onScroll={handleScroll}
+        onEndReached={carregarMais}
+        onEndReachedThreshold={0.45}
         scrollEventThrottle={16}
         initialNumToRender={10}
         maxToRenderPerBatch={10}

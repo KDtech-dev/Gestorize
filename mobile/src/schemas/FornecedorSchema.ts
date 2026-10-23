@@ -30,11 +30,7 @@ export const fornecedorSchema = z.object({
         .nullable()
         .optional(),
 
-    ramo_atividade: z
-        .string()
-        .max(255, "Ramo de atividade muito longo")
-        .nullable()
-        .optional(),
+    categoria_ids: z.array(z.string()).default([]),
 
     nome_responsavel: z
         .string()

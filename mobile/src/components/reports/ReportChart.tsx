@@ -9,9 +9,10 @@ type ReportChartProps = {
   type: 'movimentacao' | 'orcamentos' | 'clientes' | 'produtos';
   data: any;
   total?: string;
+  dateRange?: string;
 };
 
-export const ReportChart = ({ type, data, total }: ReportChartProps) => {
+export const ReportChart = ({ type, data, total, dateRange }: ReportChartProps) => {
   const { colors, isDark } = useTheme();
 
   const chartConfig = {
@@ -55,6 +56,7 @@ export const ReportChart = ({ type, data, total }: ReportChartProps) => {
             : 'Produtos cadastrados por categoria';
       return <View>
         <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
+        {dateRange ? <Text style={[styles.dateRange, { color: colors.muted }]}>{dateRange}</Text> : null}
         <Text style={[styles.empty, { color: colors.muted }]}>Nenhuma movimentação registrada neste período.</Text>
       </View>;
     }
@@ -67,6 +69,7 @@ export const ReportChart = ({ type, data, total }: ReportChartProps) => {
             <Text style={[styles.title, { color: colors.text }]}>
               {type === 'movimentacao' ? 'Valor em orçamentos por período' : 'Orçamentos criados por período'}
             </Text>
+            {dateRange ? <Text style={[styles.dateRange, { color: colors.muted }]}>{dateRange}</Text> : null}
             <ScrollView 
               horizontal 
               showsHorizontalScrollIndicator={false}
@@ -90,6 +93,7 @@ export const ReportChart = ({ type, data, total }: ReportChartProps) => {
         return (
           <>
             <Text style={[styles.title, { color: colors.text }]}>Novos clientes por período</Text>
+            {dateRange ? <Text style={[styles.dateRange, { color: colors.muted }]}>{dateRange}</Text> : null}
             <ScrollView 
               horizontal 
               showsHorizontalScrollIndicator={false}
@@ -114,6 +118,7 @@ export const ReportChart = ({ type, data, total }: ReportChartProps) => {
         return (
           <>
             <Text style={[styles.title, { color: colors.text }]}>Produtos cadastrados por categoria</Text>
+            {dateRange ? <Text style={[styles.dateRange, { color: colors.muted }]}>{dateRange}</Text> : null}
             <View style={styles.pieChartContainer}>
               <PieChart
                 data={data}
@@ -163,6 +168,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 16,
     textAlign: 'center',
+  },
+  dateRange: {
+    marginTop: -7,
+    marginBottom: 8,
+    paddingHorizontal: 20,
+    fontSize: 12,
   },
   chartScrollContainer: {
     paddingRight: 20,

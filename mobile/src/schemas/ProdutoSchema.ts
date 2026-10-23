@@ -1,5 +1,11 @@
 import { z } from "zod";
 
+const dateToIso = (value: string | null | undefined) => {
+  if (!value) return null;
+  const match = value.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  return match ? `${match[3]}-${match[2]}-${match[1]}` : value;
+};
+
 const produtoSchema = z.object({
   nome: z
     .string()
@@ -42,6 +48,7 @@ const produtoSchema = z.object({
     .string()
     .nullable()
     .optional(),
+  categoria_nome: z.string().optional(),
 
   fornecedor_id: z
     .string()
@@ -52,6 +59,23 @@ const produtoSchema = z.object({
     .string()
     .min(1, "A unidade de medida é obrigatória."),
 
+}).superRefine((produto, ctx) => {
+  if (!produto.data_entrada) ctx.addIssue({ code: 'custom', path: ['data_entrada'], message: 'A data de entrada é obrigatória.' });
+  const categoria = produto.categoria_nome;
+  const exigeValidade = ['insumos', 'produtos médicos/hospitalares'].includes(
+    (categoria ?? '').normalize('NFC').toLocaleLowerCase('pt-BR'),
+  );
+  if (exigeValidade && !produto.validade) {
+    ctx.addIssue({ code: 'custom', path: ['validade'], message: 'A validade é obrigatória para esta categoria.' });
+  }
+  const entrada = dateToIso(produto.data_entrada);
+  const validade = dateToIso(produto.validade);
+  if (validade && entrada && validade < entrada) {
+    ctx.addIssue({ code: 'custom', path: ['validade'], message: 'A validade não pode ser anterior à data de entrada.' });
+  }
+  if (validade && validade < new Date().toISOString().slice(0, 10)) {
+    ctx.addIssue({ code: 'custom', path: ['validade'], message: 'Não é possível cadastrar um produto vencido.' });
+  }
 });
 
 export { produtoSchema };

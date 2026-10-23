@@ -151,11 +151,14 @@ export default function NovoProduto() {
             data_entrada: null,
             validade: null,
             categoria_id: "",
+            categoria_nome: "",
             fornecedor_id: "",
             unidade_medida_id: "",
         },
     });
     const nomeProduto = watch("nome");
+    const categoriaIdSelecionada = watch("categoria_id");
+    const validadeObrigatoria = categorias.some((categoria) => String(categoria.id) === String(categoriaIdSelecionada) && ["insumos", "produtos médicos/hospitalares"].includes((categoria.nome ?? "").toLocaleLowerCase("pt-BR")));
     const unsavedGuard = useUnsavedChangesGuard({
         hasUnsavedChanges: isDirty || imagensAlteradas,
         message: isCriar
@@ -281,6 +284,7 @@ export default function NovoProduto() {
                     data_entrada: dateFromApi(produto.data_entrada),
                     validade: dateFromApi(produto.validade),
                     categoria_id: produto.categoria_id ? String(produto.categoria_id) : "",
+                    categoria_nome: produto.categoria_titulo ?? "",
                     fornecedor_id: produto.fornecedor_id ? String(produto.fornecedor_id) : "",
                     unidade_medida_id: produto.unidade_medida_id ? String(produto.unidade_medida_id) : "",
                 };
@@ -403,6 +407,7 @@ export default function NovoProduto() {
                 shouldDirty: true,
                 shouldValidate: true,
             });
+            setValue("categoria_nome", opcao.nome, { shouldDirty: true, shouldValidate: true });
 
             setNomeCategoria("");
             setShowCategoriaModal(false);
@@ -528,6 +533,7 @@ export default function NovoProduto() {
                 estoque: data.estoque,
                 data_entrada: dateToApi(data.data_entrada),
                 validade: dateToApi(data.validade),
+                categoria_nome: undefined,
                 categoria_id: data.categoria_id,
                 fornecedor_id: data.fornecedor_id || null,
                 unidade_medida_id: data.unidade_medida_id,
@@ -878,7 +884,10 @@ export default function NovoProduto() {
                                     }
                                     value={value}
                                     options={categorias}
-                                    onChange={onChange}
+                                    onChange={(id) => {
+                                        onChange(id);
+                                        setValue("categoria_nome", categorias.find((item) => item.id === id)?.nome ?? "", { shouldDirty: true, shouldValidate: true });
+                                    }}
                                     onOpen={carregarCategorias}
                                     showAddButton
                                     onAdd={() => setShowCategoriaModal(true)}
@@ -950,7 +959,7 @@ export default function NovoProduto() {
                         }) => (
                             <>
                                 <DateField
-                                    label="Validade"
+                                label={validadeObrigatoria ? "Validade (obrigatória)" : "Validade (opcional)"}
                                     value={value ?? ""}
                                     onChange={(text) => onChange(formatDate(text))}
                                 />

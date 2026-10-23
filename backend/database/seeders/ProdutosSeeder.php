@@ -21,6 +21,8 @@ class ProdutosSeeder extends Seeder
         $calcados   = Categoria::where('nome', 'Calçados')->first()->id;
         $moveis     = Categoria::where('nome', 'Móveis')->first()->id;
         $brinquedos = Categoria::where('nome', 'Brinquedos')->first()->id;
+        $insumos = Categoria::where('nome', 'Insumos')->first()->id;
+        $medicos = Categoria::where('nome', 'Produtos médicos/hospitalares')->first()->id;
 
         $un  = UnidadeMedida::where('sigla', 'UN')->first()->id;
         $kg  = UnidadeMedida::where('sigla', 'KG')->first()->id;
@@ -78,12 +80,28 @@ class ProdutosSeeder extends Seeder
             // Brinquedos
             ['nome' => 'Boneca de Pano',           'descricao' => 'Altura 30cm',            'preco_custo' => 15.00, 'porcentagem_lucro' => 65, 'preco_venda' => 24.75,  'estoque' => 45,  'categoria_id' => $brinquedos,  'unidade_medida_id' => $un],
             ['nome' => 'Carrinho de Controle',     'descricao' => 'Remoto, escala 1:18',    'preco_custo' => 50.00, 'porcentagem_lucro' => 60, 'preco_venda' => 80.00,  'estoque' => 20,  'categoria_id' => $brinquedos,  'unidade_medida_id' => $un],
+
+            // Insumos e produtos médicos/hospitalares
+            ['nome' => 'Insumo para Limpeza Profissional', 'descricao' => 'Embalagem concentrada 1L', 'preco_custo' => 18.00, 'porcentagem_lucro' => 45, 'preco_venda' => 26.10, 'estoque' => 25, 'categoria_id' => $insumos, 'unidade_medida_id' => $l],
+            ['nome' => 'Luvas de Procedimento', 'descricao' => 'Caixa com 100 unidades', 'preco_custo' => 22.00, 'porcentagem_lucro' => 50, 'preco_venda' => 33.00, 'estoque' => 40, 'categoria_id' => $medicos, 'unidade_medida_id' => $cx],
+            ['nome' => 'Gaze Estéril', 'descricao' => 'Pacote hospitalar', 'preco_custo' => 7.00, 'porcentagem_lucro' => 55, 'preco_venda' => 10.85, 'estoque' => 60, 'categoria_id' => $medicos, 'unidade_medida_id' => $un],
         ];
 
+        $hoje = now();
+        $validadeOffsets = [-45, -10, -1, 0, 7, 15, 30, 60, 90, 180, 365];
+        $categoriasComValidade = [$alimentos, $bebidas, $higiene, $insumos, $medicos];
+
         foreach ($produtos as $indice => $produto) {
-            $dataCadastro = now()->subDays(($indice * 11) % 360);
+            $dataCadastro = $hoje->copy()->subDays(($indice * 11) % 360);
+            $temValidade = in_array($produto['categoria_id'], $categoriasComValidade, true);
+            $validadeOffset = $validadeOffsets[$indice % count($validadeOffsets)];
+            $validade = $temValidade ? $hoje->copy()->addDays($validadeOffset) : null;
+            $diasDesdeEntrada = $temValidade && $validadeOffset < 0
+                ? abs($validadeOffset) + random_int(1, 30)
+                : random_int(0, 60);
             $registro = Produto::create(array_merge($produto, [
-                'data_entrada' => now()->toDateString(),
+                'data_entrada' => $hoje->copy()->subDays($diasDesdeEntrada)->toDateString(),
+                'validade' => $validade?->toDateString(),
                 'fornecedor_id' => Fornecedor::query()->inRandomOrder()->value('id'),
             ]));
 

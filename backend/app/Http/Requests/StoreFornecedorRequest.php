@@ -20,6 +20,8 @@ class StoreFornecedorRequest extends FormRequest
             'email' => ['nullable', 'email', 'max:255', Rule::unique('fornecedores', 'email'),],
             'telefone' => ['required', 'string', 'max:20',],
             'ramo_atividade' => ['nullable', 'string', 'max:255',],
+            'categoria_ids' => ['sometimes', 'array'],
+            'categoria_ids.*' => ['uuid', 'distinct', 'exists:categorias,id'],
             'nome_responsavel' => ['nullable', 'string', 'max:255',],
             'chave_pix' => ['nullable', 'string', 'max:255',],
             'endereco_id' => ['nullable', 'uuid', 'exists:enderecos,id',],

@@ -3,6 +3,8 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Validator;
+use App\Models\Categoria;
 
 class StoreProdutoRequest extends FormRequest
 {
@@ -24,8 +26,21 @@ class StoreProdutoRequest extends FormRequest
             'fornecedor_id' => ['nullable', 'uuid', 'exists:fornecedores,id'],
             'unidade_medida_id' => ['required', 'uuid', 'exists:unidades_medida,id',],
             'estoque' => ['required', 'numeric', 'min:0',],
-            'validade' => ['nullable', 'date',],
+            'validade' => ['nullable', 'date', 'after_or_equal:data_entrada', 'after_or_equal:today'],
         ];
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator) {
+            $categoriaId = $this->input('categoria_id');
+            if (!$categoriaId) return;
+            $nome = Categoria::whereKey($categoriaId)->value('nome');
+            if (in_array(mb_strtolower((string) $nome), ['insumos', 'produtos médicos/hospitalares'], true)
+                && !$this->filled('validade')) {
+                $validator->errors()->add('validade', 'A validade é obrigatória para esta categoria.');
+            }
+        });
     }
 
     public function messages(): array
@@ -66,6 +81,7 @@ class StoreProdutoRequest extends FormRequest
             'estoque.min' => 'O estoque não pode ser negativo.',
 
             'validade.date' => 'A validade deve ser uma data válida.',
+            'validade.after_or_equal' => 'A validade não pode ser anterior à data de entrada nem estar vencida.',
         ];
     }
 }

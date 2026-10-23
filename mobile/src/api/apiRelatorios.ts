@@ -6,6 +6,7 @@ export type TipoRelatorio = 'movimentacao' | 'orcamentos' | 'clientes' | 'produt
 export type RelatorioResponse = {
   periodo: PeriodoRelatorio;
   tipo: TipoRelatorio;
+  intervalo: { inicio: string; fim: string };
   nota: string;
   metricas: {
     valor_orcado: { valor: number; variacao: number | null };

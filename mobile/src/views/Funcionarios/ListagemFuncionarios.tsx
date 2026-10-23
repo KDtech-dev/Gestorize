@@ -1,5 +1,6 @@
 import {
     useCallback,
+    useEffect,
     useMemo,
     useRef,
     useState,
@@ -38,6 +39,7 @@ import { can } from '@utils/permissions';
 type Navigation = NativeStackNavigationProp<RootStackParamList>;
 
 type PerfilFuncionario = 'gestor' | 'funcionario';
+const PAGE_SIZE = 10;
 
 
 const perfisFuncionario = [
@@ -64,6 +66,7 @@ const Funcionarios = () => {
         useState<PerfilFuncionario | null>(null);
     const [search, setSearch] = useState('');
     const [loading, setLoading] = useState(true);
+    const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
     const scrollY = useRef(new Animated.Value(0)).current;
     const carregarFuncionarios = useCallback(async () => {
         try {
@@ -74,6 +77,7 @@ const Funcionarios = () => {
             setFuncionarios(response.data.filter((funcionario) =>
                 String(funcionario.id) !== String(user?.id)
             ));
+            setVisibleCount(PAGE_SIZE);
         } catch (error: any) {
             Toast.show({
                 type: 'error',
@@ -116,6 +120,19 @@ const Funcionarios = () => {
             return matchPerfil && matchSearch;
         });
     }, [funcionarios, search, selectedPerfil]);
+
+    useEffect(() => {
+        setVisibleCount(PAGE_SIZE);
+    }, [search, selectedPerfil]);
+
+    const visibleData = useMemo(
+        () => filteredData.slice(0, visibleCount),
+        [filteredData, visibleCount],
+    );
+
+    const carregarMais = useCallback(() => {
+        setVisibleCount((count) => Math.min(count + PAGE_SIZE, filteredData.length));
+    }, [filteredData.length]);
 
     const opacity = scrollY.interpolate({
         inputRange: [0, 100],
@@ -211,7 +228,7 @@ const Funcionarios = () => {
             </Animated.View>
 
             <Animated.FlatList
-                data={filteredData}
+                data={visibleData}
                 keyExtractor={(item) => item.id}
                 contentContainerStyle={styles.listContent}
                 showsVerticalScrollIndicator={false}
@@ -245,6 +262,8 @@ const Funcionarios = () => {
                     );
                 }}
                 onScroll={handleScroll}
+                onEndReached={carregarMais}
+                onEndReachedThreshold={0.45}
                 scrollEventThrottle={16}
                 initialNumToRender={10}
                 maxToRenderPerBatch={10}

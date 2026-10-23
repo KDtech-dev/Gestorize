@@ -10,15 +10,12 @@ class CategoriasSeeder extends Seeder
 {
     public function run()
     {
-        Categoria::create(['nome' => 'Alimentos',]);
-        Categoria::create(['nome' => 'Bebidas',]);
-        Categoria::create(['nome' => 'Limpeza',]);
-        Categoria::create(['nome' => 'Higiene Pessoal',]);
-        Categoria::create(['nome' => 'Eletrônicos',]);
-        Categoria::create(['nome' => 'Roupas',]);
-        Categoria::create(['nome' => 'Calçados',]);
-        Categoria::create(['nome' => 'Móveis',]);
-        Categoria::create(['nome' => 'Brinquedos',]);
-        Categoria::create(['nome' => 'Ferramentas']);
+        foreach ([
+            'Alimentos', 'Bebidas', 'Limpeza', 'Higiene Pessoal', 'Eletrônicos',
+            'Roupas', 'Calçados', 'Móveis', 'Brinquedos', 'Ferramentas',
+            'Insumos', 'Produtos médicos/hospitalares',
+        ] as $nome) {
+            Categoria::firstOrCreate(['nome' => $nome]);
+        }
     }
 }

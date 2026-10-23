@@ -17,7 +17,6 @@ class FornecedorFactory extends Factory
             'cnpj'             => $this->faker->numerify('##.###.###/####-##'),
             'email'            => $this->faker->companyEmail(),
             'telefone'         => $this->faker->numerify('(##) #####-####'),
-            'ramo_atividade'   => $this->faker->bs(),
             'nome_responsavel' => $this->faker->name(),
             'chave_pix'        => $this->faker->numerify('##.###.###/####-##'),
             'endereco_id'      => Endereco::factory(),

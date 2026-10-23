@@ -47,4 +47,10 @@ class Fornecedor extends Model
     {
         return $this->belongsTo(Endereco::class);
     }
+
+    public function categorias()
+    {
+        return $this->belongsToMany(Categoria::class, 'categoria_fornecedor')
+            ->withTimestamps();
+    }
 }

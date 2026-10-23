@@ -21,6 +21,7 @@ type Props = {
   estoque: number;
   unidade?: string | null;
   categoria?: string | null;
+  validade?: string | null;
   imagem?: string | null;
   selected?: boolean;
   onPress?: () => void;
@@ -32,6 +33,7 @@ const Produto = ({
   estoque,
   unidade,
   categoria,
+  validade,
   imagem,
   selected = false,
   onPress,
@@ -53,12 +55,6 @@ const Produto = ({
 
   const arrowColor = isDark ? '#ffffff' : '#062046';
 
-  const badgeBg = isDark
-    ? 'rgba(255,255,255,0.12)'
-    : 'rgba(0,104,255,0.2)';
-
-  const badgeText = isDark ? '#ffffff' : '#062046';
-
   const abrirImagem = () => {
     if (imagem) {
       setImagemVisivel(true);
@@ -73,6 +69,14 @@ const Produto = ({
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
+  const dataValidade = validade?.slice(0, 10) ?? null;
+  const hojeDate = new Date();
+  const hoje = `${hojeDate.getFullYear()}-${String(hojeDate.getMonth() + 1).padStart(2, '0')}-${String(hojeDate.getDate()).padStart(2, '0')}`;
+  const validadeVencida = Boolean(dataValidade && dataValidade < hoje);
+  const validadeFormatada = dataValidade
+    ? `${dataValidade.slice(8, 10)}/${dataValidade.slice(5, 7)}/${dataValidade.slice(0, 4)}`
+    : null;
+  const validadeStatus = dataValidade === hoje ? 'Vence hoje' : validadeVencida ? 'Vencido' : 'No prazo';
 
   return (
     <>
@@ -87,9 +91,9 @@ const Produto = ({
             {
               backgroundColor: cardBg,
               shadowColor: isDark ? '#ffffff' : '#000000',
-              shadowOpacity: isDark ? 0.08 : 0.8,
-              borderWidth: selected ? 3 : 0,
-              borderColor: colors.accent,
+              shadowOpacity: isDark ? 0.08 : 0.12,
+              borderWidth: selected ? 2 : 1,
+              borderColor: selected ? colors.primary : colors.border,
             },
           ]}
         >
@@ -127,6 +131,18 @@ const Produto = ({
             </TouchableOpacity>
 
             <View style={styles.info}>
+              {categoria ? (
+                <View style={styles.categoryLine}>
+                  <Ionicons name="pricetag-outline" size={12} color={colors.primary} />
+                  <Text
+                    numberOfLines={1}
+                    style={[styles.categoryText, { color: colors.primary }]}
+                  >
+                    {categoria}
+                  </Text>
+                </View>
+              ) : null}
+
               <View style={styles.header}>
                 <Text
                   numberOfLines={2}
@@ -138,24 +154,6 @@ const Produto = ({
                 >
                   {nome}
                 </Text>
-
-                {!compactLists && categoria ? (
-                  <View
-                    style={[
-                      styles.badge,
-                      { backgroundColor: badgeBg },
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.badgeText,
-                        { color: badgeText },
-                      ]}
-                    >
-                      {categoria}
-                    </Text>
-                  </View>
-                ) : null}
               </View>
 
               <Text
@@ -163,7 +161,7 @@ const Produto = ({
                 style={[
                   styles.subtitle,
                   compactLists && styles.subtitleCompact,
-                  { color: subText },
+                  { color: colors.primary },
                 ]}
               >
                 Valor: R$ {precoFormatado}
@@ -189,15 +187,20 @@ const Produto = ({
                 </View>
               )}
 
-              {compactLists && categoria ? (
-                <Text
-                  style={[
-                    styles.compactCategory,
-                    { color: subText },
-                  ]}
-                >
-                  {categoria}
-                </Text>
+              {validadeFormatada ? (
+                <View style={styles.detailRow}>
+                  <Ionicons
+                    name="calendar-outline"
+                    size={15}
+                    color={validadeVencida ? colors.error : colors.success}
+                  />
+                  <Text
+                    numberOfLines={1}
+                    style={[styles.detailText, { color: validadeVencida ? colors.error : subText }]}
+                  >
+                    Validade: {validadeFormatada} · {validadeStatus}
+                  </Text>
+                </View>
               ) : null}
             </View>
           </View>
@@ -266,15 +269,15 @@ export default Produto;
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 20,
-    paddingVertical: 20,
-    paddingHorizontal: 15,
-    marginBottom: 14,
+    borderRadius: 18,
+    paddingVertical: 16,
+    paddingHorizontal: 14,
+    marginBottom: 11,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    shadowRadius: 8,
-    elevation: 5,
+    shadowRadius: 10,
+    elevation: 3,
   },
 
   cardCompact: {
@@ -298,17 +301,18 @@ const styles = StyleSheet.create({
   },
 
   circle: {
-    width: 65,
-    height: 65,
-    borderRadius: 50,
+    width: 64,
+    height: 64,
+    borderRadius: 15,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
   },
 
   circleCompact: {
-    width: 44,
-    height: 44,
+    width: 46,
+    height: 46,
+    borderRadius: 12,
   },
 
   image: {
@@ -317,45 +321,43 @@ const styles = StyleSheet.create({
   },
 
   header: {
-    flexDirection: 'column',
-    alignItems: 'flex-start',
-    gap: 4,
+    minWidth: 0,
+    marginBottom: 2,
+  },
+
+  categoryLine: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
     minWidth: 0,
     marginBottom: 3,
   },
 
+  categoryText: {
+    flexShrink: 1,
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.2,
+  },
+
   title: {
     flexShrink: 1,
-    fontSize: 18,
-    fontWeight: '900',
+    fontSize: 16,
+    fontWeight: '800',
   },
 
   titleCompact: {
     fontSize: 15,
   },
 
-  badge: {
-    maxWidth: '100%',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-
-  badgeText: {
-    fontSize: 12,
-    fontWeight: '700',
-    flexShrink: 1,
-    flexWrap: 'wrap',
-    width: '100%',
-  },
-
   subtitle: {
     fontSize: 16,
-    marginTop: 3,
+    fontWeight: '800',
+    marginTop: 7,
   },
 
   subtitleCompact: {
-    fontSize: 13,
+    fontSize: 14,
     marginTop: 2,
   },
 
@@ -370,11 +372,6 @@ const styles = StyleSheet.create({
   detailText: {
     flex: 1,
     fontSize: 13,
-  },
-
-  compactCategory: {
-    fontSize: 12,
-    marginTop: 2,
   },
 
   modalOverlay: {

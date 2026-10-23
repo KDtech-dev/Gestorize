@@ -9,7 +9,7 @@ type Row = Record<string, unknown>;
 const definitions: Record<string, { columns: Array<{ key: string; label: string; format?: (row: Row) => string }>; search: string[] }> = {
   clientes: { columns: [{ key: 'nome', label: 'Cliente' }, { key: 'tipo', label: 'Tipo' }, { key: 'email', label: 'E-mail' }, { key: 'telefone', label: 'Telefone' }], search: ['nome', 'email', 'telefone'] },
   produtos: { columns: [{ key: 'nome', label: 'Produto' }, { key: 'codigo_barras', label: 'Código' }, { key: 'categoria_titulo', label: 'Categoria' }, { key: 'preco_venda', label: 'Preço', format: (row) => currency(row.preco_venda) }, { key: 'estoque', label: 'Estoque' }], search: ['nome', 'codigo_barras', 'categoria_titulo'] },
-  fornecedores: { columns: [{ key: 'nome', label: 'Fornecedor' }, { key: 'email', label: 'E-mail' }, { key: 'telefone', label: 'Telefone' }, { key: 'cnpj', label: 'CNPJ' }], search: ['nome', 'razao_social', 'email', 'cnpj'] },
+  fornecedores: { columns: [{ key: 'nome', label: 'Fornecedor' }, { key: 'categorias', label: 'Ramos de atividade', format: (row) => Array.isArray(row.categorias) ? (row.categorias as Row[]).map((category) => String(category.nome ?? '')).join(', ') || '—' : '—' }, { key: 'email', label: 'E-mail' }, { key: 'telefone', label: 'Telefone' }, { key: 'cnpj', label: 'CNPJ' }], search: ['nome', 'razao_social', 'email', 'cnpj'] },
   orcamentos: { columns: [{ key: 'titulo', label: 'Orçamento' }, { key: 'cliente_nome', label: 'Cliente', format: (row) => String(row.cliente_nome ?? (row.cliente as Row | undefined)?.nome ?? '—') }, { key: 'status', label: 'Status', format: (row) => String(row.status ?? 'Pendente') }, { key: 'data_orcamento', label: 'Criado em', format: (row) => date(row.data_orcamento ?? row.created_at) }, { key: 'valor_total', label: 'Valor', format: (row) => currency(row.valor_total) }], search: ['titulo', 'status'] },
   funcionarios: { columns: [{ key: 'nome', label: 'Funcionário' }, { key: 'email', label: 'E-mail' }, { key: 'telefone', label: 'Telefone' }, { key: 'role', label: 'Perfil' }], search: ['nome', 'email', 'cpf'] },
 };
@@ -46,7 +46,7 @@ export function DataModule({ title, endpoint, module }: { title: string; endpoin
       .finally(() => setLoading(false));
   }, [endpoint, title]);
 
-  const filteredRows = useMemo(() => rows.filter((row) => definition.search.some((key) => String(row[key] ?? '').toLocaleLowerCase().includes(search.toLocaleLowerCase()))), [definition, rows, search]);
+  const filteredRows = useMemo(() => rows.filter((row) => definition.search.some((key) => String(row[key] ?? '').toLocaleLowerCase().includes(search.toLocaleLowerCase())) || (module === 'fornecedores' && Array.isArray(row.categorias) && (row.categorias as Row[]).some((category) => String(category.nome ?? '').toLocaleLowerCase().includes(search.toLocaleLowerCase())))), [definition, module, rows, search]);
   async function saveRecord(payload: Row, id?: string) {
     await apiFetch(id ? `${endpoint}/${id}` : endpoint, { method: id ? 'PUT' : 'POST', body: JSON.stringify(payload) });
     await reload();
