@@ -30,7 +30,7 @@ function PanelTitle({ eyebrow, title, description, action }: { eyebrow: string; 
   );
 }
 
-const panelSx = { minWidth: 0, p: { xs: 1.9, md: 2.5 }, border: '1px solid var(--line)', borderRadius: '17px', bgcolor: 'var(--card)', boxShadow: '0 8px 30px #1d392a06' };
+const panelSx = { minWidth: 0, minHeight: { xs: 350, md: 380 }, p: { xs: 1.9, md: 2.5 }, border: '1px solid var(--line)', borderRadius: '17px', bgcolor: 'var(--card)', boxShadow: '0 8px 30px #1d392a06' };
 
 export function ReportPanels({ report, loading }: { report: Report | null; loading: boolean }) {
   const maxValue = Math.max(...(report?.serie.valores ?? []), 1);
@@ -45,15 +45,15 @@ export function ReportPanels({ report, loading }: { report: Report | null; loadi
           action={<MuiLink component={Link} href="/relatorios" underline="none" sx={{ flexShrink: 0, mt: 0.5, color: 'var(--primary)', fontSize: 12, fontWeight: 700 }}>Ver relatórios ↗</MuiLink>}
         />
         {loading ? (
-          <Stack direction="row" sx={{ minHeight: 205, alignItems: 'center', justifyContent: 'center', gap: 1, color: 'var(--muted)', fontSize: 13 }}><CircularProgress size={18} />Carregando atividade…</Stack>
+          <Stack direction="row" sx={{ minHeight: 280, alignItems: 'center', justifyContent: 'center', gap: 1, color: 'var(--muted)', fontSize: 13 }}><CircularProgress size={18} />Carregando atividade…</Stack>
         ) : report?.serie.rotulos.length ? (
-          <Box sx={{ height: 205, display: 'grid', gridTemplateColumns: `repeat(${report.serie.rotulos.length},minmax(0,1fr))`, alignItems: 'end', gap: { xs: 0.75, md: 1.5 }, mt: 2.5 }}>
+          <Box sx={{ height: 280, display: 'grid', gridTemplateColumns: `repeat(${report.serie.rotulos.length},minmax(0,1fr))`, alignItems: 'end', gap: { xs: 0.75, md: 1.5 }, mt: 2.5 }}>
             {report.serie.rotulos.map((label, index) => {
               const value = Number(report.serie.valores[index] ?? 0);
               return (
                 <Stack key={`${label}-${index}`} sx={{ height: '100%', minWidth: 0, alignItems: 'center', justifyContent: 'flex-end', gap: 0.9 }}>
                   <Typography sx={{ color: 'var(--muted)', fontSize: 12, fontWeight: 700 }}>{value}</Typography>
-                  <Box sx={{ width: 'min(100%,36px)', height: 145, display: 'flex', alignItems: 'flex-end', overflow: 'hidden', borderRadius: '8px', bgcolor: 'var(--surface-soft)' }}>
+                  <Box sx={{ width: 'min(100%,36px)', height: 210, display: 'flex', alignItems: 'flex-end', overflow: 'hidden', borderRadius: '8px', bgcolor: 'var(--surface-soft)' }}>
                     <Box sx={{ width: '100%', minHeight: 3, height: `${Math.max(value ? 8 : 3, value / maxValue * 100)}%`, borderRadius: '7px 7px 3px 3px', bgcolor: '#005CE4' }} />
                   </Box>
                   <Typography component="span" sx={{ color: 'var(--muted)', fontSize: 11, whiteSpace: 'nowrap' }}>{label}</Typography>
@@ -92,7 +92,6 @@ const quickItems: QuickItem[] = [
   { href: '/produtos?novo=1', title: 'Novo produto', description: 'Adicionar item ao catálogo', icon: 'mdi:package-variant-plus', permission: 'produtos.criar', viewPermission: 'produtos.ver' },
   { href: '/orcamentos?novo=1', title: 'Novo orçamento', description: 'Criar proposta para cliente', icon: 'mdi:file-document-plus-outline', permission: 'orcamentos.criar', viewPermission: 'orcamentos.ver' },
   { href: '/clientes?novo=1', title: 'Novo cliente', description: 'Cadastrar cliente', icon: 'mdi:account-plus-outline', permission: 'clientes.criar', viewPermission: 'clientes.ver' },
-  { href: '/vendas', title: 'Nova venda', description: 'Iniciar um atendimento', icon: 'mdi:cash-register', permission: 'vendas.criar', viewPermission: 'vendas.ver' },
   { href: '/fornecedores?novo=1', title: 'Novo fornecedor', description: 'Cadastrar parceiro comercial', icon: 'mdi:truck-plus-outline', permission: 'fornecedores.criar', viewPermission: 'fornecedores.ver' },
   { href: '/funcionarios?novo=1', title: 'Novo funcionário', description: 'Adicionar pessoa à equipe', icon: 'mdi:account-cog-outline', permission: 'users.criar', viewPermission: 'users.ver' },
 ];

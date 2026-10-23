@@ -1,7 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Alert, Box, Stack, Typography } from '@mui/material';
+import Link from 'next/link';
+import { Icon } from '@iconify/react';
+import { Alert, Box, Button, Stack, Typography } from '@mui/material';
 import { useAuth } from '@/context/AuthContext';
 import { apiFetch, unwrap } from '@/lib/api';
 import { MetricsGrid, QuickAccess, ReportPanels } from '@/components/DashboardWidgets';
@@ -43,10 +45,23 @@ export function Dashboard() {
 
   return (
     <Stack spacing={3}>
-      <Box sx={{ pb: 0.5 }}>
-        <Typography component="span" sx={{ color: 'var(--muted)', fontSize: 11, fontWeight: 800, letterSpacing: 1.1 }}>PAINEL DE CONTROLE</Typography>
-        <Typography component="h1" sx={{ mt: 0.5, color: 'var(--ink)', font: '800 clamp(25px,3vw,32px) Manrope,sans-serif', letterSpacing: '-0.7px' }}>Visão geral</Typography>
-        <Typography sx={{ mt: 0.75, color: 'var(--muted)', fontSize: { xs: 14, md: 15 }, lineHeight: 1.5 }}>Acompanhe os indicadores e acesse as principais ações do sistema.</Typography>
+      <Box sx={{ pb: 0.5, display: 'flex', alignItems: { xs: 'flex-start', sm: 'flex-end' }, justifyContent: 'space-between', gap: 2, flexWrap: 'wrap' }}>
+        <Box>
+          <Typography component="span" sx={{ color: 'var(--muted)', fontSize: 11, fontWeight: 800, letterSpacing: 1.1 }}>PAINEL DE CONTROLE</Typography>
+          <Typography component="h1" sx={{ mt: 0.5, color: 'var(--ink)', font: '800 clamp(25px,3vw,32px) Manrope,sans-serif', letterSpacing: '-0.7px' }}>Visão geral</Typography>
+          <Typography sx={{ mt: 0.75, color: 'var(--muted)', fontSize: { xs: 14, md: 15 }, lineHeight: 1.5 }}>Acompanhe os indicadores e acesse as principais ações do sistema.</Typography>
+        </Box>
+        {can('vendas.ver') && can('vendas.criar') && (
+          <Button
+            component={Link}
+            href="/vendas"
+            variant="contained"
+            startIcon={<Icon icon="mdi:cart-outline" width={23} height={23} />}
+            sx={{ minHeight: 52, px: 3, mb: 0.75, borderRadius: '12px', bgcolor: '#005CE4', color: '#fff', fontSize: 16, fontWeight: 700, textTransform: 'none', boxShadow: '0 5px 14px #005CE433', '&:hover': { bgcolor: '#0048b8', boxShadow: '0 7px 18px #005CE440' } }}
+          >
+            Vender +
+          </Button>
+        )}
       </Box>
       {error && <Alert severity="error" variant="outlined" sx={{ borderRadius: '12px' }}>{error}</Alert>}
       <MetricsGrid metrics={[...visibleCards]} values={summary} loading={loading} />
