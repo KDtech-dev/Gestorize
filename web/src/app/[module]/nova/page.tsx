@@ -3,14 +3,14 @@
 import { useParams } from 'next/navigation';
 import { AppShell } from '@/components/AppShell';
 import { SalesDesk } from '@/components/SalesDesk';
-import { useAuth } from '@/context/AuthContext';
+import { canSell, useAuth } from '@/context/AuthContext';
 
 export default function NewModulePage() {
   const params = useParams<{ module: string }>();
-  const { can, loading } = useAuth();
+  const { user, loading } = useAuth();
 
   if (loading) return <div className="boot-screen"><span className="spinner" />Carregando…</div>;
-  if (params.module !== 'vendas' || !can('vendas.ver') || !can('vendas.criar')) {
+  if (params.module !== 'vendas' || !canSell(user)) {
     return <AppShell><section className="empty-state"><span className="empty-icon">⌁</span><h1>Acesso indisponível</h1><p>Seu perfil não possui acesso a esta área.</p></section></AppShell>;
   }
 

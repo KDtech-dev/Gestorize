@@ -53,8 +53,8 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::prefix('produtos')->group(function () {
-        Route::get('/',        [ProdutoController::class, 'index'])->middleware('permission:produtos.ver|vendas.ver');
-        Route::get('/codigo/{codigo}', [ProdutoController::class, 'buscarPorCodigo'])->middleware('permission:produtos.ver|vendas.ver');
+        Route::get('/',        [ProdutoController::class, 'index'])->middleware('role_or_permission:admin|gestor|funcionario|produtos.ver|vendas.ver|vendas.criar');
+        Route::get('/codigo/{codigo}', [ProdutoController::class, 'buscarPorCodigo'])->middleware('role_or_permission:admin|gestor|funcionario|produtos.ver|vendas.ver|vendas.criar');
         Route::post('/',       [ProdutoController::class, 'store'])->middleware('permission:produtos.criar');
         Route::get('/{id}',    [ProdutoController::class, 'show'])->middleware('permission:produtos.ver');
         Route::put('/{produto}', [ProdutoController::class, 'update'])->middleware('permission:produtos.editar');
@@ -67,7 +67,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::prefix('vendas')->group(function () {
         Route::get('/', [VendaController::class, 'index'])->middleware('permission:vendas.ver');
-        Route::post('/', [VendaController::class, 'store'])->middleware('permission:vendas.criar');
+        Route::post('/', [VendaController::class, 'store'])->middleware('role_or_permission:admin|gestor|funcionario|vendas.criar');
     });
 
     Route::prefix('fornecedores')->group(function () {

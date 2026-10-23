@@ -13,6 +13,7 @@ export type VendaItem = {
 
 export type VendaType = {
   id: string;
+  usuario_id?: string;
   valor_total: number | string;
   vendido_em: string;
   vendedor: string | null;

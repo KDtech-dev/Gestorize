@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { Icon } from '@iconify/react';
 import { Alert, Box, Button, ButtonBase, Collapse, IconButton, Paper, Stack, Typography } from '@mui/material';
-import { useAuth } from '@/context/AuthContext';
+import { canSell, useAuth } from '@/context/AuthContext';
 import { apiFetch } from '@/lib/api';
 import { SalesCheckout, type DiscountMode, type SaleCustomer, type SaleQuote } from '@/components/sales/SalesCheckout';
 import type { PaymentMethod } from '@/components/sales/types';
@@ -47,14 +47,14 @@ export function SalesDesk() {
 
   const load = async () => {
     const [productData, salesData, customerData, quoteData] = await Promise.all([
-      apiFetch<unknown>('/produtos'), apiFetch<unknown>('/vendas'),
+      apiFetch<unknown>('/produtos'), can('vendas.ver') ? apiFetch<unknown>('/vendas') : Promise.resolve([]),
       can('clientes.ver') ? apiFetch<unknown>('/clientes') : Promise.resolve([]),
       can('orcamentos.ver') ? apiFetch<unknown>('/orcamentos') : Promise.resolve([]),
     ]);
     const loadedSales = list<Sale>(salesData);
     const soldQuoteIds = new Set(loadedSales.map((sale) => sale.orcamento_id).filter((id): id is string => Boolean(id)));
     setProducts(list<Product>(productData));
-    setSales(loadedSales.filter((sale) => sale.usuario_id === user?.id));
+    setSales(can('vendas.ver') ? loadedSales.filter((sale) => sale.usuario_id === user?.id) : []);
     setCustomers(list<Customer>(customerData));
     setQuotes(list<Quote>(quoteData).filter((quote) => quote.status === 'aprovado' && !soldQuoteIds.has(quote.id)));
   };
@@ -131,7 +131,7 @@ export function SalesDesk() {
   };
 
   async function registerSale() {
-    if (!cart.length || !can('vendas.criar')) return;
+    if (!cart.length || !canSell(user)) return;
     setBusy(true); setError('');
     try {
       await apiFetch('/vendas', { method: 'POST', body: JSON.stringify({ cliente_id: customerId || null, orcamento_id: quoteId || null, forma_pagamento: paymentMethod, desconto: appliedDiscount, itens: cart.map(({ produto, quantidade }) => ({ produto_id: produto.id, quantidade })) }) });
@@ -143,11 +143,11 @@ export function SalesDesk() {
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: 'var(--surface-soft)', color: 'var(--ink)' }}>
       <Box component="header" sx={{ minHeight: 64, px: { xs: 1.5, md: 3 }, display: 'flex', alignItems: 'center', gap: 2, bgcolor: 'var(--top-navigation-bg)', color: 'var(--top-navigation-fg)' }}>
-        <ButtonBase component={Link} href="/vendas" aria-label="Voltar ao histórico de vendas" sx={{ width: 34, height: 34, borderRadius: '9px', color: 'inherit', '&:hover': { bgcolor: '#ffffff20' } }}><Icon icon="mdi:arrow-left" width={21} height={21} /></ButtonBase>
+        <ButtonBase component={Link} href={can('vendas.ver') ? '/vendas' : '/'} aria-label={can('vendas.ver') ? 'Voltar ao histórico de vendas' : 'Voltar ao início'} sx={{ width: 34, height: 34, borderRadius: '9px', color: 'inherit', '&:hover': { bgcolor: '#ffffff20' } }}><Icon icon="mdi:arrow-left" width={21} height={21} /></ButtonBase>
         <Icon icon="mdi:cart-outline" width={22} height={22} />
         <Typography component="h1" sx={{ fontSize: 16, fontWeight: 800 }}>Nova venda</Typography>
         <Box sx={{ px: 1, py: 0.45, borderRadius: 99, bgcolor: 'var(--top-navigation-fg)', color: 'var(--top-navigation-bg)', fontSize: 11, fontWeight: 700 }}>Em andamento</Box>
-        <Button onClick={() => setHistoryOpen((open) => !open)} startIcon={<Icon icon="mdi:history" width={17} height={17} />} sx={{ ml: { xs: 0, md: 1 }, px: 1, color: 'inherit', fontSize: 11, textTransform: 'none', whiteSpace: 'nowrap' }}>Histórico ({sales.length})</Button>
+        {can('vendas.ver') && <Button onClick={() => setHistoryOpen((open) => !open)} startIcon={<Icon icon="mdi:history" width={17} height={17} />} sx={{ ml: { xs: 0, md: 1 }, px: 1, color: 'inherit', fontSize: 11, textTransform: 'none', whiteSpace: 'nowrap' }}>Histórico ({sales.length})</Button>}
         <Stack direction="row" sx={{ alignItems: 'center', gap: { xs: 1, md: 2.5 }, ml: 'auto', fontSize: 11 }}>
           <Typography sx={{ color: 'inherit', fontSize: 'inherit' }}>Caixa web</Typography>
           <Typography sx={{ display: { xs: 'none', sm: 'block' }, color: 'inherit', fontSize: 'inherit' }}>Operador: {user?.name ?? '—'}</Typography>
@@ -155,7 +155,7 @@ export function SalesDesk() {
         </Stack>
       </Box>
 
-      <Collapse in={historyOpen} unmountOnExit>
+      {can('vendas.ver') && <Collapse in={historyOpen} unmountOnExit>
         <Box sx={{ px: { xs: 1.5, md: 2.5 }, pt: 1.5 }}>
           <Paper sx={{ ...panelSx, p: { xs: 1.5, md: 2 } }}>
             {loading ? <Typography sx={{ py: 2, color: 'var(--muted)', fontSize: 13 }}>Carregando histórico…</Typography> : sales.length ? sales.map((sale) => <Box key={sale.id} sx={{ borderBottom: '1px solid var(--line)' }}>
@@ -169,7 +169,7 @@ export function SalesDesk() {
             </Box>) : <Typography sx={{ py: 2, color: 'var(--muted)', fontSize: 13 }}>Nenhuma venda registrada.</Typography>}
           </Paper>
         </Box>
-      </Collapse>
+      </Collapse>}
 
       <Box sx={{ p: { xs: 1.5, md: 2.5 }, display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'minmax(0,1fr) minmax(260px,320px)', xl: 'minmax(0,1fr) 340px' }, alignItems: 'stretch', gap: 2, minHeight: 'calc(100vh - 64px)' }}>
         <Paper component="section" sx={{ ...panelSx, p: { xs: 1.5, md: 2.25 }, minWidth: 0, minHeight: { lg: 'calc(100vh - 114px)' }, display: 'flex', flexDirection: 'column' }}>
@@ -234,7 +234,7 @@ export function SalesDesk() {
           discountDescription={discountDescription}
           paymentMethod={paymentMethod}
           busy={busy}
-          canCreateSale={can('vendas.criar')}
+          canCreateSale={canSell(user)}
           cartCount={cart.length}
           quoteItemsComplete={quoteItemsComplete}
           quoteStockAvailable={quoteStockAvailable}

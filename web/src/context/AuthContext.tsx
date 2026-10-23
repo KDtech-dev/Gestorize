@@ -14,6 +14,11 @@ export type WebUser = {
   permissions?: string[];
 };
 
+export const canSell = (user: WebUser | null) => !!user && (
+  ['admin', 'gestor', 'funcionario'].includes(user.role ?? '')
+  || !!user.permissions?.includes('vendas.criar')
+);
+
 type AuthValue = {
   user: WebUser | null;
   loading: boolean;

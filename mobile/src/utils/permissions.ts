@@ -7,6 +7,11 @@ export const can = (user: UserType | null, permission: string): boolean => {
   return !!user.permissions?.includes(permission);
 };
 
+export const canSell = (user: UserType | null): boolean => !!user && (
+  ['admin', 'gestor', 'funcionario'].includes(user.role)
+  || !!user.permissions?.includes('vendas.criar')
+);
+
 const routePermission: Partial<Record<keyof RootStackParamList, string>> = {
   Clientes: 'clientes.ver',
   Produtos: 'produtos.ver',
@@ -19,13 +24,13 @@ const routePermission: Partial<Record<keyof RootStackParamList, string>> = {
   NovoOrcamento: 'orcamentos.ver',
   NovoFuncionario: 'users.ver',
   Relatorios: 'relatorios.ver',
-  Vendas: 'vendas.ver',
 };
 
 export const canAccessRoute = (
   user: UserType | null,
   routeName: keyof RootStackParamList,
 ) => {
+  if (routeName === 'Vendas') return canSell(user) || can(user, 'vendas.ver');
   const required = routePermission[routeName];
   return required ? can(user, required) : true;
 };

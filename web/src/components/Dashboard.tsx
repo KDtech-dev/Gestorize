@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Icon } from '@iconify/react';
 import { Alert, Box, Button, Stack, Typography } from '@mui/material';
-import { useAuth } from '@/context/AuthContext';
+import { canSell, useAuth } from '@/context/AuthContext';
 import { apiFetch, unwrap } from '@/lib/api';
 import { MetricsGrid, QuickAccess, ReportPanels } from '@/components/DashboardWidgets';
 
@@ -77,7 +77,7 @@ export function Dashboard() {
           <Typography component="h1" sx={{ mt: 0.5, color: 'var(--ink)', font: '800 clamp(25px,3vw,32px) Manrope,sans-serif', letterSpacing: '-0.7px' }}>Visão geral</Typography>
           <Typography sx={{ mt: 0.75, color: 'var(--muted)', fontSize: { xs: 14, md: 15 }, lineHeight: 1.5 }}>Acompanhe os indicadores e acesse as principais ações do sistema.</Typography>
         </Box>
-        {can('vendas.ver') && can('vendas.criar') && (
+        {canSell(user) && (
           <Button
             component={Link}
             href="/vendas/nova"

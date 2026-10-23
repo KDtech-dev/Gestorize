@@ -77,7 +77,7 @@ const Homepage = () => {
       route: 'Vendas' as const,
       icon: 'point-of-sale' as const,
       label: 'Vendas',
-      description: 'Registre vendas e consulte movimentações',
+      description: can(user, 'vendas.ver') ? 'Registre vendas e consulte movimentações' : 'Acesse o caixa para registrar uma venda',
     },
     {
       route: 'Funcionarios' as const,

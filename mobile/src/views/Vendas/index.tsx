@@ -24,7 +24,7 @@ import OrcamentoClientePicker from '@components/orcamentos/OrcamentoClientePicke
 import { getClientes } from '@api/apiClientes';
 import { useTheme } from '@context/ThemeContext';
 import { useAuth } from '@context/AuthContext';
-import { can } from '@utils/permissions';
+import { can, canSell } from '@utils/permissions';
 import Toast from 'react-native-toast-message';
 
 type CarrinhoItem = { produto: ProdutoType; quantidade: number };
@@ -34,7 +34,9 @@ export default function Vendas() {
   const navigation = useNavigation();
   const { colors } = useTheme();
   const { user } = useAuth();
-  const podeCriar = can(user, 'vendas.criar');
+  const podeCriar = canSell(user);
+  const podeVerHistorico = can(user, 'vendas.ver');
+  const podeVerClientes = can(user, 'clientes.ver');
   const [produtos, setProdutos] = useState<ProdutoType[]>([]);
   const [vendas, setVendas] = useState<VendaType[]>([]);
   const [carrinho, setCarrinho] = useState<CarrinhoItem[]>([]);
@@ -56,37 +58,47 @@ export default function Vendas() {
   const carregar = useCallback(async () => {
     setCarregandoHistorico(true);
     setCarregandoProdutos(true);
-    const [produtosResult, vendasResult] = await Promise.allSettled([getProdutos(), getVendas()]);
+    const [produtosResult, vendasResult] = await Promise.allSettled([
+      podeCriar ? getProdutos() : Promise.resolve(null),
+      podeVerHistorico ? getVendas() : Promise.resolve(null),
+    ]);
 
-    if (produtosResult.status === 'fulfilled') {
+    if (!podeCriar) {
+      setProdutos([]);
+    } else if (produtosResult.status === 'fulfilled' && produtosResult.value) {
       setProdutos(produtosResult.value.data ?? []);
     } else {
       setProdutos([]);
-      const status = produtosResult.reason?.response?.status;
+      const erro = produtosResult.status === 'rejected' ? produtosResult.reason : null;
+      const status = erro?.response?.status;
       Toast.show({
         type: 'error',
         text1: 'Erro ao carregar produtos',
-        text2: status === 403 ? 'Seu perfil não tem permissão para consultar produtos.' : produtosResult.reason?.response?.data?.message ?? 'Tente novamente.',
+        text2: status === 403 ? 'Seu perfil não tem permissão para consultar produtos.' : erro?.response?.data?.message ?? 'Tente novamente.',
       });
     }
     setCarregandoProdutos(false);
 
-    if (vendasResult.status === 'fulfilled') {
-      setVendas(vendasResult.value.data ?? []);
+    if (!podeVerHistorico) {
+      setVendas([]);
+      setErroHistorico(null);
+    } else if (vendasResult.status === 'fulfilled' && vendasResult.value) {
+      setVendas((vendasResult.value.data ?? []).filter((venda) => venda.usuario_id === user?.id));
       setErroHistorico(null);
     } else {
-      const status = vendasResult.reason?.response?.status;
+      const erro = vendasResult.status === 'rejected' ? vendasResult.reason : null;
+      const status = erro?.response?.status;
       const mensagem = status === 403
         ? 'Seu perfil precisa da permissão vendas.ver para consultar o histórico.'
         : status >= 500
           ? 'O backend não conseguiu consultar as vendas. Confirme as migrations de vendas e entre novamente para atualizar as permissões.'
-          : vendasResult.reason?.response?.data?.message ?? 'Verifique a conexão com o backend e tente novamente.';
+          : erro?.response?.data?.message ?? 'Verifique a conexão com o backend e tente novamente.';
       setErroHistorico(mensagem);
       Toast.show({ type: 'error', text1: 'Erro ao carregar vendas', text2: mensagem });
     }
 
     setCarregandoHistorico(false);
-  }, []);
+  }, [podeCriar, podeVerHistorico, user?.id]);
 
   useFocusEffect(useCallback(() => { carregar(); }, [carregar]));
 
@@ -182,10 +194,10 @@ export default function Vendas() {
 
   return (
     <View style={[styles.screen, { backgroundColor: colors.background }]}>
-      <Nav title="Vendas" subtitle="PDV e movimentação de estoque" onBackPress={() => navigation.goBack()} rightType="menu" />
+      <Nav title="Vendas" subtitle={podeCriar ? 'PDV e movimentação de estoque' : 'Histórico de vendas'} onBackPress={() => navigation.goBack()} rightType="menu" />
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <View style={styles.desktopContent}>
-          <View style={[styles.panel, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          {podeCriar && <View style={[styles.panel, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <Text style={[styles.heading, { color: colors.text }]}>Adicionar produtos</Text>
             <Text style={[styles.hint, { color: colors.muted }]}>Use a câmera, um leitor conectado ou selecione na lista por categoria.</Text>
             <View style={styles.scanRow}>
@@ -230,9 +242,9 @@ export default function Vendas() {
               <Text style={[styles.heading, { color: colors.text }]}>Carrinho ({carrinho.length})</Text>
               <Text style={[styles.total, { color: colors.primary }]}>{moeda(total)}</Text>
             </View>
-            <Pressable onPress={abrirSeletorClientes} style={[styles.selectProductsButton, { borderColor: colors.border, backgroundColor: colors.background }]}>
+            <Pressable disabled={!podeVerClientes} onPress={abrirSeletorClientes} style={[styles.selectProductsButton, { borderColor: colors.border, backgroundColor: colors.background, opacity: podeVerClientes ? 1 : 0.65 }]}>
               <MaterialCommunityIcons name="account-outline" size={21} color={colors.primary} />
-              <Text style={[styles.selectProductsText, { color: colors.text }]}>{clienteSelecionado?.nome ?? 'Associar cliente (opcional)'}</Text>
+              <Text style={[styles.selectProductsText, { color: colors.text }]}>{clienteSelecionado?.nome ?? (podeVerClientes ? 'Associar cliente (opcional)' : 'Venda sem cliente')}</Text>
               {clienteSelecionado ? (
                 <Pressable onPress={(event) => { event.stopPropagation(); setClienteSelecionado(null); }} accessibilityLabel="Remover cliente">
                   <MaterialCommunityIcons name="close-circle" size={21} color={colors.muted} />
@@ -253,9 +265,9 @@ export default function Vendas() {
             ))}
             <Button title={salvando ? 'Registrando...' : 'Finalizar venda'} onPress={finalizarVenda} disabled={!podeCriar || !carrinho.length || salvando} />
             {!podeCriar ? <Text style={[styles.hint, { color: colors.muted }]}>Seu perfil pode consultar vendas, mas não registrá-las.</Text> : null}
-          </View>
+          </View>}
 
-          <View style={[styles.panel, styles.history, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          {podeVerHistorico && <View style={[styles.panel, styles.history, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={styles.sectionRow}>
               <Text style={[styles.heading, { color: colors.text }]}>Histórico de vendas</Text>
               <Text style={[styles.hint, { color: colors.muted }]}>{vendas.length} registros</Text>
@@ -295,7 +307,7 @@ export default function Vendas() {
                 </View>
               </List.Accordion>
             ))}
-          </View>
+          </View>}
         </View>
       </ScrollView>
 
