@@ -154,7 +154,6 @@ export default function NovoProduto() {
             unidade_medida_id: "",
         },
     });
-    const nomeProduto = watch("nome");
     const categoriaIdSelecionada = watch("categoria_id");
     const validadeObrigatoria = categorias.some((categoria) => String(categoria.id) === String(categoriaIdSelecionada) && ["insumos", "produtos médicos/hospitalares"].includes((categoria.nome ?? "").toLocaleLowerCase("pt-BR")));
     const unsavedGuard = useUnsavedChangesGuard({
