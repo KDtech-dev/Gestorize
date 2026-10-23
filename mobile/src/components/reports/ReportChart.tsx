@@ -6,7 +6,7 @@ import { useTheme } from '@context/ThemeContext';
 const { width: screenWidth } = Dimensions.get('window');
 
 type ReportChartProps = {
-  type: 'movimentacao' | 'orcamentos' | 'clientes' | 'produtos';
+  type: 'movimentacao' | 'orcamentos' | 'clientes' | 'produtos' | 'vendas' | 'faturamento';
   data: any;
   total?: string;
   dateRange?: string;
@@ -53,7 +53,7 @@ export const ReportChart = ({ type, data, total, dateRange }: ReportChartProps) 
           ? 'Orçamentos criados por período'
           : type === 'clientes'
             ? 'Novos clientes por período'
-            : 'Produtos cadastrados por categoria';
+            : type === 'vendas' ? 'Vendas concluídas por período' : type === 'faturamento' ? 'Faturamento de vendas por período' : 'Produtos cadastrados por categoria';
       return <View>
         <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
         {dateRange ? <Text style={[styles.dateRange, { color: colors.muted }]}>{dateRange}</Text> : null}
@@ -64,10 +64,11 @@ export const ReportChart = ({ type, data, total, dateRange }: ReportChartProps) 
     switch (type) {
       case 'movimentacao':
       case 'orcamentos':
+      case 'faturamento':
         return (
           <>
             <Text style={[styles.title, { color: colors.text }]}>
-              {type === 'movimentacao' ? 'Valor em orçamentos por período' : 'Orçamentos criados por período'}
+              {type === 'movimentacao' ? 'Valor em orçamentos por período' : type === 'faturamento' ? 'Faturamento de vendas por período' : 'Orçamentos criados por período'}
             </Text>
             {dateRange ? <Text style={[styles.dateRange, { color: colors.muted }]}>{dateRange}</Text> : null}
             <ScrollView 
@@ -82,7 +83,7 @@ export const ReportChart = ({ type, data, total, dateRange }: ReportChartProps) 
                 chartConfig={chartConfig}
                 bezier
                 style={styles.chart}
-                formatYLabel={(value) => type === 'movimentacao' ? `R$ ${value}` : value}
+                formatYLabel={(value) => type === 'movimentacao' || type === 'faturamento' ? `R$ ${value}` : value}
                 verticalLabelRotation={0}
                 fromZero
               />
@@ -90,9 +91,10 @@ export const ReportChart = ({ type, data, total, dateRange }: ReportChartProps) 
           </>
         );
       case 'clientes':
+      case 'vendas':
         return (
           <>
-            <Text style={[styles.title, { color: colors.text }]}>Novos clientes por período</Text>
+            <Text style={[styles.title, { color: colors.text }]}>{type === 'vendas' ? 'Vendas concluídas por período' : 'Novos clientes por período'}</Text>
             {dateRange ? <Text style={[styles.dateRange, { color: colors.muted }]}>{dateRange}</Text> : null}
             <ScrollView 
               horizontal 

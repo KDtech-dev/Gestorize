@@ -32,9 +32,9 @@ export const MetricCard = ({ title, value, change, icon, iconColor, onPress }: M
     >
       <View style={styles.header}>
         <View style={[styles.iconContainer, { backgroundColor: iconColor ? `${iconColor}20` : `${colors.primary}20` }]}>
-          <MaterialCommunityIcons 
+          <MaterialCommunityIcons
             name={icon} 
-            size={24} 
+            size={19}
             color={iconColor || colors.primary} 
           />
         </View>
@@ -43,8 +43,15 @@ export const MetricCard = ({ title, value, change, icon, iconColor, onPress }: M
         </Text>
       </View>
       
-      <Text style={[styles.value, { color: colors.text }]}>{value}</Text>
-      <Text style={[styles.title, { color: colors.muted }]}>{title}</Text>
+      <Text
+        style={[styles.value, { color: colors.text }]}
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        minimumFontScale={0.72}
+      >
+        {value}
+      </Text>
+      <Text style={[styles.title, { color: colors.muted }]} numberOfLines={2}>{title}</Text>
     </CardContainer>
   );
 };
@@ -52,39 +59,43 @@ export const MetricCard = ({ title, value, change, icon, iconColor, onPress }: M
 const styles = StyleSheet.create({
   card: {
     flex: 1,
-    padding: 16,
-    borderRadius: 16,
+    flexBasis: '46%',
+    maxWidth: '49%',
+    padding: 12,
+    borderRadius: 14,
     borderWidth: 1,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
     minWidth: '45%',
+    minHeight: 118,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 9,
   },
   iconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 32,
+    height: 32,
+    borderRadius: 11,
     alignItems: 'center',
     justifyContent: 'center',
   },
   change: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: 10,
+    fontWeight: '700',
   },
   value: {
-    fontSize: 28,
+    fontSize: 22,
     fontWeight: 'bold',
-    marginBottom: 4,
+    marginBottom: 3,
   },
   title: {
-    fontSize: 14,
-    fontWeight: '500',
+    fontSize: 12,
+    lineHeight: 15,
+    fontWeight: '600',
   },
 });

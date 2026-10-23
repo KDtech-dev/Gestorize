@@ -23,7 +23,7 @@ import Toast from 'react-native-toast-message';
 import { formatErrorMessage } from '@core/utils/format';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Relatorios'>;
-type ReportType = 'movimentacao' | 'orcamentos' | 'clientes' | 'produtos';
+type ReportType = 'movimentacao' | 'orcamentos' | 'clientes' | 'produtos' | 'vendas';
 type PeriodType = 'hoje' | 'semana' | 'mes' | 'ano';
 
 const periods = [
@@ -33,12 +33,7 @@ const periods = [
   { id: 'ano' as PeriodType, label: 'Ano' },
 ];
 
-const reportTypes = [
-  { id: 'movimentacao' as ReportType, label: 'Movimentação' },
-  { id: 'orcamentos' as ReportType, label: 'Orçamentos' },
-  { id: 'clientes' as ReportType, label: 'Clientes' },
-  { id: 'produtos' as ReportType, label: 'Produtos' },
-];
+const reportTypes: ReportType[] = ['vendas', 'orcamentos', 'clientes', 'produtos', 'movimentacao'];
 
 const escapeHtml = (value: string) => value
   .replace(/&/g, '&amp;')
@@ -51,6 +46,14 @@ const formatCurrency = (value: number) => value.toLocaleString('pt-BR', {
   style: 'currency',
   currency: 'BRL',
 });
+
+const formatPaymentLabel = (value: string) => ({
+  pix: 'Pix',
+  dinheiro: 'Dinheiro',
+  debito: 'Cartão de débito',
+  credito: 'Cartão de crédito',
+  nao_informado: 'Não informado',
+}[value] ?? value.replace(/_/g, ' '));
 
 const formatarDataCurta = (data: string) => {
   const [ano, mes, dia] = data.slice(0, 10).split('-');
@@ -112,6 +115,17 @@ const gerarHtmlRelatorio = (report: RelatorioResponse, periodo: PeriodType, tipo
       return `<tr><td>${escapeHtml(item.rotulo)}</td><td class="number">${escapeHtml(formatarValor(item.valor))}</td><td><div class="track"><div class="bar" style="width:${largura}%"></div></div></td></tr>`;
     }).join('')
     : '<tr><td colspan="3" class="empty">Nenhum registro neste período.</td></tr>';
+  const serieVendas = report.serie.rotulos_vendas.map((rotulo, index) => ({
+    rotulo,
+    quantidade: report.serie.vendas[index] ?? 0,
+    faturamento: report.serie.faturamento[index] ?? 0,
+  }));
+  const linhasVendas = serieVendas.length
+    ? serieVendas.map((item) => `<tr><td>${escapeHtml(item.rotulo)}</td><td class="number">${item.quantidade}</td><td class="number">${formatCurrency(item.faturamento)}</td></tr>`).join('')
+    : '<tr><td colspan="3" class="empty">Nenhuma venda registrada neste período.</td></tr>';
+  const formasPagamento = report.totais.formas_pagamento.length
+    ? report.totais.formas_pagamento.map((item) => `<tr><td>${escapeHtml(formatPaymentLabel(item.forma))}</td><td class="number">${item.quantidade}</td><td class="number">${formatCurrency(item.valor)}</td></tr>`).join('')
+    : '<tr><td colspan="3" class="empty">Nenhuma forma de pagamento registrada.</td></tr>';
 
   return `<!doctype html><html><head><meta charset="utf-8" /><title>Relatório Gestorize</title><style>
     @page { size: A4; margin: 18mm 14mm; }
@@ -137,6 +151,7 @@ const gerarHtmlRelatorio = (report: RelatorioResponse, periodo: PeriodType, tipo
     .empty { color: #64748b; text-align: center; padding: 20px; }
     .note { background: #f8fafc; border-left: 3px solid #c69f36; padding: 10px 12px; margin-top: 18px; color: #475569; }
     .footer { border-top: 1px solid #e2e8f0; padding-top: 8px; margin-top: 24px; color: #94a3b8; font-size: 9px; }
+    .section-caption { color: #64748b; margin: -3px 0 8px; }
   </style></head><body>
     <div class="brand">Gestorize · Relatórios</div>
     <h1>${escapeHtml(tipoLabel)}</h1>
@@ -147,6 +162,8 @@ const gerarHtmlRelatorio = (report: RelatorioResponse, periodo: PeriodType, tipo
       <div class="metric"><div class="metric-label">Valor em orçamentos</div><div class="metric-value">${formatCurrency(report.metricas.valor_orcado.valor)}</div><div class="metric-change">${escapeHtml(formatarVariacao(report.metricas.valor_orcado.variacao))}</div></div>
       <div class="metric"><div class="metric-label">Orçamentos criados</div><div class="metric-value">${report.metricas.orcamentos.valor}</div><div class="metric-change">${escapeHtml(formatarVariacao(report.metricas.orcamentos.variacao))}</div></div>
       <div class="metric"><div class="metric-label">Novos clientes</div><div class="metric-value">${report.metricas.clientes.valor}</div><div class="metric-change">${escapeHtml(formatarVariacao(report.metricas.clientes.variacao))}</div></div>
+      <div class="metric"><div class="metric-label">Vendas concluídas</div><div class="metric-value">${report.metricas.vendas.valor}</div><div class="metric-change">${escapeHtml(formatarVariacao(report.metricas.vendas.variacao))}</div></div>
+      <div class="metric"><div class="metric-label">Faturamento de vendas</div><div class="metric-value">${formatCurrency(report.metricas.faturamento_vendas.valor)}</div><div class="metric-change">${escapeHtml(formatarVariacao(report.metricas.faturamento_vendas.variacao))}</div></div>
     </div>
     <h2>Resumo do período</h2>
     <table><tbody>
@@ -154,8 +171,16 @@ const gerarHtmlRelatorio = (report: RelatorioResponse, periodo: PeriodType, tipo
       <tr><td>Aprovações realizadas</td><td class="number">${report.totais.aprovacoes}</td></tr>
       <tr><td>Orçamentos pendentes</td><td class="number">${report.totais.pendentes}</td></tr>
       <tr><td>Produtos cadastrados</td><td class="number">${report.totais.produtos}</td></tr>
+      <tr><td>Vendas concluídas</td><td class="number">${report.totais.vendas}</td></tr>
+      <tr><td>Faturamento líquido das vendas</td><td class="number">${formatCurrency(report.totais.faturamento_vendas)}</td></tr>
+      <tr><td>Descontos concedidos nas vendas</td><td class="number">${formatCurrency(report.totais.descontos_vendas)}</td></tr>
     </tbody></table>
-    <h2>${isProdutos ? 'Produtos cadastrados por categoria' : tipo === 'movimentacao' ? 'Valor em orçamentos por período' : tipo === 'orcamentos' ? 'Orçamentos criados por período' : 'Novos clientes por período'}</h2>
+    <h2>Vendas por período</h2>
+    <p class="section-caption">Quantidade de vendas concluídas e faturamento líquido registrado em cada intervalo.</p>
+    <table><thead><tr><th>Intervalo</th><th class="number">Vendas</th><th class="number">Faturamento</th></tr></thead><tbody>${linhasVendas}</tbody></table>
+    <h2>Vendas por forma de pagamento</h2>
+    <table><thead><tr><th>Forma</th><th class="number">Vendas</th><th class="number">Faturamento</th></tr></thead><tbody>${formasPagamento}</tbody></table>
+    <h2>${isProdutos ? 'Produtos cadastrados por categoria' : tipo === 'movimentacao' ? 'Valor em orçamentos por período' : tipo === 'orcamentos' ? 'Orçamentos criados por período' : tipo === 'vendas' ? 'Vendas concluídas por período' : 'Novos clientes por período'}</h2>
     <table><thead><tr><th>${isProdutos ? 'Categoria' : 'Intervalo'}</th><th class="number">${tipo === 'movimentacao' ? 'Valor' : 'Quantidade'}</th><th>Distribuição</th></tr></thead><tbody>${linhaTabela}</tbody></table>
     <div class="note">${escapeHtml(report.nota)}</div>
     <div class="footer">Documento gerado pelo Gestorize com base nos dados registrados até o momento da emissão.</div>
@@ -166,7 +191,7 @@ const Relatorios = ({ navigation }: Props) => {
   const { colors } = useTheme();
   const [selectedPeriod, setSelectedPeriod] = useState<PeriodType>('hoje');
   const [selectedReportType, setSelectedReportType] =
-    useState<ReportType>('movimentacao');
+    useState<ReportType>('vendas');
   const [report, setReport] = useState<RelatorioResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [pdfLoading, setPdfLoading] = useState(false);
@@ -216,6 +241,11 @@ const Relatorios = ({ navigation }: Props) => {
             datasets: [{ data: report.serie.valores }],
           },
           total: `${report.totais.clientes} novos clientes`,
+        };
+      case 'vendas':
+        return {
+          data: { labels: report.serie.rotulos, datasets: [{ data: report.serie.vendas }] },
+          total: `${report.totais.vendas} vendas concluídas · ${formatCurrency(report.totais.faturamento_vendas)} faturados`,
         };
       case 'produtos':
         return {
@@ -317,6 +347,8 @@ const Relatorios = ({ navigation }: Props) => {
           <MetricCard value={moeda(report.metricas.valor_orcado.valor)} change={report.metricas.valor_orcado.variacao} title="Valor em orçamentos" icon="currency-brl" iconColor={colors.success} />
           <MetricCard value={String(report.metricas.orcamentos.valor)} change={report.metricas.orcamentos.variacao} title="Orçamentos criados" icon="file-document-outline" />
           <MetricCard value={String(report.metricas.clientes.valor)} change={report.metricas.clientes.variacao} title="Clientes novos" icon="account-group" />
+          <MetricCard value={String(report.metricas.vendas.valor)} change={report.metricas.vendas.variacao} title="Vendas concluídas" icon="cart-check" iconColor={colors.primary} />
+          <MetricCard value={moeda(report.metricas.faturamento_vendas.valor)} change={report.metricas.faturamento_vendas.variacao} title="Faturamento de vendas" icon="cash-multiple" iconColor={colors.success} />
         </View>}
 
         <View style={styles.section}>
@@ -350,6 +382,30 @@ const Relatorios = ({ navigation }: Props) => {
             total={chartData.total}
             dateRange={dateRange}
           />
+        )}
+
+        {!loading && selectedReportType === 'vendas' && report && (
+          <>
+            <ReportChart
+              type="faturamento"
+              data={{ labels: report.serie.rotulos_vendas, datasets: [{ data: report.serie.faturamento }] }}
+              total={`${moeda(report.totais.faturamento_vendas)} em faturamento líquido`}
+              dateRange={dateRange}
+            />
+            <View style={[styles.salesBreakdown, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <Text style={[styles.breakdownTitle, { color: colors.text }]}>Vendas por forma de pagamento</Text>
+              {report.totais.formas_pagamento.length ? report.totais.formas_pagamento.map((item) => (
+                <View key={item.forma} style={[styles.breakdownRow, { borderBottomColor: colors.border }]}>
+                  <Text style={[styles.breakdownLabel, { color: colors.text }]}>{formatPaymentLabel(item.forma)}</Text>
+                  <Text style={[styles.breakdownValue, { color: colors.muted }]}>{item.quantidade} · {moeda(item.valor)}</Text>
+                </View>
+              )) : <Text style={[styles.breakdownEmpty, { color: colors.muted }]}>Nenhuma venda registrada neste período.</Text>}
+              <View style={[styles.breakdownRow, styles.breakdownLastRow]}>
+                <Text style={[styles.breakdownLabel, { color: colors.text }]}>Descontos concedidos</Text>
+                <Text style={[styles.breakdownValue, { color: colors.text }]}>{moeda(report.totais.descontos_vendas)}</Text>
+              </View>
+            </View>
+          </>
         )}
 
         {report && <Text style={[styles.note, { color: colors.muted }]}>{report.nota}</Text>}
@@ -399,8 +455,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     paddingHorizontal: 20,
-    gap: 12,
-    marginBottom: 24,
+    gap: 8,
+    marginBottom: 20,
   },
   buttonContainer: {
     marginHorizontal: 20,
@@ -410,4 +466,11 @@ const styles = StyleSheet.create({
   loader: { marginVertical: 32 },
   message: { marginHorizontal: 20, marginBottom: 20, textAlign: 'center' },
   note: { marginHorizontal: 20, marginTop: 4, marginBottom: 20, fontSize: 12, lineHeight: 18 },
+  salesBreakdown: { marginHorizontal: 20, marginBottom: 24, padding: 16, borderWidth: 1, borderRadius: 16 },
+  breakdownTitle: { fontSize: 16, fontWeight: '700', marginBottom: 8 },
+  breakdownRow: { minHeight: 42, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderBottomWidth: StyleSheet.hairlineWidth, gap: 10 },
+  breakdownLastRow: { borderBottomWidth: 0, marginTop: 4 },
+  breakdownLabel: { fontSize: 14, fontWeight: '600', textTransform: 'capitalize', flex: 1 },
+  breakdownValue: { fontSize: 13, fontWeight: '600', textAlign: 'right' },
+  breakdownEmpty: { paddingVertical: 12, fontSize: 14 },
 });

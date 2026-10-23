@@ -26,7 +26,7 @@ class RelatorioService
             ->get(['id', 'categoria_id', 'created_at']);
         $vendas = Venda::query()
             ->whereBetween('vendido_em', [$inicio, $fim])
-            ->get(['vendido_em', 'valor_total']);
+            ->get(['vendido_em', 'valor_total', 'desconto', 'forma_pagamento']);
 
         $orcamentosAnteriores = Orcamento::query()
             ->whereBetween('created_at', [$inicioAnterior, $fimAnterior]);
@@ -42,6 +42,13 @@ class RelatorioService
         $totalClientes = $clientes->count();
         $totalVendas = $vendas->count();
         $faturamentoVendas = (float) $vendas->sum(fn ($item) => (float) $item->valor_total);
+        $descontosVendas = (float) $vendas->sum(fn ($item) => (float) $item->desconto);
+        $formasPagamento = $vendas->groupBy(fn ($item) => $item->forma_pagamento ?: 'nao_informado')
+            ->map(fn ($itens, $forma) => [
+                'forma' => $forma,
+                'quantidade' => $itens->count(),
+                'valor' => round((float) $itens->sum(fn ($item) => (float) $item->valor_total), 2),
+            ])->sortByDesc('valor')->values();
 
         return [
             'periodo' => $periodo,
@@ -51,8 +58,8 @@ class RelatorioService
                 'fim' => $fim->toDateString(),
             ],
             'nota' => $tipo === 'vendas'
-                ? 'Este relatório resume as vendas registradas no período.'
-                : 'Este relatório resume orçamentos. Consulte vendas registradas e baixas de estoque no histórico de vendas.',
+                ? 'Faturamento considera o valor líquido das vendas após a aplicação dos descontos.'
+                : 'Este relatório consolida orçamentos, clientes, produtos e vendas registrados no período.',
             'metricas' => [
                 'valor_orcado' => [
                     'valor' => round($valorOrcado, 2),
@@ -84,6 +91,8 @@ class RelatorioService
                 'produtos' => $produtos->count(),
                 'vendas' => $totalVendas,
                 'faturamento_vendas' => round($faturamentoVendas, 2),
+                'descontos_vendas' => round($descontosVendas, 2),
+                'formas_pagamento' => $formasPagamento,
             ],
             'serie' => $this->serie($periodo, $tipo, $orcamentos, $clientes, $produtos, $vendas),
         ];
@@ -121,11 +130,13 @@ class RelatorioService
                 ->sortByDesc('quantidade')
                 ->values();
 
-            return ['rotulos' => [], 'valores' => [], 'categorias' => $categorias];
+            [$rotulosVendas, $valoresVendas, $faturamentoVendas] = $this->seriesVendas($periodo, $vendas);
+            return ['rotulos' => [], 'rotulos_vendas' => $rotulosVendas, 'valores' => [], 'vendas' => $valoresVendas, 'faturamento' => $faturamentoVendas, 'categorias' => $categorias];
         }
 
         [$buckets, $labels] = $this->buckets($periodo, CarbonImmutable::now());
         $valores = array_fill(0, count($buckets), 0);
+        [$rotulosVendas, $valoresVendas, $faturamento] = $this->seriesVendas($periodo, $vendas);
         $eventos = match ($tipo) {
             'orcamentos' => $orcamentos,
             'vendas' => $vendas,
@@ -143,12 +154,32 @@ class RelatorioService
             $indice = array_search($chave, $buckets, true);
             if ($indice === false) continue;
 
-            $valores[$indice] += $tipo === 'movimentacao'
-                ? (float) $evento->valor_total
-                : 1;
+            $valores[$indice] += $tipo === 'movimentacao' ? (float) $evento->valor_total : 1;
         }
 
-        return ['rotulos' => $labels, 'valores' => $valores, 'categorias' => []];
+        return ['rotulos' => $labels, 'rotulos_vendas' => $rotulosVendas, 'valores' => $valores, 'vendas' => $valoresVendas, 'faturamento' => $faturamento, 'categorias' => []];
+    }
+
+    private function seriesVendas(string $periodo, $vendas): array
+    {
+        [$buckets, $labels] = $this->buckets($periodo, CarbonImmutable::now());
+        $quantidades = array_fill(0, count($buckets), 0);
+        $faturamento = array_fill(0, count($buckets), 0.0);
+
+        foreach ($vendas as $venda) {
+            $data = CarbonImmutable::parse($venda->vendido_em);
+            $chave = match ($periodo) {
+                'hoje' => sprintf('%02d', intdiv((int) $data->format('G'), 4) * 4),
+                'ano' => $data->format('m-Y'),
+                default => $data->format('Y-m-d'),
+            };
+            $indice = array_search($chave, $buckets, true);
+            if ($indice === false) continue;
+            $quantidades[$indice]++;
+            $faturamento[$indice] += (float) $venda->valor_total;
+        }
+
+        return [$labels, $quantidades, array_map(fn ($valor) => round($valor, 2), $faturamento)];
     }
 
     private function buckets(string $periodo, CarbonImmutable $agora): array
