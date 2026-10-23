@@ -26,6 +26,7 @@ class VendaService
                 'usuario_id' => $usuarioId,
                 'cliente_id' => $cliente?->id,
                 'cliente_nome' => $cliente?->nome,
+                'forma_pagamento' => $dados['forma_pagamento'] ?? null,
                 'valor_total' => 0,
                 'vendido_em' => now(),
             ]);

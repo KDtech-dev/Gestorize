@@ -16,6 +16,7 @@ class VendaResource extends JsonResource
             'vendedor' => $this->usuario?->name,
             'cliente_id' => $this->cliente_id,
             'cliente_nome' => $this->cliente_nome ?? $this->cliente?->nome,
+            'forma_pagamento' => $this->forma_pagamento,
             'itens' => VendaItemResource::collection($this->whenLoaded('itens')),
         ];
     }

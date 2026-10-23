@@ -9,7 +9,7 @@ class Venda extends Model
 {
     use HasUuids;
 
-    protected $fillable = ['usuario_id', 'cliente_id', 'cliente_nome', 'valor_total', 'vendido_em'];
+    protected $fillable = ['usuario_id', 'cliente_id', 'cliente_nome', 'forma_pagamento', 'valor_total', 'vendido_em'];
 
     protected function casts(): array
     {

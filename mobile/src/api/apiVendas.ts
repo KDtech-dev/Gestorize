@@ -16,6 +16,7 @@ export type VendaType = {
   valor_total: number | string;
   vendido_em: string;
   vendedor: string | null;
+  forma_pagamento?: 'pix' | 'dinheiro' | 'debito' | 'credito' | null;
   cliente_id?: string | null;
   cliente_nome?: string | null;
   itens: VendaItem[];

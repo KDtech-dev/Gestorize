@@ -26,7 +26,8 @@ export default function ModulePage() {
 
   if (loading) return <div className="boot-screen"><span className="spinner" />Carregando…</div>;
   if (!config || !can(config.permission)) return <AppShell><section className="empty-state"><span className="empty-icon">⌁</span><h1>Acesso indisponível</h1><p>Seu perfil não possui acesso a esta área.</p></section></AppShell>;
+  if (module === 'vendas') return <SalesDesk />;
   return <AppShell>
-    {module === 'vendas' ? <SalesDesk /> : module === 'relatorios' ? <ReportsPage /> : <DataModule title={config.title} endpoint={config.endpoint} module={module} />}
+    {module === 'relatorios' ? <ReportsPage /> : <DataModule title={config.title} endpoint={config.endpoint} module={module} />}
   </AppShell>;
 }
