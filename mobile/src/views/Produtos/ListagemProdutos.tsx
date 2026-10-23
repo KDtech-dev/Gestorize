@@ -343,6 +343,6 @@ const styles = StyleSheet.create({
 
     listContent: {
         padding: 10,
-        paddingTop: 270,
+        paddingTop: 300,
     },
 });

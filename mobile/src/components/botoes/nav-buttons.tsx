@@ -33,23 +33,15 @@ export function NavButton({
 
   const cardBg = colors.card;
 
-  const iconColor = disabled ? colors.muted : isDark ? colors.accent : '#ffffff';
+  const iconColor = disabled ? colors.muted : colors.primary;
 
-  const iconBg = disabled ? colors.border : isDark ? colors.elevated : colors.primary;
+  const iconBg = disabled ? colors.border : colors.elevated;
 
-  const borderColor = disabled
-    ? colors.border
-    : isDark
-      ? colors.accent
-      : colors.primary;
+  const borderColor = colors.primary;
 
   const textColor = disabled ? colors.muted : isDark ? '#ffffff' : colors.text;
 
-  const subtitleColor = disabled
-    ? colors.muted
-    : isDark
-      ? '#C3CBD6'
-      : colors.muted;
+  const subtitleColor = colors.muted;
 
   const handlePressIn = () => {
     if (disabled) return;
@@ -81,9 +73,10 @@ export function NavButton({
           styles.card,
           {
             backgroundColor: cardBg,
+            borderColor: colors.border,
             borderLeftColor: borderColor,
-            shadowColor: isDark ? '#ffffff' : '#000000',
-            shadowOpacity: isDark ? 0.07 : 0.1,
+            shadowColor: '#000000',
+            shadowOpacity: isDark ? 0.04 : 0.06,
             opacity: disabled ? 0.6 : 1,
           },
         ]}
@@ -117,26 +110,27 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   card: {
-    minHeight: 190,
+    minHeight: 166,
     width: '100%',
     borderLeftWidth: 4,
+    borderWidth: 1,
     backgroundColor: '#ffffff',
-    paddingVertical: 14,
-    paddingHorizontal: 12,
-    borderRadius: 14,
+    paddingVertical: 16,
+    paddingHorizontal: 14,
+    borderRadius: 16,
   },
   inner: {
     alignItems: 'center',
-    gap: 10,
+    gap: 8,
   },
   iconWrapper: {
-    width: 58,
-    height: 58,
-    borderRadius: 20,
+    width: 52,
+    height: 52,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
   },
   textWrapper: { flex: 1 },
-  title: { marginTop: 4, fontWeight: '800', fontSize: 16, textAlign: 'center' },
-  subtitle: { marginTop: 2, fontSize: 13, lineHeight: 17, textAlign: 'center' },
+  title: { marginTop: 2, fontWeight: '800', fontSize: 15, textAlign: 'center' },
+  subtitle: { marginTop: 1, fontSize: 12, lineHeight: 16, textAlign: 'center' },
 });
