@@ -40,7 +40,7 @@ export function Dashboard() {
   const visibleCards = cards.filter((card) => can(card.permission));
   return <>
     <section className="welcome-banner"><div><span className="eyebrow">SEU NEGÓCIO EM FOCO</span><h1>Gestão simples, decisões melhores.</h1><p>Acompanhe os principais indicadores e acesse seus módulos.</p></div><div className="banner-mark">G</div></section>
-    <div className="section-heading"><div><span className="eyebrow">ACOMPANHAMENTO</span><h2>Resumo do sistema</h2></div><span className="live-label"><i />Dados da API</span></div>
+    <div className="section-heading"><div><span className="eyebrow">ACOMPANHAMENTO</span><h2>Resumo do sistema</h2></div></div>
     {error && <div className="inline-error">{error}</div>}
     <section className="metric-grid">
       {visibleCards.map((card) => <article className={`metric-card ${card.color}`} key={card.key}>

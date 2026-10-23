@@ -8,7 +8,6 @@ const questions = [
   { title: 'Como funciona a aprovação de orçamento?', answer: 'Orçamentos novos ficam pendentes. Abra os detalhes para conferir cliente, produtos e valores. Quando estiver correto, use Aprovar. Orçamentos aprovados ficam bloqueados para edição.' },
   { title: 'Como salvar um relatório em PDF?', answer: 'Na tela Relatórios, escolha o período e o tipo de informação. Use a opção de imprimir do navegador e selecione Salvar como PDF.' },
   { title: 'Por que uma opção não aparece para mim?', answer: 'A disponibilidade das áreas e ações depende das permissões associadas ao seu perfil. Peça ao administrador do sistema para revisar seus acessos.' },
-  { title: 'Por quanto tempo minha sessão fica ativa?', answer: 'A sessão expira automaticamente após três horas. Para sair antes, use Sair da conta nas Configurações.' },
 ];
 
 function HelpContent() {

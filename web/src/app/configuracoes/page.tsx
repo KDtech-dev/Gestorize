@@ -24,7 +24,7 @@ function SettingsContent() {
       <SettingToggle icon="☾" title="Tema escuro" description={mode === 'dark' ? 'Ativado' : 'Desativado'} checked={mode === 'dark'} onChange={() => toggle()} />
       <SettingToggle icon="☷" title="Listas compactas" description={compactLists ? 'Linhas mais baixas e mais registros na tela' : 'Espaçamento padrão nas listagens'} checked={compactLists} onChange={setCompactLists} />
     </section>
-    <section className="settings-section"><div className="settings-section-title"><span className="settings-section-icon">⌁</span><div><h2>Sessão</h2><p>A sessão encerra automaticamente após três horas.</p></div></div>
+    <section className="settings-section"><div className="settings-section-title"><span className="settings-section-icon">⌁</span><div><h2>Sessão</h2><p>Gerencie o acesso à sua conta neste navegador.</p></div></div>
       <button className="setting-row setting-danger" onClick={() => void signOut()}><span className="setting-icon">↪</span><span className="setting-copy"><strong>Sair da conta</strong><small>Encerrar o acesso neste navegador.</small></span><span className="setting-arrow">›</span></button>
     </section>
   </>;

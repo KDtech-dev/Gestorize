@@ -38,7 +38,6 @@ export default function LoginPage() {
       <label className="field"><span>Senha</span><input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Sua senha" required /></label>
       {error && <div className="form-error" role="alert">{error}</div>}
       <button className="primary-button login-submit" disabled={submitting}>{submitting ? 'Entrando…' : 'Entrar'}<span aria-hidden>→</span></button>
-      <div className="session-note"><span className="status-dot" />Sua sessão será encerrada após 3 horas.</div>
     </form></section>
   </main>;
 }

@@ -60,7 +60,7 @@ export function SalesDesk() {
   }
 
   return <>
-    <div className="page-heading"><div><span className="eyebrow">PONTO DE VENDA</span><h1>Vendas</h1><p>Registre uma venda e acompanhe o histórico atualizado pela API.</p></div><div className="record-count"><strong>{sales.length}</strong><span>vendas</span></div></div>
+    <div className="page-heading"><div><span className="eyebrow">PONTO DE VENDA</span><h1>Vendas</h1><p>Registre uma venda e acompanhe o histórico recente.</p></div><div className="record-count"><strong>{sales.length}</strong><span>vendas</span></div></div>
     <div className="sales-layout">
       <section className="data-panel sale-builder"><div className="panel-heading"><div><h2>Nova venda</h2><p>Pesquise um produto e adicione ao carrinho.</p></div><span className="panel-tag">PDV</span></div>
         <div className="sale-search-wrap"><label className="search-field sale-search"><span>⌕</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Nome ou código de barras" /></label>
