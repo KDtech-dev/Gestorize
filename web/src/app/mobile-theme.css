@@ -1,0 +1,13 @@
+/* Matches the light and dark palette defined in mobile/src/context/ThemeContext.tsx. */
+.theme-root[data-theme='dark'] .metric-card,
+.theme-root[data-theme='dark'] .quick-card,
+.theme-root[data-theme='dark'] .data-panel,
+.theme-root[data-theme='dark'] .product-results,
+.theme-root[data-theme='dark'] .product-result,
+.theme-root[data-theme='dark'] .record-modal {
+  background: var(--card);
+}
+
+.theme-root[data-theme='dark'] .editor-actions {
+  background: var(--elevated);
+}
