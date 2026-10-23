@@ -46,11 +46,11 @@ export function TopNavigation({ items }: { items: NavigationItem[] }) {
           transition: 'background .16s, color .16s',
           '&:hover': { backgroundColor: '#ffffff1f', color: '#fff' },
           '&.Mui-selected': {
-            backgroundColor: '#ffffff',
-            color: '#005CE4',
-            boxShadow: 'inset 0 0 0 1px #dbeafe',
+            backgroundColor: '#005CE4',
+            color: '#fff',
+            boxShadow: 'inset 0 0 0 1px #005CE4',
           },
-          '&.Mui-selected:hover': { backgroundColor: '#ffffff' },
+          '&.Mui-selected:hover': { backgroundColor: '#0048b8' },
         },
         '& .MuiTab-iconWrapper': { fontSize: 21, lineHeight: 1 },
         '.theme-root[data-theme="dark"] & .MuiTab-root': {
