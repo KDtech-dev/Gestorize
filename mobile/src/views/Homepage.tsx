@@ -130,7 +130,7 @@ const Homepage = () => {
             keyExtractor={(item) => item.id}
             contentContainerStyle={styles.metricsList}
             renderItem={({ item }) => (
-              <View style={[styles.metricCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <View style={[styles.metricCard, { backgroundColor: colors.surface, borderColor: colors.border === '#ffffff' ? '#E2E8F0' : colors.border }]}>
                 <View style={styles.metricCardTop}>
                   <View style={[styles.metricIcon, { backgroundColor: colors.elevated }]}>
                     <MaterialCommunityIcons name={item.icon} size={21} color={item.cores} />

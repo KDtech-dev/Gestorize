@@ -31,13 +31,11 @@ export function NavButton({
   const scale = React.useRef(new Animated.Value(1)).current;
   const { colors, isDark } = useTheme();
 
-  const cardBg = colors.card;
+  const cardBg = colors.surface;
 
   const iconColor = disabled ? colors.muted : colors.primary;
 
   const iconBg = disabled ? colors.border : colors.elevated;
-
-  const borderColor = colors.primary;
 
   const textColor = disabled ? colors.muted : isDark ? '#ffffff' : colors.text;
 
@@ -73,8 +71,7 @@ export function NavButton({
           styles.card,
           {
             backgroundColor: cardBg,
-            borderColor: colors.border,
-            borderLeftColor: borderColor,
+            borderColor: isDark ? colors.border : '#E2E8F0',
             shadowColor: '#000000',
             shadowOpacity: isDark ? 0.04 : 0.06,
             opacity: disabled ? 0.6 : 1,
@@ -112,7 +109,6 @@ const styles = StyleSheet.create({
   card: {
     minHeight: 166,
     width: '100%',
-    borderLeftWidth: 4,
     borderWidth: 1,
     backgroundColor: '#ffffff',
     paddingVertical: 16,
