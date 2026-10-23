@@ -54,7 +54,7 @@ export function Dashboard() {
         {can('vendas.ver') && can('vendas.criar') && (
           <Button
             component={Link}
-            href="/vendas"
+            href="/vendas/nova"
             variant="contained"
             startIcon={<Icon icon="mdi:cart-outline" width={23} height={23} />}
             sx={{ minHeight: 52, px: 3, mb: 0.75, borderRadius: '12px', bgcolor: '#005CE4', color: '#fff', fontSize: 16, fontWeight: 700, textTransform: 'none', boxShadow: '0 5px 14px #005CE433', '&:hover': { bgcolor: '#0048b8', boxShadow: '0 7px 18px #005CE440' } }}

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { AppShell } from '@/components/AppShell';
 import { DataModule } from '@/components/DataModule';
-import { SalesDesk } from '@/components/SalesDesk';
+import { SalesOverview } from '@/components/SalesOverview';
 import { ReportsPage } from '@/components/ReportsPage';
 import { useAuth } from '@/context/AuthContext';
 
@@ -26,7 +26,7 @@ export default function ModulePage() {
 
   if (loading) return <div className="boot-screen"><span className="spinner" />Carregando…</div>;
   if (!config || !can(config.permission)) return <AppShell><section className="empty-state"><span className="empty-icon">⌁</span><h1>Acesso indisponível</h1><p>Seu perfil não possui acesso a esta área.</p></section></AppShell>;
-  if (module === 'vendas') return <SalesDesk />;
+  if (module === 'vendas') return <AppShell><SalesOverview /></AppShell>;
   return <AppShell>
     {module === 'relatorios' ? <ReportsPage /> : <DataModule title={config.title} endpoint={config.endpoint} module={module} />}
   </AppShell>;

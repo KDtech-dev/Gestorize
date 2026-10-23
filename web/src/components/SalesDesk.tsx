@@ -87,7 +87,7 @@ export function SalesDesk() {
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: 'var(--surface-soft)', color: 'var(--ink)' }}>
       <Box component="header" sx={{ minHeight: 64, px: { xs: 1.5, md: 3 }, display: 'flex', alignItems: 'center', gap: 2, bgcolor: '#1d4ed8', color: '#fff' }}>
-        <ButtonBase component={Link} href="/" aria-label="Voltar à visão geral" sx={{ width: 34, height: 34, borderRadius: '9px', color: 'inherit', '&:hover': { bgcolor: '#ffffff20' } }}><Icon icon="mdi:arrow-left" width={21} height={21} /></ButtonBase>
+        <ButtonBase component={Link} href="/vendas" aria-label="Voltar ao histórico de vendas" sx={{ width: 34, height: 34, borderRadius: '9px', color: 'inherit', '&:hover': { bgcolor: '#ffffff20' } }}><Icon icon="mdi:arrow-left" width={21} height={21} /></ButtonBase>
         <Icon icon="mdi:cart-outline" width={22} height={22} />
         <Typography component="h1" sx={{ fontSize: 16, fontWeight: 800 }}>Nova venda</Typography>
         <Box sx={{ px: 1, py: 0.45, borderRadius: 99, bgcolor: '#ffffff', color: '#1d4ed8', fontSize: 11, fontWeight: 700 }}>Em andamento</Box>
