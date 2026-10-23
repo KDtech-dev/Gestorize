@@ -5,6 +5,7 @@ import {
     NativeScrollEvent,
     NativeSyntheticEvent,
     StyleSheet,
+    Text,
     View,
 } from 'react-native';
 
@@ -233,6 +234,7 @@ const Fornecedores = () => {
                     placeholder="Buscar fornecedor..."
                 />
 
+                <Text style={[styles.filterLabel, { color: colors.muted }]}>Ordenação e ramo de atividade</Text>
                 <FlatList
                     horizontal
                     data={ramosAtividade}
@@ -325,10 +327,11 @@ const styles = StyleSheet.create({
         paddingHorizontal: 10,
         gap: 8,
     },
+    filterLabel: { fontSize: 12, fontWeight: '700', letterSpacing: 0.4, marginHorizontal: 12, marginBottom: 7 },
 
     listContent: {
         padding: 10,
-        paddingTop: 135,
+        paddingTop: 155,
     },
 
 });

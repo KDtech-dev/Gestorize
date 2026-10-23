@@ -12,6 +12,7 @@ import {
     NativeScrollEvent,
     NativeSyntheticEvent,
     StyleSheet,
+    Text,
     View,
 } from 'react-native';
 
@@ -204,6 +205,7 @@ const Funcionarios = () => {
                 />
 
                 <View style={styles.filtersContainer}>
+                    <Text style={[styles.filterLabel, { color: colors.muted }]}>Perfil</Text>
                     <FlatList
                         data={perfisFuncionario}
                         horizontal
@@ -293,6 +295,7 @@ const styles = StyleSheet.create({
     filtersContainer: {
         marginTop: 10,
     },
+    filterLabel: { fontSize: 12, fontWeight: '700', letterSpacing: 0.4, marginHorizontal: 12, marginBottom: 7 },
 
     filtersContent: {
         paddingHorizontal: 10,
@@ -301,6 +304,6 @@ const styles = StyleSheet.create({
 
     listContent: {
         padding: 10,
-        paddingTop: 135,
+        paddingTop: 155,
     },
 });

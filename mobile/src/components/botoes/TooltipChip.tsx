@@ -21,11 +21,13 @@ const TooltipChip = ({ label, active = false, onPress }: Props) => {
 
   const borderColor = active
     ? colors.accent
-    : colors.background === '#ffffff' ? '#CBD5E1' : '#526173';
+    : colors.background === '#ffffff' ? '#D8DEE8' : '#465568';
 
   return (
     <Pressable
       onPress={onPress}
+      accessibilityRole="button"
+      accessibilityState={{ selected: active }}
       style={[styles.container, { backgroundColor, borderColor, borderWidth: 1 }]}
     >
       <Text style={[styles.text, { color: textColor }]}>{label}</Text>
@@ -37,16 +39,17 @@ export default TooltipChip;
 
 const styles = StyleSheet.create({
   container: {
+    minHeight: 38,
     paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 20,
+    paddingHorizontal: 14,
+    borderRadius: 12,
     alignSelf: 'flex-start',
     flexShrink: 0,
     maxWidth: 280,
   },
 
   text: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
     flexShrink: 1,
     maxWidth: 248,

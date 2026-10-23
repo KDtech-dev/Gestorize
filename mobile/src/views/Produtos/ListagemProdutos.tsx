@@ -195,6 +195,7 @@ const Produtos = () => {
                 />
 
                 <View style={styles.filtersContainer}>
+                    <Text style={[styles.filterLabel, { color: colors.muted }]}>Estoque</Text>
                     <FlatList
                         data={[
                             {

@@ -5,6 +5,7 @@ import {
   NativeScrollEvent,
   NativeSyntheticEvent,
   StyleSheet,
+  Text,
   View,
 } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
@@ -114,6 +115,7 @@ const Orcamentos = () => {
       <Animated.View pointerEvents="box-none" style={[styles.headerFilters, { transform: [{ translateY: headerTranslate }], opacity }]}>
         <SearchBar placeholder="Busque pelo cliente ou código" value={search} onChangeText={setSearch} />
         <View style={styles.filtersContainer}>
+          <Text style={[styles.filterLabel, { color: colors.muted }]}>Período</Text>
           <FlatList
             data={filtros}
             horizontal
@@ -130,6 +132,7 @@ const Orcamentos = () => {
           />
         </View>
         <View style={styles.filtersContainer}>
+          <Text style={[styles.filterLabel, { color: colors.muted }]}>Status</Text>
           <FlatList
             data={[{ id: null, label: 'Todos os status' }, { id: 'pendente', label: 'Pendentes' }, { id: 'aprovado', label: 'Aprovados' }] as { id: FiltroStatus; label: string }[]}
             horizontal
@@ -182,6 +185,7 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   headerFilters: { position: 'absolute', top: 140, left: 0, right: 0, marginTop: 12, zIndex: 10 },
   filtersContainer: { marginTop: 10 },
+  filterLabel: { fontSize: 12, fontWeight: '700', letterSpacing: 0.4, marginHorizontal: 12, marginBottom: 7 },
   filtersContent: { paddingHorizontal: 10, gap: 8 },
-  listContent: { padding: 10, paddingTop: 190 },
+  listContent: { padding: 10, paddingTop: 225 },
 });
