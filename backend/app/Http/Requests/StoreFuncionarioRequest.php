@@ -11,7 +11,7 @@ class StoreFuncionarioRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        return ! $this->exists('permissions') || $this->user()?->can('acessos.gerenciar') === true;
     }
 
     protected function prepareForValidation(): void

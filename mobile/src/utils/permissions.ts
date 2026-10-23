@@ -2,8 +2,8 @@ import type { RootStackParamList, UserType } from '@context/types';
 
 export const can = (user: UserType | null, permission: string): boolean => {
   if (!user) return false;
-  if (user.role === 'admin') return true;
-
+  // Global admins use explicit global routes; tenant actions follow the same
+  // permission list enforced by the API middleware.
   return !!user.permissions?.includes(permission);
 };
 
@@ -39,7 +39,8 @@ export const canAccessRoute = (
   if (routeName === 'NovaVenda') return canSell(user);
   if (routeName === 'Vendas') return can(user, 'vendas.ver');
   const required = routePermission[routeName];
-  return required ? can(user, required) : true;
+  if (required) return can(user, required);
+  return ['Configuracoes', 'Ajuda', 'UserPerfil', 'Homepage'].includes(routeName);
 };
 
 export const canAccessForm = (

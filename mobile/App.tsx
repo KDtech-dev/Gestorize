@@ -36,6 +36,7 @@ import NovaVenda from '@views/Vendas/NovaVenda';
 import Organizacoes from '@views/Organizacoes';
 import FormularioOrganizacao from '@views/Organizacoes/FormularioOrganizacao';
 import AdministracaoGlobal from '@views/AdministracaoGlobal';
+import TrocarSenhaPrimeiroAcesso from '@views/TrocarSenhaPrimeiroAcesso';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const navigationRef = createNavigationContainerRef<RootStackParamList>();
@@ -60,6 +61,9 @@ const AppNavigator = () => {
           </>
         ) : (
           <>
+            {user?.must_change_password ? (
+              <Stack.Screen name="TrocarSenhaPrimeiroAcesso" component={TrocarSenhaPrimeiroAcesso} />
+            ) : <>
             <Stack.Screen name="Homepage" component={Homepage} />
             {canAccess('AdministracaoGlobal') && <Stack.Screen name="AdministracaoGlobal" component={AdministracaoGlobal} />}
             {canAccess('Organizacoes') && <Stack.Screen name="Organizacoes" component={Organizacoes} />}
@@ -83,6 +87,7 @@ const AppNavigator = () => {
             {canAccess('Relatorios') && (
               <Stack.Screen name="Relatorios" component={Relatorios} />
             )}
+            </>}
           </>
         )}
       </Stack.Navigator>

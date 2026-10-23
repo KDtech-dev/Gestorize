@@ -96,3 +96,12 @@ export const postLogout = async (): Promise<void> => {
   await authStorage.set(null);
   await secureStore.remove(auth.userDataKeyName);
 };
+
+export const trocarSenhaPrimeiroAcesso = async (data: {
+  current_password: string;
+  password: string;
+  password_confirmation: string;
+}) => {
+  const response = await getAxios().post('/primeiro-acesso/alterar-senha', data);
+  return response.data;
+};

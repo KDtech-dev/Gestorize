@@ -12,14 +12,26 @@ class EnsureOrganizationContext
     {
         $user = $request->user();
         $path = $request->path();
+        $passwordChangePath = $path === 'api/primeiro-acesso/alterar-senha';
+        $passwordBootstrapPath = $path === 'api/logout'
+            || $path === 'api/refresh'
+            || ($path === 'api/me' && $request->isMethod('GET'))
+            || $passwordChangePath;
+        $globalPathAllowed = $path === 'api/logout'
+            || $path === 'api/refresh'
+            || $path === 'api/me'
+            || $path === 'api/ajuda/contato';
         $isGlobalAdmin = $user?->hasRole('admin') && ! $user->organization_id;
-        $globalPaths = ['api/logout', 'api/refresh', 'api/me', 'api/ajuda/contato'];
 
         if ($path === 'api/logout') {
             return $next($request);
         }
 
-        if ($isGlobalAdmin && ! in_array($path, $globalPaths, true)) {
+        if ($user?->must_change_password && ! $passwordBootstrapPath) {
+            return response()->json(['success' => false, 'message' => 'Troque sua senha inicial para continuar.'], 403);
+        }
+
+        if ($isGlobalAdmin && ! $globalPathAllowed) {
             return response()->json(['success' => false, 'message' => 'Acesso disponível somente dentro de uma organização.'], 403);
         }
 

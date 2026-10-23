@@ -243,7 +243,7 @@ const Homepage = () => {
                     label={item.label}
                     description={item.description}
                     onClick={() => navigation.navigate(item.route)}
-                    containerStyle={styles.gridItem}
+                    containerStyle={administradorGlobal ? styles.gridItemFull : styles.gridItem}
                   />
                 ))}
               </View>
@@ -361,6 +361,9 @@ const styles = StyleSheet.create({
   gridItem: {
     flexBasis: '47%',
     flexGrow: 1,
+  },
+  gridItemFull: {
+    width: '100%',
   },
   cardsWrapper: {
     marginTop: 16,

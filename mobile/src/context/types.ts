@@ -58,6 +58,7 @@ export type UserType = {
   name?: string;
   email: string;
   organization_id?: string | null;
+  must_change_password?: boolean;
   organization_name?: string | null;
   organization?: {
     id: string;
@@ -273,6 +274,7 @@ export type RootStackParamList = {
   Configuracoes: undefined;
   Ajuda: undefined;
   Login: undefined;
+  TrocarSenhaPrimeiroAcesso: undefined;
   ResetPassword: undefined;
   ForgoutPassword: undefined;
   Homepage: undefined;

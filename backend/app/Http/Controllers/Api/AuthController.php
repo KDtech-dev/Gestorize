@@ -13,6 +13,8 @@ use App\Services\ResponseService;
 use App\Services\UserService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
@@ -56,5 +58,32 @@ class AuthController extends Controller
         $usuario = $users->atualizarMeuPerfil($request->user(), $request->validated());
 
         return ResponseService::success(new UserResource($usuario), 'Perfil atualizado com sucesso.');
+    }
+
+    public function trocarSenhaPrimeiroAcesso(Request $request): JsonResponse
+    {
+        $dados = $request->validate([
+            'current_password' => ['required', 'string'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+        ]);
+        $user = $request->user();
+
+        if (! $user->must_change_password) {
+            throw ValidationException::withMessages(['password' => 'A troca obrigatória da senha já foi concluída.']);
+        }
+        if (! Hash::check($dados['current_password'], $user->password)) {
+            throw ValidationException::withMessages(['current_password' => 'A senha inicial informada está incorreta.']);
+        }
+        if (Hash::check($dados['password'], $user->password)) {
+            throw ValidationException::withMessages(['password' => 'Escolha uma senha diferente da senha inicial.']);
+        }
+
+        $user->forceFill([
+            'password' => Hash::make($dados['password']),
+            'must_change_password' => false,
+        ])->save();
+        $user->load(['roles.permissions', 'permissions', 'funcionario.endereco']);
+
+        return ResponseService::success(new UserResource($user), 'Senha atualizada com sucesso.');
     }
 }

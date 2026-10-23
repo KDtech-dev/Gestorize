@@ -80,6 +80,7 @@ class OrganizationController extends Controller
                 'email' => $data['manager']['email'],
                 'password' => Hash::make($data['manager']['password']),
                 'organization_id' => $organization->id,
+                'must_change_password' => true,
             ]);
             $manager->assignRole('gestor');
             Funcionario::create(['id' => $manager->id, 'cpf' => $data['manager']['cpf'], 'organization_id' => $organization->id]);

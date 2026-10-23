@@ -13,7 +13,7 @@ class Funcionario extends Model
 
     protected static function booted(): void
     {
-        static::addGlobalScope('organization', function ($query): void {
+        static::addGlobalScope('funcionario_user_organization', function ($query): void {
             if (Auth::check()) {
                 $query->whereHas('user', fn ($users) => $users->where('organization_id', Auth::user()->organization_id));
             }

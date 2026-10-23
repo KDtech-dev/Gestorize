@@ -51,8 +51,10 @@ class AcessoService
         array $permissoes
     ): User {
         $user = User::findOrFail($userId);
+        $permissoesDoPapel = $user->getPermissionsViaRoles()->pluck('name')->all();
+        $permissoesExtras = array_values(array_diff($permissoes, $permissoesDoPapel));
 
-        $user->syncPermissions($permissoes);
+        $user->syncPermissions($permissoesExtras);
 
         return $user;
     }

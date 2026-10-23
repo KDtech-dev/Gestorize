@@ -52,12 +52,11 @@ type FormOutput = z.output<typeof funcionarioSchema>;
 type RoleForm = FormData["role"];
 
 const PERFIS_FALLBACK: Opcao[] = [
-    { id: "admin", nome: "Administrador" },
     { id: "gestor", nome: "Gestor" },
     { id: "funcionario", nome: "Funcionário" },
 ];
 
-const PAPEIS_FUNCIONARIO: readonly RoleName[] = ["admin", "gestor", "funcionario"];
+const PAPEIS_FUNCIONARIO: readonly RoleName[] = ["gestor", "funcionario"];
 
 export default function NovoFuncionario() {
     const navigation = useNavigation<Navigation>();
@@ -75,6 +74,7 @@ export default function NovoFuncionario() {
     const podeCriar = can(usuarioLogado, 'users.criar');
     const podeEditar = can(usuarioLogado, 'users.editar');
     const podeExcluir = can(usuarioLogado, 'users.excluir');
+    const podeGerenciarAcessos = can(usuarioLogado, 'acessos.gerenciar');
     const formCanEdit = isCriar ? podeCriar : podeEditar;
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [showPermissionsModal, setShowPermissionsModal] = useState(false);
@@ -171,7 +171,7 @@ export default function NovoFuncionario() {
             const response = await getPapeis();
 
             const lista: Opcao[] = response.data
-                .filter((papel) => papel.name !== "cliente")
+                .filter((papel) => papel.name !== "cliente" && papel.name !== "admin")
                 .map((papel) => ({
                     id: papel.name,
                     nome: papel.label,
@@ -312,7 +312,7 @@ export default function NovoFuncionario() {
             data_nascimento: dateToApi(data.data_nascimento),
             ...(!isProprioUsuario ? {
                 role: data.role,
-                permissions: data.permissions ?? [],
+                ...(podeGerenciarAcessos ? { permissions: data.permissions ?? [] } : {}),
             } : {}),
         };
 
@@ -673,7 +673,7 @@ export default function NovoFuncionario() {
                     </Text>
                 </View>}
 
-                <View style={styles.section}>
+                {podeGerenciarAcessos && <View style={styles.section}>
                     {!isProprioUsuario && <>
                     <Text
                         style={[
@@ -746,9 +746,9 @@ export default function NovoFuncionario() {
                             />
                         )}
                     </View>
-                </View>
+                </View>}
             </KeyboardAwareScrollView>
-            {!isProprioUsuario && <Controller
+            {!isProprioUsuario && podeGerenciarAcessos && <Controller
                 control={control}
                 name="permissions"
                 render={({ field: { value, onChange } }) => (

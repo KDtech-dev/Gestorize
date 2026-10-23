@@ -29,6 +29,7 @@ class FuncionarioService
                 'name'     => $dados['name'],
                 'email'    => $dados['email'],
                 'password' => $dados['password'],
+                'must_change_password' => ($dados['role'] ?? null) === 'gestor',
             ]);
 
             $this->definirAcesso($user, $dados);

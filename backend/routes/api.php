@@ -26,6 +26,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/', [OrganizationController::class, 'store']);
         Route::put('/{organization}', [OrganizationController::class, 'update']);
     });
+    Route::post('/primeiro-acesso/alterar-senha', [AuthController::class, 'trocarSenhaPrimeiroAcesso'])->middleware('throttle:5,1');
     Route::put('/acessos/papeis/{role}/permissoes', [AcessoController::class, 'definirDoPapel'])->middleware('global.admin');
 
     Route::middleware('tenant.context')->group(function () {
