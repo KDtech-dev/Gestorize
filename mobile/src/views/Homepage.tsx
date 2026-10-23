@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { ActivityIndicator, FlatList, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -10,7 +10,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@context/types';
 import { useTheme } from '@context/ThemeContext';
 import { useAuth } from '@context/AuthContext';
-import { can, canAccessRoute } from '@utils/permissions';
+import { can, canAccessRoute, canSell } from '@utils/permissions';
 import { DashboardResumo, getDashboardResumo } from '@api/apiDashboard';
 
 const metricColors = {
@@ -25,6 +25,7 @@ const Homepage = () => {
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { colors } = useTheme();
   const { user } = useAuth();
+  const podeVender = canSell(user);
   const [resumo, setResumo] = useState<DashboardResumo | null>(null);
   const [carregandoResumo, setCarregandoResumo] = useState(true);
 
@@ -111,6 +112,19 @@ const Homepage = () => {
               <MaterialCommunityIcons name="view-dashboard-outline" size={26} color={colors.primary} />
             </View>
           </View>
+
+          {podeVender ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Vender. Abrir caixa para registrar uma venda"
+              onPress={() => navigation.navigate('Vendas')}
+              style={({ pressed }) => [styles.sellButton, { backgroundColor: colors.primary, opacity: pressed ? 0.88 : 1 }]}
+            >
+              <MaterialCommunityIcons name="cart-outline" size={23} color="#fff" />
+              <Text style={styles.sellButtonText}>Vender +</Text>
+              <MaterialCommunityIcons name="arrow-right" size={19} color="#fff" />
+            </Pressable>
+          ) : null}
 
           <View style={styles.metricsHeader}>
             <View>
@@ -219,6 +233,17 @@ const styles = StyleSheet.create({
   welcomeTitle: { fontSize: 23, lineHeight: 29, fontWeight: '900' },
   welcomeSubtitle: { fontSize: 13, lineHeight: 18 },
   welcomeIcon: { width: 48, height: 48, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  sellButton: {
+    minHeight: 52,
+    paddingHorizontal: 18,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    elevation: 2,
+  },
+  sellButtonText: { color: '#fff', fontSize: 16, fontWeight: '800' },
   sectionTitle: {
     marginTop: 0,
     marginBottom: 4,

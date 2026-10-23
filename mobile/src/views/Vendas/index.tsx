@@ -235,7 +235,7 @@ export default function Vendas() {
               <Text style={[styles.selectProductsText, { color: colors.text }]}>{carregandoProdutos ? 'Carregando produtos...' : 'Pesquisar e selecionar produtos'}</Text>
               <MaterialCommunityIcons name="chevron-right" size={22} color={colors.muted} />
             </Pressable>
-          </View>
+          </View>}
 
           <View style={[styles.panel, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={styles.sectionRow}>
@@ -265,7 +265,7 @@ export default function Vendas() {
             ))}
             <Button title={salvando ? 'Registrando...' : 'Finalizar venda'} onPress={finalizarVenda} disabled={!podeCriar || !carrinho.length || salvando} />
             {!podeCriar ? <Text style={[styles.hint, { color: colors.muted }]}>Seu perfil pode consultar vendas, mas não registrá-las.</Text> : null}
-          </View>}
+          </View>
 
           {podeVerHistorico && <View style={[styles.panel, styles.history, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={styles.sectionRow}>
