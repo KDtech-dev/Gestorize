@@ -23,7 +23,7 @@ function PanelTitle({ eyebrow, title, description, action }: { eyebrow: string; 
       <Box>
         <Typography component="span" sx={{ color: 'var(--muted)', fontSize: 10, fontWeight: 800, letterSpacing: 1.1 }}>{eyebrow}</Typography>
         <Typography component="h2" sx={{ mt: 0.5, color: 'var(--ink)', font: '800 18px Manrope,sans-serif' }}>{title}</Typography>
-        <Typography sx={{ mt: 0.5, color: 'var(--muted)', fontSize: 13 }}>{description}</Typography>
+        <Typography sx={{ mt: 0.75, color: 'var(--muted)', fontSize: { xs: 14, md: 15 }, lineHeight: 1.5 }}>{description}</Typography>
       </Box>
       {action}
     </Stack>
