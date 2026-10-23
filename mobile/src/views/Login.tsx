@@ -27,13 +27,15 @@ const Login = ({ navigation }: Props) => {
   const translateYLogo = useRef(new Animated.Value(0)).current;
   const scaleLogo = useRef(new Animated.Value(1)).current;
 
-  const headerBackground = isDark ? colors.background : '#0D2B52';
-  const textColor = '#ffffff';
-  const subtitleColor = '#ffffffcc';
+  const headerBackground = isDark ? '#ffffff' : '#0D2B52';
+  const textColor = isDark ? '#0f172a' : '#ffffff';
+  const subtitleColor = isDark ? '#475569' : '#ffffffcc';
 
   const cardBackground = colors.surface;
 
-  const logoSource = require('@assets/images/LogoLight.png');
+  const logoSource = isDark
+    ? require('@assets/images/Logo.png')
+    : require('@assets/images/LogoLight.png');
 
   useEffect(() => {
     const showSub = Keyboard.addListener('keyboardDidShow', () => { });
@@ -94,10 +96,10 @@ const Login = ({ navigation }: Props) => {
           accessibilityRole="button"
           accessibilityLabel={isDark ? 'Ativar tema claro' : 'Ativar tema escuro'}
           onPress={toggle}
-          style={[styles.themeButton, { backgroundColor: isDark ? '#ffffff20' : '#ffffff18', borderColor: '#ffffff55' }]}
+          style={[styles.themeButton, { backgroundColor: isDark ? '#0f172a0D' : '#ffffff18', borderColor: isDark ? '#0f172a33' : '#ffffff55' }]}
         >
-          <MaterialCommunityIcons name={isDark ? 'white-balance-sunny' : 'moon-waning-crescent'} size={19} color="#fff" />
-          <Text style={styles.themeButtonText}>{isDark ? 'Claro' : 'Escuro'}</Text>
+          <MaterialCommunityIcons name={isDark ? 'white-balance-sunny' : 'moon-waning-crescent'} size={19} color={textColor} />
+          <Text style={[styles.themeButtonText, { color: textColor }]}>{isDark ? 'Claro' : 'Escuro'}</Text>
         </Pressable>
         <View style={styles.header}>
           <Animated.Image

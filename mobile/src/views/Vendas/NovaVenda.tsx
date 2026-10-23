@@ -29,10 +29,24 @@ import Toast from 'react-native-toast-message';
 
 type CarrinhoItem = { produto: ProdutoType; quantidade: number; precoUnitario?: number };
 const moeda = (valor: number | string | null | undefined) => Number(valor ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+const lerDesconto = (valor: string, percentual: boolean) => percentual
+  ? Number(valor.replace(',', '.')) || 0
+  : (Number(valor.replace(/\D/g, '')) || 0) / 100;
+const formatarDesconto = (valor: string, percentual: boolean) => {
+  if (percentual) {
+    const limpo = valor.replace(/[^\d,.]/g, '').replace('.', ',');
+    const [inteiro = '', ...decimais] = limpo.split(',');
+    return decimais.length ? `${inteiro},${decimais.join('').slice(0, 2)}` : inteiro;
+  }
+  const centavos = Number(valor.replace(/\D/g, ''));
+  return centavos ? `R$ ${ (centavos / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '';
+};
+const exibirPercentual = (valor: number) => valor ? String(valor).replace('.', ',') : '';
 
 export default function NovaVenda() {
   const navigation = useNavigation();
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
+  const corAcao = isDark ? '#2563EB' : colors.primary;
   const { user } = useAuth();
   const podeCriar = canSell(user);
   const podeVerClientes = can(user, 'clientes.ver');
@@ -89,7 +103,7 @@ export default function NovaVenda() {
   useFocusEffect(useCallback(() => { carregar(); }, [carregar]));
 
   const subtotal = carrinho.reduce((soma, item) => soma + Number(item.precoUnitario ?? item.produto.preco_venda ?? 0) * item.quantidade, 0);
-  const descontoInformado = Math.max(0, Number(desconto.replace(',', '.')) || 0);
+  const descontoInformado = Math.max(0, lerDesconto(desconto, descontoPercentual));
   const descontoAplicado = Math.min(subtotal, descontoPercentual ? subtotal * Math.min(descontoInformado, 100) / 100 : descontoInformado);
   const total = subtotal - descontoAplicado;
 
@@ -210,6 +224,13 @@ export default function NovaVenda() {
     }));
   };
 
+  const selecionarModoDesconto = (percentual: boolean) => {
+    if (percentual === descontoPercentual) return;
+    const valorAtual = lerDesconto(desconto, descontoPercentual);
+    setDesconto(percentual ? exibirPercentual(valorAtual) : formatarDesconto(String(Math.round(valorAtual * 100)), false));
+    setDescontoPercentual(percentual);
+  };
+
   return (
     <View style={[styles.screen, { backgroundColor: colors.background }]}>
       <Nav title="Nova venda" subtitle="Caixa e registro de vendas" onBackPress={() => navigation.goBack()} rightType="menu" />
@@ -233,8 +254,8 @@ export default function NovaVenda() {
                 returnKeyType="search"
                 style={[styles.input, { color: colors.text, borderColor: colors.border, backgroundColor: colors.background }]}
               />
-              <Pressable disabled={!podeCriar} onPress={() => lerCodigo()} style={[styles.iconButton, { backgroundColor: colors.primary, opacity: podeCriar ? 1 : 0.55 }]} accessibilityLabel="Buscar código">
-                <MaterialCommunityIcons name="barcode-scan" size={22} color="#fff" />
+              <Pressable disabled={!podeCriar} onPress={() => lerCodigo()} style={[styles.iconButton, { backgroundColor: colors.elevated, borderColor: colors.border, borderWidth: 1, opacity: podeCriar ? 1 : 0.55 }]} accessibilityRole="button" accessibilityLabel="Buscar código">
+                <MaterialCommunityIcons name="barcode-scan" size={22} color={colors.muted} />
               </Pressable>
               <Pressable disabled={!podeCriar} onPress={async () => {
                 if (!permission?.granted) {
@@ -245,8 +266,9 @@ export default function NovaVenda() {
                   }
                 }
                 setCameraVisivel(true);
-              }} style={[styles.iconButton, { backgroundColor: colors.elevated, opacity: podeCriar ? 1 : 0.55 }]} accessibilityLabel="Abrir câmera">
-                <MaterialCommunityIcons name="camera-outline" size={22} color={colors.text} />
+              }} style={[styles.cameraButton, { backgroundColor: corAcao, borderColor: corAcao, opacity: podeCriar ? 1 : 0.55 }]} accessibilityRole="button" accessibilityLabel="Abrir câmera para escanear produto">
+                <MaterialCommunityIcons name="camera-outline" size={21} color="#fff" />
+                <Text style={styles.cameraButtonText}>Câmera</Text>
               </Pressable>
             </View>
             <Pressable
@@ -286,15 +308,23 @@ export default function NovaVenda() {
                 <Pressable onPress={() => atualizarQuantidade(produto.id, 1)}><MaterialCommunityIcons name="plus-circle-outline" size={25} color={colors.primary} /></Pressable>
               </View>
             ))}
-            <View style={styles.discountRow}>
-              <TextInput value={desconto} onChangeText={setDesconto} keyboardType="decimal-pad" placeholder={descontoPercentual ? 'Desconto (%)' : 'Desconto (R$)'} placeholderTextColor={colors.muted} style={[styles.discountInput, { color: colors.text, borderColor: colors.border, backgroundColor: colors.background }]} />
-              <Pressable onPress={() => setDescontoPercentual((atual) => !atual)} style={[styles.modeButton, { borderColor: colors.border, backgroundColor: colors.elevated }]}><Text style={[styles.modeText, { color: colors.primary }]}>{descontoPercentual ? '%' : 'R$'}</Text></Pressable>
+            <View style={styles.discountHeader}>
+              <Text style={[styles.paymentLabel, { color: colors.text }]}>Desconto</Text>
+              <View style={[styles.discountModes, { backgroundColor: colors.background, borderColor: colors.border }]} accessibilityRole="radiogroup">
+                <Pressable accessibilityRole="radio" accessibilityState={{ selected: descontoPercentual }} accessibilityLabel="Desconto percentual" onPress={() => selecionarModoDesconto(true)} style={[styles.discountMode, { backgroundColor: descontoPercentual ? corAcao : 'transparent' }]}>
+                  <Text style={[styles.discountModeText, { color: descontoPercentual ? '#fff' : colors.text }]}>% Percentual</Text>
+                </Pressable>
+                <Pressable accessibilityRole="radio" accessibilityState={{ selected: !descontoPercentual }} accessibilityLabel="Desconto em valor" onPress={() => selecionarModoDesconto(false)} style={[styles.discountMode, { backgroundColor: !descontoPercentual ? corAcao : 'transparent' }]}>
+                  <Text style={[styles.discountModeText, { color: !descontoPercentual ? '#fff' : colors.text }]}>R$ Valor</Text>
+                </Pressable>
+              </View>
             </View>
+            <TextInput value={desconto} onChangeText={(valor) => setDesconto(formatarDesconto(valor, descontoPercentual))} keyboardType="decimal-pad" placeholder={descontoPercentual ? 'Informe o percentual' : 'R$ 0,00'} placeholderTextColor={colors.muted} style={[styles.discountInput, { color: colors.text, borderColor: colors.border, backgroundColor: colors.background }]} />
             <Text style={[styles.hint, { color: colors.muted }]}>Desconto aplicado: {moeda(descontoAplicado)}</Text>
             <Text style={[styles.paymentLabel, { color: colors.text }]}>Forma de pagamento</Text>
             <View style={styles.paymentOptions}>{([
               ['pix', 'Pix'], ['dinheiro', 'Dinheiro'], ['debito', 'Débito'], ['credito', 'Crédito'],
-            ] as [FormaPagamento, string][]).map(([value, label]) => <Pressable key={value} onPress={() => setFormaPagamento(value)} style={[styles.paymentOption, { borderColor: formaPagamento === value ? colors.primary : colors.border, backgroundColor: formaPagamento === value ? colors.elevated : colors.background }]}><Text style={{ color: colors.text, fontWeight: formaPagamento === value ? '800' : '600' }}>{label}</Text></Pressable>)}</View>
+            ] as [FormaPagamento, string][]).map(([value, label]) => <Pressable key={value} onPress={() => setFormaPagamento(value)} style={[styles.paymentOption, { borderColor: formaPagamento === value ? colors.primary : colors.border, backgroundColor: formaPagamento === value ? colors.elevated : colors.background }]}><Text style={{ color: colors.text, fontSize: 15, fontWeight: formaPagamento === value ? '800' : '600' }}>{label}</Text></Pressable>)}</View>
             <View style={styles.sectionRow}><Text style={[styles.totalLabel, { color: colors.text }]}>Total</Text><Text style={[styles.total, { color: colors.primary }]}>{moeda(total)}</Text></View>
             <Button title={salvando ? 'Registrando...' : 'Finalizar venda'} onPress={finalizarVenda} disabled={!podeCriar || !carrinho.length || salvando} />
           </View>
@@ -366,12 +396,14 @@ const styles = StyleSheet.create({
   desktopContent: { width: '100%', maxWidth: 960, alignSelf: 'center' },
   panel: { borderWidth: 1, borderRadius: 18, padding: 16, marginBottom: 12, gap: 10 },
   heading: { fontSize: 18, fontWeight: '800' },
-  hint: { fontSize: 13, lineHeight: 19 },
+  hint: { fontSize: 15, lineHeight: 22 },
   scanRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  input: { flex: 1, minHeight: 48, borderWidth: 1, borderRadius: 12, paddingHorizontal: 12, fontSize: 14 },
+  input: { flex: 1, minHeight: 48, borderWidth: 1, borderRadius: 12, paddingHorizontal: 12, fontSize: 16 },
   iconButton: { height: 48, width: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  cameraButton: { minWidth: 76, minHeight: 54, borderWidth: 1.5, borderRadius: 12, alignItems: 'center', justifyContent: 'center', gap: 1 },
+  cameraButtonText: { color: '#fff', fontSize: 12, fontWeight: '900' },
   selectProductsButton: { minHeight: 50, borderWidth: 1, borderRadius: 12, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', gap: 9 },
-  selectProductsText: { flex: 1, fontWeight: '700', fontSize: 14 },
+  selectProductsText: { flex: 1, fontWeight: '700', fontSize: 16, lineHeight: 21 },
   sectionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
   total: { fontSize: 20, fontWeight: '900' },
   cartRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 9, borderBottomWidth: StyleSheet.hairlineWidth },
@@ -380,10 +412,11 @@ const styles = StyleSheet.create({
   quantity: { minWidth: 24, textAlign: 'center', fontWeight: '800' },
   price: { fontWeight: '900', fontSize: 16 },
   totalLabel: { fontSize: 15, fontWeight: '800' },
-  discountRow: { flexDirection: 'row', gap: 8, marginTop: 8 },
-  discountInput: { flex: 1, minHeight: 46, borderWidth: 1, borderRadius: 12, paddingHorizontal: 12, fontSize: 14 },
-  modeButton: { minWidth: 54, borderWidth: 1, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  modeText: { fontWeight: '900', fontSize: 15 },
+  discountHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginTop: 8 },
+  discountModes: { flexDirection: 'row', borderWidth: 1, borderRadius: 11, padding: 3 },
+  discountMode: { minHeight: 38, minWidth: 94, paddingHorizontal: 9, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  discountModeText: { fontSize: 13, fontWeight: '800' },
+  discountInput: { flex: 1, minHeight: 46, borderWidth: 1, borderRadius: 12, paddingHorizontal: 12, fontSize: 16 },
   paymentLabel: { fontSize: 15, fontWeight: '800', marginTop: 6 },
   paymentOptions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   paymentOption: { minHeight: 40, paddingHorizontal: 12, borderWidth: 1, borderRadius: 11, justifyContent: 'center' },

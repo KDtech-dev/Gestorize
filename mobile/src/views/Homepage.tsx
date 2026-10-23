@@ -12,12 +12,17 @@ import { useTheme } from '@context/ThemeContext';
 import { useAuth } from '@context/AuthContext';
 import { can, canAccessRoute, canSell } from '@utils/permissions';
 import { DashboardResumo, getDashboardResumo } from '@api/apiDashboard';
+import { getVendas, VendaType } from '@api/apiVendas';
+
+const moeda = (valor: number) => valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
 const metricColors = {
   clientes: '#6D5CE8',
   aprovados: '#16845B',
   pendentes: '#C36A1D',
   estoque: '#3478C8',
+  vendas: '#16845B',
+  faturamento: '#087F8C',
 } as const;
 
 const Homepage = () => {
@@ -26,23 +31,40 @@ const Homepage = () => {
   const { colors, isDark } = useTheme();
   const { user } = useAuth();
   const podeVender = canSell(user);
+  const podeVerVendas = can(user, 'vendas.ver');
   const [resumo, setResumo] = useState<DashboardResumo | null>(null);
+  const [vendas, setVendas] = useState<VendaType[]>([]);
+  const [vendasCarregadas, setVendasCarregadas] = useState(false);
   const [carregandoResumo, setCarregandoResumo] = useState(true);
 
   useFocusEffect(
     useCallback(() => {
       let ativo = true;
       setCarregandoResumo(true);
-      getDashboardResumo()
-        .then((dados) => { if (ativo) setResumo(dados); })
-        .catch(() => { if (ativo) setResumo(null); })
-        .finally(() => { if (ativo) setCarregandoResumo(false); });
+      Promise.allSettled([
+        getDashboardResumo(),
+        podeVerVendas ? getVendas() : Promise.resolve(null),
+      ]).then(([resumoResult, vendasResult]) => {
+        if (!ativo) return;
+        setResumo(resumoResult.status === 'fulfilled' ? resumoResult.value : null);
+        setVendas(vendasResult.status === 'fulfilled' && vendasResult.value ? vendasResult.value.data ?? [] : []);
+        setVendasCarregadas(vendasResult.status === 'fulfilled');
+      }).finally(() => { if (ativo) setCarregandoResumo(false); });
 
       return () => { ativo = false; };
-    }, []),
+    }, [podeVerVendas]),
   );
 
+  const hoje = new Date();
+  const vendasHoje = vendas.filter((venda) => {
+    const data = new Date(venda.vendido_em);
+    return data.getFullYear() === hoje.getFullYear() && data.getMonth() === hoje.getMonth() && data.getDate() === hoje.getDate();
+  });
+  const faturamentoHoje = vendasHoje.reduce((total, venda) => total + Number(venda.valor_total), 0);
+
   const metricas = [
+    { id: 'vendas', titulo: 'Vendas hoje', valor: vendasCarregadas ? vendasHoje.length : null, permissao: 'vendas.ver', icon: 'receipt-text-outline' as const, cores: metricColors.vendas, rodape: vendasCarregadas ? 'Vendas concluídas hoje' : 'Dados de vendas indisponíveis' },
+    { id: 'faturamento', titulo: 'Faturamento hoje', valor: vendasCarregadas ? faturamentoHoje : null, permissao: 'vendas.ver', icon: 'cash-multiple' as const, cores: metricColors.faturamento, formato: 'moeda' as const, rodape: vendasCarregadas ? 'Soma das vendas de hoje' : 'Dados de vendas indisponíveis' },
     { id: 'clientes', titulo: 'Clientes cadastrados', valor: resumo?.clientes, permissao: 'clientes.ver', icon: 'account-group-outline' as const, cores: metricColors.clientes },
     { id: 'aprovados', titulo: 'Orçamentos aprovados', valor: resumo?.orcamentos_aprovados, permissao: 'orcamentos.ver', icon: 'check-decagram-outline' as const, cores: metricColors.aprovados },
     { id: 'pendentes', titulo: 'Orçamentos pendentes', valor: resumo?.orcamentos_pendentes, permissao: 'orcamentos.ver', icon: 'clock-outline' as const, cores: metricColors.pendentes },
@@ -151,8 +173,8 @@ const Homepage = () => {
                   </View>
                   <Text style={[styles.metricLabel, { color: colors.muted }]}>{item.titulo}</Text>
                 </View>
-                <Text style={[styles.metricValue, { color: colors.text }]}>{item.valor == null ? '—' : item.valor.toLocaleString('pt-BR')}</Text>
-                <Text style={[styles.metricFootnote, { color: colors.muted }]}>{resumo ? 'Registros no sistema' : 'Resumo indisponível'}</Text>
+                <Text numberOfLines={1} adjustsFontSizeToFit style={[styles.metricValue, { color: colors.text }]}>{item.valor == null ? '—' : item.formato === 'moeda' ? moeda(item.valor) : item.valor.toLocaleString('pt-BR')}</Text>
+                <Text style={[styles.metricFootnote, { color: colors.muted }]}>{item.rodape ?? (resumo ? 'Registros no sistema' : 'Resumo indisponível')}</Text>
               </View>
             )}
           />
@@ -258,11 +280,11 @@ const styles = StyleSheet.create({
   },
   sectionHeading: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10 },
   metricsTitle: { marginTop: 0, marginBottom: 0 },
-  metricsSubtitle: { fontSize: 12, marginTop: 3 },
+  metricsSubtitle: { fontSize: 14, lineHeight: 19, marginTop: 3 },
   metricsList: { gap: 12, paddingVertical: 4, paddingRight: 16 },
   metricCard: {
     width: 190,
-    minHeight: 122,
+    minHeight: 128,
     borderRadius: 13,
     borderWidth: 1,
     padding: 16,
@@ -271,9 +293,9 @@ const styles = StyleSheet.create({
   },
   metricCardTop: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   metricIcon: { width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  metricLabel: { fontSize: 13, fontWeight: '700', flex: 1, lineHeight: 18 },
+  metricLabel: { fontSize: 14, fontWeight: '700', flex: 1, lineHeight: 19 },
   metricValue: { fontSize: 28, fontWeight: '800', marginTop: 8 },
-  metricFootnote: { fontSize: 11, marginTop: 1 },
+  metricFootnote: { fontSize: 12, lineHeight: 16, marginTop: 1 },
   grid: {
     width: '100%',
     flexDirection: 'row',
