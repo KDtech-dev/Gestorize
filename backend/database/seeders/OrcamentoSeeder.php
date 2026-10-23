@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Orcamento;
 use App\Models\OrcamentoItem;
+use App\Models\Cliente;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -17,12 +18,21 @@ class OrcamentoSeeder extends Seeder
     {
         $aprovadorId = User::query()->value('id');
 
-        Orcamento::factory(20)->create()->each(function (Orcamento $orcamento, int $indice) use ($aprovadorId) {
+        $clienteId = Cliente::query()->orderBy('created_at')->value('id');
+
+        foreach (range(0, 19) as $indice) {
             $dataCadastro = now()->subDays(($indice * 17) % 360);
             $aprovado = $indice % 3 === 0;
 
+            $orcamento = Orcamento::updateOrCreate(
+                ['titulo' => 'Orçamento ' . str_pad((string) ($indice + 1), 3, '0', STR_PAD_LEFT)],
+                [
+                    'cliente_id' => $clienteId,
+                    'valor_total' => 0,
+                    'data_orcamento' => $dataCadastro->toDateString(),
+                ],
+            );
             $orcamento->forceFill([
-                'titulo' => 'Orçamento ' . str_pad((string) ($indice + 1), 3, '0', STR_PAD_LEFT),
                 'data_orcamento' => $dataCadastro->toDateString(),
                 'created_at' => $dataCadastro,
                 'updated_at' => $dataCadastro,
@@ -31,7 +41,8 @@ class OrcamentoSeeder extends Seeder
                 'aprovado_em' => $aprovado ? $dataCadastro : null,
             ])->save();
 
-            $itens = OrcamentoItem::factory(rand(2, 5))->make([
+            $orcamento->itens()->delete();
+            $itens = OrcamentoItem::factory(2 + ($indice % 4))->make([
                 'orcamento_id' => $orcamento->id,
             ]);
 
@@ -40,6 +51,6 @@ class OrcamentoSeeder extends Seeder
             $orcamento->forceFill([
                 'valor_total' => $orcamento->itens()->sum('subtotal'),
             ])->save();
-        });
+        }
     }
 }

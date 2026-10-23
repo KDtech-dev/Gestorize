@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
             ClientesSeeder::class,
             ProdutosSeeder::class,
             OrcamentoSeeder::class,
+            VendasSeeder::class,
         ]);
     }
 }

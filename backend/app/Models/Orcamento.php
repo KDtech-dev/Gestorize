@@ -36,6 +36,11 @@ class Orcamento extends Model
         return $this->belongsTo(User::class, 'aprovado_por');
     }
 
+    public function venda()
+    {
+        return $this->hasOne(Venda::class);
+    }
+
     public function itens()
     {
         return $this->hasMany(OrcamentoItem::class);

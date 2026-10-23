@@ -99,10 +99,11 @@ class ProdutosSeeder extends Seeder
             $diasDesdeEntrada = $temValidade && $validadeOffset < 0
                 ? abs($validadeOffset) + random_int(1, 30)
                 : random_int(0, 60);
-            $registro = Produto::create(array_merge($produto, [
+            $fornecedorId = Fornecedor::query()->orderBy('cnpj')->skip($indice % max(Fornecedor::count(), 1))->value('id');
+            $registro = Produto::updateOrCreate(['nome' => $produto['nome']], array_merge($produto, [
                 'data_entrada' => $hoje->copy()->subDays($diasDesdeEntrada)->toDateString(),
                 'validade' => $validade?->toDateString(),
-                'fornecedor_id' => Fornecedor::query()->inRandomOrder()->value('id'),
+                'fornecedor_id' => $fornecedorId,
             ]));
 
             $registro->forceFill([

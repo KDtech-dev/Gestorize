@@ -9,40 +9,40 @@ class UnidadesMedidaSeeder extends Seeder
 {
     public function run()
     {
-        UnidadeMedida::create([
+        UnidadeMedida::firstOrCreate(['sigla' => 'UN'], [
             'nome' => 'Unidade',
             'sigla' => 'UN'
         ]);
 
-        UnidadeMedida::create([
+        UnidadeMedida::firstOrCreate(['sigla' => 'KG'], [
             'nome' => 'Quilograma',
             'sigla' => 'KG'
         ]);
-        UnidadeMedida::create([
+        UnidadeMedida::firstOrCreate(['sigla' => 'G'], [
             'nome' => 'Grama',
             'sigla' => 'G'
         ]);
 
-        UnidadeMedida::create([
+        UnidadeMedida::firstOrCreate(['sigla' => 'L'], [
             'nome' => 'Litro',
             'sigla' => 'L'
         ]);
-        UnidadeMedida::create([
+        UnidadeMedida::firstOrCreate(['sigla' => 'ML'], [
             'nome' => 'Mililitro',
             'sigla' => 'ML'
         ]);
 
-        UnidadeMedida::create([
+        UnidadeMedida::firstOrCreate(['sigla' => 'M'], [
             'nome' => 'Metro',
             'sigla' => 'M'
         ]);
 
-        UnidadeMedida::create([
+        UnidadeMedida::firstOrCreate(['sigla' => 'CX'], [
             'nome' => 'Caixa',
             'sigla' => 'CX'
         ]);
         
-        UnidadeMedida::create([
+        UnidadeMedida::firstOrCreate(['sigla' => 'PKG'], [
             'nome' => 'Pacote',
             'sigla' => 'PKG'
         ]);

@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Enums\RoleEnum;
 use App\Models\Endereco;
 use App\Models\User;
+use App\Models\Funcionario;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -73,21 +74,26 @@ class TestUsersSeeder extends Seeder
         string $dataNascimento,
         array $endereco,
     ): User {
-        $user = User::create([
+        $user = User::updateOrCreate(['email' => $email], [
             'name' => $nome,
-            'email' => $email,
             'password' => Hash::make('123456'),
         ]);
 
         $user->syncRoles([$role->value]);
 
-        $endereco = Endereco::create($endereco);
+        $registroFuncionario = Funcionario::query()->whereKey($user->id)->first();
+        $registroEndereco = $registroFuncionario?->endereco;
+        if ($registroEndereco) {
+            $registroEndereco->update($endereco);
+        } else {
+            $registroEndereco = Endereco::create($endereco);
+        }
 
-        $user->funcionario()->create([
+        Funcionario::updateOrCreate(['id' => $user->id], [
             'telefone' => $telefone,
             'cpf' => $cpf,
             'data_nascimento' => $dataNascimento,
-            'endereco_id' => $endereco->id,
+            'endereco_id' => $registroEndereco->id,
         ]);
 
         return $user;

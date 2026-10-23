@@ -12,9 +12,20 @@ class ClientesSeeder extends Seeder
         $diasDesdeCadastro = [0, 2, 8, 20, 45, 90, 150, 240, 300, 360];
 
         foreach ($diasDesdeCadastro as $indice => $dias) {
-            $cliente = $indice % 2 === 0
-                ? Cliente::factory()->pf()->create()
-                : Cliente::factory()->pj()->create();
+            $email = 'cliente.demo.' . ($indice + 1) . '@example.com';
+            $atributos = [
+                'nome' => 'Cliente de Demonstração ' . ($indice + 1),
+                'email' => $email,
+                'telefone' => sprintf('(11) 98888-%04d', $indice + 1),
+            ];
+            $cliente = Cliente::query()->where('email', $email)->first();
+            if (!$cliente) {
+                $cliente = $indice % 2 === 0
+                    ? Cliente::factory()->pf()->create($atributos)
+                    : Cliente::factory()->pj()->create($atributos);
+            } else {
+                $cliente->update($atributos);
+            }
 
             $dataCadastro = now()->subDays($dias);
             $cliente->forceFill([

@@ -25,6 +25,7 @@ class VendaService
             $venda = Venda::create([
                 'usuario_id' => $usuarioId,
                 'cliente_id' => $cliente?->id,
+                'orcamento_id' => $dados['orcamento_id'] ?? null,
                 'cliente_nome' => $cliente?->nome,
                 'forma_pagamento' => $dados['forma_pagamento'] ?? null,
                 'valor_total' => 0,

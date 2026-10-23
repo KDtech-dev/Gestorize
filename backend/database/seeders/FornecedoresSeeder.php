@@ -25,9 +25,20 @@ class FornecedoresSeeder extends Seeder
             $categoriasPorNome['Bebidas']->id,
         ]);
 
-        Fornecedor::factory(9)->create()->each(function (Fornecedor $fornecedor) use ($categorias) {
-            $quantidade = random_int(1, min(3, $categorias->count()));
-            $fornecedor->categorias()->sync($categorias->random($quantidade)->modelKeys());
-        });
+        foreach (range(1, 9) as $indice) {
+            $fornecedor = Fornecedor::updateOrCreate(
+                ['cnpj' => sprintf('20.000.000/0001-%02d', $indice)],
+                [
+                    'nome' => "Fornecedor de Demonstração {$indice}",
+                    'email' => "fornecedor{$indice}@example.com",
+                    'telefone' => sprintf('(11) 90000-%04d', $indice),
+                    'nome_responsavel' => "Responsável {$indice}",
+                ],
+            );
+            $categoria = $categorias->get(($indice - 1) % max($categorias->count(), 1));
+            if ($categoria) {
+                $fornecedor->categorias()->sync([$categoria->id]);
+            }
+        }
     }
 }
