@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use App\Rules\BelongsToCurrentOrganization;
 
 class UpdateFornecedorRequest extends FormRequest
 {
@@ -20,15 +21,15 @@ class UpdateFornecedorRequest extends FormRequest
 
         return [
             'nome' => ['sometimes', 'required', 'string', 'max:255',],
-            'cnpj' => ['sometimes', 'required', 'string', 'max:18', Rule::unique('fornecedores', 'cnpj')->ignore($fornecedorId),],
-            'email' => ['sometimes', 'nullable', 'email', 'max:255', Rule::unique('fornecedores', 'email')->ignore($fornecedorId),],
+            'cnpj' => ['sometimes', 'required', 'string', 'max:18', Rule::unique('fornecedores', 'cnpj')->where('organization_id', $this->user()?->organization_id)->ignore($fornecedorId),],
+            'email' => ['sometimes', 'nullable', 'email', 'max:255', Rule::unique('fornecedores', 'email')->where('organization_id', $this->user()?->organization_id)->ignore($fornecedorId),],
             'telefone' => ['sometimes', 'required', 'string', 'max:20',],
             'ramo_atividade' => ['sometimes', 'nullable', 'string', 'max:255',],
             'categoria_ids' => ['sometimes', 'array'],
-            'categoria_ids.*' => ['uuid', 'distinct', 'exists:categorias,id'],
+            'categoria_ids.*' => ['uuid', 'distinct', new BelongsToCurrentOrganization('categorias')],
             'nome_responsavel' => ['sometimes', 'nullable', 'string', 'max:255',],
             'chave_pix' => ['sometimes', 'nullable', 'string', 'max:255',],
-            'endereco_id' => ['sometimes', 'nullable', 'uuid', 'exists:enderecos,id',],
+            'endereco_id' => ['sometimes', 'nullable', 'uuid', new BelongsToCurrentOrganization('enderecos')],
         ];
     }
 

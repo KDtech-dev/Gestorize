@@ -81,7 +81,7 @@ class StoreClienteRequest extends FormRequest
 
             'nome' => ['required', 'string', 'max:255',],
             'tipo' => ['required', 'string', Rule::in(['pf', 'pj']),],
-            'email' => ['nullable', 'email', 'max:255', 'unique:clientes,email',],
+            'email' => ['nullable', 'email', 'max:255', Rule::unique('clientes', 'email')->where('organization_id', $this->user()?->organization_id),],
             'telefone' => ['nullable', 'string', 'max:20',],
 
             'avatar' => ['nullable', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048',],
@@ -98,11 +98,11 @@ class StoreClienteRequest extends FormRequest
             'pf' => ['required_if:tipo,pf', 'array',],
             'pf.genero' => ['nullable', 'string', Rule::in(['masculino', 'feminino', 'outro',]),],
             'pf.rg' => ['required_if:tipo,pf', 'string', 'max:20',],
-            'pf.cpf' => ['required_if:tipo,pf', 'string', 'size:11', 'unique:clientes_pf,cpf',],
+            'pf.cpf' => ['required_if:tipo,pf', 'string', 'size:11', Rule::unique('clientes_pf', 'cpf')->where('organization_id', $this->user()?->organization_id),],
             'pf.data_nascimento' => ['required_if:tipo,pf', 'date', 'before:today',],
 
             'pj' => ['required_if:tipo,pj', 'array',],
-            'pj.cnpj' => ['required_if:tipo,pj', 'string', 'size:14', 'unique:clientes_pj,cnpj',],
+            'pj.cnpj' => ['required_if:tipo,pj', 'string', 'size:14', Rule::unique('clientes_pj', 'cnpj')->where('organization_id', $this->user()?->organization_id),],
             'pj.razao_social' => ['required_if:tipo,pj', 'string', 'max:255',],
             'pj.nome_fantasia' => ['nullable', 'string', 'max:255',],
             'pj.nome_responsavel' => ['required_if:tipo,pj', 'string', 'max:255',],

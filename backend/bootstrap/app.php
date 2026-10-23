@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Middleware\PreventAdminSelfDeletion;
+use App\Http\Middleware\EnsureOrganizationContext;
+use App\Http\Middleware\RequireGlobalAdministrator;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -26,6 +28,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission'         => PermissionMiddleware::class,
             'role_or_permission' => RoleOrPermissionMiddleware::class,
             'prevent.admin.self.deletion' => PreventAdminSelfDeletion::class,
+            'tenant.context' => EnsureOrganizationContext::class,
+            'global.admin' => RequireGlobalAdministrator::class,
         ]);
 
 

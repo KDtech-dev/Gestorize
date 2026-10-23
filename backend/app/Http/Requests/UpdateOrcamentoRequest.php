@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests;
 
+use App\Rules\BelongsToCurrentOrganization;
+
 use App\Models\Orcamento;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -21,9 +23,9 @@ class UpdateOrcamentoRequest extends FormRequest
     {
         return [
             'titulo' => ['sometimes', 'required', 'string', 'max:120'],
-            'cliente_id' => ['sometimes', 'required', 'uuid', 'exists:clientes,id'],
+            'cliente_id' => ['sometimes', 'required', 'uuid', new BelongsToCurrentOrganization('clientes')],
             'itens' => ['sometimes', 'array', 'min:1'],
-            'itens.*.produto_id' => ['required_with:itens', 'uuid', 'distinct', 'exists:produtos,id'],
+            'itens.*.produto_id' => ['required_with:itens', 'uuid', 'distinct', new BelongsToCurrentOrganization('produtos')],
             'itens.*.quantidade' => ['required_with:itens', 'integer', 'min:1'],
         ];
     }

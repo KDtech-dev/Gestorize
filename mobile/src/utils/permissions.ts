@@ -8,8 +8,10 @@ export const can = (user: UserType | null, permission: string): boolean => {
 };
 
 export const canSell = (user: UserType | null): boolean => !!user && (
+  !!user.organization_id && (
   ['admin', 'gestor', 'funcionario'].includes(user.role)
   || !!user.permissions?.includes('vendas.criar')
+  )
 );
 
 const routePermission: Partial<Record<keyof RootStackParamList, string>> = {
@@ -30,6 +32,10 @@ export const canAccessRoute = (
   user: UserType | null,
   routeName: keyof RootStackParamList,
 ) => {
+  if (user?.role === 'admin' && !user.organization_id) {
+    return routeName === 'Organizacoes' || ['Configuracoes', 'Ajuda', 'UserPerfil', 'Homepage'].includes(routeName);
+  }
+  if (routeName === 'Organizacoes') return false;
   if (routeName === 'NovaVenda') return canSell(user);
   if (routeName === 'Vendas') return can(user, 'vendas.ver');
   const required = routePermission[routeName];

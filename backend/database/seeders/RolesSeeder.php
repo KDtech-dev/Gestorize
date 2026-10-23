@@ -38,6 +38,9 @@ class RolesSeeder extends Seeder
                 P::VENDAS_VER,
                 P::VENDAS_CRIAR,
                 P::USERS_VER,
+                P::USERS_CRIAR,
+                P::USERS_EDITAR,
+                P::USERS_EXCLUIR,
                 P::RELATORIOS_VER,
             ],
 

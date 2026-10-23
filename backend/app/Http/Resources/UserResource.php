@@ -13,6 +13,16 @@ class UserResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'email' => $this->email,
+            'organization_id' => $this->organization_id,
+            'organization_name' => $this->organization?->name,
+            'organization' => $this->organization ? [
+                'id' => $this->organization->id,
+                'name' => $this->organization->name,
+                'document' => $this->organization->document,
+                'email' => $this->organization->email,
+                'phone' => $this->organization->phone,
+                'settings' => $this->organization->settings,
+            ] : null,
             'avatar_url' => $this->avatar_url,
             'role' => $this->getRoleNames()->first(),
             'permissions' => $this->getAllPermissions()

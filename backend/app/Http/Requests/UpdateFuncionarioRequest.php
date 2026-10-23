@@ -6,6 +6,7 @@ use App\Enums\PermissionEnum;
 use App\Models\Funcionario;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use App\Rules\BelongsToCurrentOrganization;
 
 class UpdateFuncionarioRequest extends FormRequest
 {
@@ -39,8 +40,8 @@ class UpdateFuncionarioRequest extends FormRequest
             'password' => ['sometimes', 'nullable', 'string', 'min:8', 'confirmed',],
             'telefone' => ['sometimes', 'nullable', 'string', 'max:20',],
             'data_nascimento' => ['sometimes', 'nullable', 'date', 'before:today',],
-            'cpf' => ['sometimes', 'nullable', 'string', 'size:11', Rule::unique('funcionarios', 'cpf')->ignore($funcionarioId, 'id'),],
-            'endereco_id' => ['sometimes', 'nullable', 'uuid', Rule::exists('enderecos', 'id'),],
+            'cpf' => ['sometimes', 'nullable', 'string', 'size:11', Rule::unique('funcionarios', 'cpf')->where('organization_id', $this->user()?->organization_id)->ignore($funcionarioId, 'id'),],
+            'endereco_id' => ['sometimes', 'nullable', 'uuid', new BelongsToCurrentOrganization('enderecos')],
             'role' => ['sometimes', 'nullable', 'string', Rule::in(['gestor', 'funcionario']),],
             'permissions' => ['sometimes', 'array',],
             'permissions.*' => ['required', 'string', 'distinct', Rule::in(PermissionEnum::values()),],

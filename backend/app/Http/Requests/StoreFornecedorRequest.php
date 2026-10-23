@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use App\Rules\BelongsToCurrentOrganization;
 
 class StoreFornecedorRequest extends FormRequest
 {
@@ -16,15 +17,15 @@ class StoreFornecedorRequest extends FormRequest
     {
         return [
             'nome' => ['required', 'string', 'max:255',],
-            'cnpj' => ['required', 'string', 'max:18', Rule::unique('fornecedores', 'cnpj'),],
-            'email' => ['nullable', 'email', 'max:255', Rule::unique('fornecedores', 'email'),],
+            'cnpj' => ['required', 'string', 'max:18', Rule::unique('fornecedores', 'cnpj')->where('organization_id', $this->user()?->organization_id),],
+            'email' => ['nullable', 'email', 'max:255', Rule::unique('fornecedores', 'email')->where('organization_id', $this->user()?->organization_id),],
             'telefone' => ['required', 'string', 'max:20',],
             'ramo_atividade' => ['nullable', 'string', 'max:255',],
             'categoria_ids' => ['sometimes', 'array'],
-            'categoria_ids.*' => ['uuid', 'distinct', 'exists:categorias,id'],
+            'categoria_ids.*' => ['uuid', 'distinct', new BelongsToCurrentOrganization('categorias')],
             'nome_responsavel' => ['nullable', 'string', 'max:255',],
             'chave_pix' => ['nullable', 'string', 'max:255',],
-            'endereco_id' => ['nullable', 'uuid', 'exists:enderecos,id',],
+            'endereco_id' => ['nullable', 'uuid', new BelongsToCurrentOrganization('enderecos')],
         ];
     }
 

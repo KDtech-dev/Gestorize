@@ -99,6 +99,9 @@ class TestUsersSeeder extends Seeder
         ]);
 
         $user->syncRoles([$role->value]);
+        $user->update(['organization_id' => $role === RoleEnum::ADMIN
+            ? null
+            : ($user->organization_id ?? \App\Models\Organization::query()->value('id'))]);
 
         $registroFuncionario = Funcionario::query()->whereKey($user->id)->first();
         $registroEndereco = $registroFuncionario?->endereco;

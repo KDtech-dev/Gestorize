@@ -4,9 +4,22 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Auth;
+use App\Models\Concerns\BelongsToOrganization;
 
 class Funcionario extends Model
 {
+    use BelongsToOrganization;
+
+    protected static function booted(): void
+    {
+        static::addGlobalScope('organization', function ($query): void {
+            if (Auth::check()) {
+                $query->whereHas('user', fn ($users) => $users->where('organization_id', Auth::user()->organization_id));
+            }
+        });
+    }
+
     protected $primaryKey = 'id';
 
     public $incrementing = false;

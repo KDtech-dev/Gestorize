@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Concerns\BelongsToOrganization;
 
 class Venda extends Model
 {
-    use HasUuids;
+    use HasUuids, BelongsToOrganization;
 
     protected $fillable = ['usuario_id', 'cliente_id', 'orcamento_id', 'cliente_nome', 'forma_pagamento', 'desconto', 'valor_total', 'vendido_em'];
 

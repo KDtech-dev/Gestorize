@@ -15,11 +15,19 @@ use App\Http\Controllers\Api\RelatorioController;
 use App\Http\Controllers\Api\UnidadeMedidaController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\VendaController;
+use App\Http\Controllers\Api\OrganizationController;
 
 Route::post('login', [AuthController::class, 'login']);
 
 Route::middleware('auth:sanctum')->group(function () {
+    Route::prefix('organizations')->middleware('global.admin')->group(function () {
+        Route::get('/', [OrganizationController::class, 'index']);
+        Route::post('/', [OrganizationController::class, 'store']);
+        Route::put('/{organization}', [OrganizationController::class, 'update']);
+    });
+    Route::put('/acessos/papeis/{role}/permissoes', [AcessoController::class, 'definirDoPapel'])->middleware('global.admin');
 
+    Route::middleware('tenant.context')->group(function () {
     Route::get('/dashboard/resumo', DashboardController::class);
     Route::post('/ajuda/contato', [AjudaController::class, 'contato'])->middleware('throttle:5,1');
 
@@ -39,7 +47,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/papeis', [AcessoController::class, 'papeis']);
         Route::get('/permissoes', [AcessoController::class, 'permissoes']);
 
-        Route::put('/papeis/{role}/permissoes', [AcessoController::class, 'definirDoPapel',]);
         Route::put('/users/{user}/permissoes', [AcessoController::class, 'definirDoUsuario',]);
     });
 
@@ -110,5 +117,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/{user}', [UserController::class, 'show'])->middleware('permission:users.ver');
         Route::put('/{user}', [UserController::class, 'update'])->middleware('permission:users.editar');
         Route::delete('/{user}', [UserController::class, 'destroy'])->middleware('permission:users.excluir');
+    });
     });
 });

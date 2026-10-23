@@ -32,6 +32,7 @@ const Homepage = () => {
   const { user } = useAuth();
   const podeVender = canSell(user);
   const podeVerVendas = can(user, 'vendas.ver');
+  const administradorGlobal = user?.role === 'admin' && !user?.organization_id;
   const [resumo, setResumo] = useState<DashboardResumo | null>(null);
   const [vendas, setVendas] = useState<VendaType[]>([]);
   const [vendasCarregadas, setVendasCarregadas] = useState(false);
@@ -42,8 +43,8 @@ const Homepage = () => {
       let ativo = true;
       setCarregandoResumo(true);
       Promise.allSettled([
-        getDashboardResumo(),
-        podeVerVendas ? getVendas() : Promise.resolve(null),
+        administradorGlobal ? Promise.resolve(null) : getDashboardResumo(),
+        !administradorGlobal && podeVerVendas ? getVendas() : Promise.resolve(null),
       ]).then(([resumoResult, vendasResult]) => {
         if (!ativo) return;
         setResumo(resumoResult.status === 'fulfilled' ? resumoResult.value : null);
@@ -52,7 +53,7 @@ const Homepage = () => {
       }).finally(() => { if (ativo) setCarregandoResumo(false); });
 
       return () => { ativo = false; };
-    }, [podeVerVendas]),
+    }, [podeVerVendas, administradorGlobal]),
   );
 
   const hoje = new Date();
@@ -69,9 +70,15 @@ const Homepage = () => {
     { id: 'aprovados', titulo: 'Orçamentos aprovados', valor: resumo?.orcamentos_aprovados, permissao: 'orcamentos.ver', icon: 'check-decagram-outline' as const, cores: metricColors.aprovados },
     { id: 'pendentes', titulo: 'Orçamentos pendentes', valor: resumo?.orcamentos_pendentes, permissao: 'orcamentos.ver', icon: 'clock-outline' as const, cores: metricColors.pendentes },
     { id: 'estoque', titulo: 'Produtos com estoque', valor: resumo?.produtos_em_estoque, permissao: 'produtos.ver', icon: 'cube-outline' as const, cores: metricColors.estoque },
-  ].filter((item) => can(user, item.permissao));
+  ].filter((item) => !administradorGlobal && can(user, item.permissao));
 
   const quickActions = [
+    {
+      route: 'Organizacoes' as const,
+      icon: 'domain' as const,
+      label: 'Organizações',
+      description: 'Crie organizações e cadastre o gestor responsável',
+    },
     {
       route: 'Clientes' as const,
       icon: 'account-group' as const,
@@ -133,6 +140,9 @@ const Homepage = () => {
       { title: 'Consultas disponíveis', routes: ['Orcamentos', 'Vendas', 'Produtos', 'Clientes'] },
     ],
   };
+  if (administradorGlobal) {
+    routeSectionsByRole.admin = [{ title: 'Administração global', routes: ['Organizacoes'] }];
+  }
   const routeSections = routeSectionsByRole[user?.role ?? ''] ?? [
     { title: 'Seus acessos', routes: quickActions.map((item) => item.route) },
   ];

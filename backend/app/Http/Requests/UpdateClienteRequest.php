@@ -104,7 +104,7 @@ class UpdateClienteRequest extends FormRequest
                 'nullable',
                 'email',
                 'max:255',
-                Rule::unique('clientes', 'email')->ignore($this->route('id'))
+                Rule::unique('clientes', 'email')->where('organization_id', $this->user()?->organization_id)->ignore($this->route('id'))
             ],
             'telefone' => ['sometimes', 'nullable', 'string', 'max:20',],
             'imagem' => ['sometimes', 'nullable', 'string', 'max:500',],
@@ -125,7 +125,7 @@ class UpdateClienteRequest extends FormRequest
                 'sometimes',
                 'string',
                 'size:11',
-                Rule::unique('clientes_pf', 'cpf')->ignore($pfId, 'id'),
+                Rule::unique('clientes_pf', 'cpf')->where('organization_id', $this->user()?->organization_id)->ignore($pfId, 'id'),
             ],
             'pf.data_nascimento' => ['sometimes', 'nullable', 'date', 'before:today',],
 
@@ -134,7 +134,7 @@ class UpdateClienteRequest extends FormRequest
                 'sometimes',
                 'string',
                 'size:14',
-                Rule::unique('clientes_pj', 'cnpj')->ignore($pjId, 'id'),
+                Rule::unique('clientes_pj', 'cnpj')->where('organization_id', $this->user()?->organization_id)->ignore($pjId, 'id'),
             ],
             'pj.razao_social' => ['sometimes', 'string', 'max:255',],
             'pj.nome_fantasia' => ['sometimes', 'nullable', 'string', 'max:255',],

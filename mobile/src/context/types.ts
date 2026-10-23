@@ -57,6 +57,16 @@ export type UserType = {
   nome: string;
   name?: string;
   email: string;
+  organization_id?: string | null;
+  organization_name?: string | null;
+  organization?: {
+    id: string;
+    name: string;
+    document?: string | null;
+    email?: string | null;
+    phone?: string | null;
+    settings?: Record<string, unknown> | null;
+  } | null;
   role: string;
   permissions?: string[];
   avatar_url?: string | null;
@@ -254,6 +264,7 @@ export type EnderecoType = {
 };
 
 export type RootStackParamList = {
+  Organizacoes: undefined;
   Vendas: undefined;
   NovaVenda: undefined;
   Relatorios: undefined;

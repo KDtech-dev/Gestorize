@@ -20,7 +20,7 @@ class UpdateUserRequest extends FormRequest
             'name'                        => ['sometimes', 'string', 'max:255'],
             'email'                       => ['sometimes', 'email', Rule::unique('users', 'email')->ignore($userId)],
             'password'                    => ['sometimes', 'string', 'min:8', 'confirmed'],
-            'role'                        => ['sometimes', 'string', 'exists:roles,name'],
+            'role'                        => ['sometimes', 'string', 'exists:roles,name', 'not_in:admin'],
             'funcionario.telefone'        => ['sometimes', 'nullable', 'string', 'max:20'],
             'funcionario.data_nascimento' => ['sometimes', 'nullable', 'date'],
             'funcionario.cpf'             => ['sometimes', 'nullable', 'string', 'size:11'],
