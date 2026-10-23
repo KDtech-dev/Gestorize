@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { Avatar, Badge, Box, ButtonBase, Divider, ListItemIcon, ListItemText, Menu, MenuItem, Typography } from '@mui/material';
 
 const menuItems = [
@@ -12,28 +12,9 @@ const menuItems = [
 
 export function UserMenu({ name, email, role }: { name: string; email: string; role: string }) {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
-  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const open = Boolean(anchorEl);
 
-  useEffect(() => () => {
-    if (closeTimer.current) clearTimeout(closeTimer.current);
-  }, []);
-
-  const cancelClose = () => {
-    if (closeTimer.current) clearTimeout(closeTimer.current);
-    closeTimer.current = null;
-  };
-
-  const scheduleClose = () => {
-    cancelClose();
-    closeTimer.current = setTimeout(() => {
-      setAnchorEl(null);
-      closeTimer.current = null;
-    }, 500);
-  };
-
   const openMenu = (event: React.MouseEvent<HTMLElement>) => {
-    cancelClose();
     setAnchorEl(event.currentTarget);
   };
 
@@ -45,8 +26,7 @@ export function UserMenu({ name, email, role }: { name: string; email: string; r
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={openMenu}
-        onMouseEnter={(event) => { cancelClose(); setAnchorEl(event.currentTarget); }}
-        onMouseLeave={scheduleClose}
+        onMouseEnter={openMenu}
         onFocus={(event) => setAnchorEl(event.currentTarget)}
         sx={{ borderRadius: 1.5, px: 1.25, py: 0.75, font: 'inherit' }}
       >
@@ -61,15 +41,10 @@ export function UserMenu({ name, email, role }: { name: string; email: string; r
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
         MenuListProps={{
           'aria-label': 'Menu do usuário',
-          onMouseEnter: cancelClose,
-          onMouseLeave: scheduleClose,
-          onFocus: cancelClose,
           sx: { py: 0.75 },
         }}
         slotProps={{
           paper: {
-            onMouseEnter: cancelClose,
-            onMouseLeave: scheduleClose,
             sx: {
               width: 260,
               maxWidth: 'calc(100vw - 24px)',
