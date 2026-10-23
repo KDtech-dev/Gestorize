@@ -33,9 +33,9 @@ export const canAccessRoute = (
   routeName: keyof RootStackParamList,
 ) => {
   if (user?.role === 'admin' && !user.organization_id) {
-    return routeName === 'Organizacoes' || ['Configuracoes', 'Ajuda', 'UserPerfil', 'Homepage'].includes(routeName);
+    return routeName === 'Organizacoes' || routeName === 'OrganizacaoForm' || ['Configuracoes', 'Ajuda', 'UserPerfil', 'Homepage'].includes(routeName);
   }
-  if (routeName === 'Organizacoes') return false;
+  if (routeName === 'Organizacoes' || routeName === 'OrganizacaoForm') return false;
   if (routeName === 'NovaVenda') return canSell(user);
   if (routeName === 'Vendas') return can(user, 'vendas.ver');
   const required = routePermission[routeName];

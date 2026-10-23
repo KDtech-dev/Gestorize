@@ -16,7 +16,16 @@ class OrganizationController extends Controller
 {
     public function index()
     {
-        return response()->json(['success' => true, 'data' => Organization::withCount('users')->latest()->get()]);
+        $organizations = Organization::withCount('users')->latest()->get();
+        $organizations->each(function (Organization $organization) {
+            $managers = $organization->users()->role('gestor')->get(['id', 'name', 'email']);
+            $settings = $organization->settings ?? [];
+            $selectedManagerId = $settings['manager_id'] ?? $managers->first()?->id;
+            $organization->setAttribute('managers', $managers);
+            $organization->setAttribute('manager_id', $selectedManagerId);
+        });
+
+        return response()->json(['success' => true, 'data' => $organizations]);
     }
 
     public function store(Request $request)
@@ -46,6 +55,7 @@ class OrganizationController extends Controller
             ]);
             $manager->assignRole('gestor');
             Funcionario::create(['id' => $manager->id, 'cpf' => $data['manager']['cpf'], 'organization_id' => $organization->id]);
+            $organization->update(['settings' => ['manager_id' => $manager->id]]);
 
             $baseOrganizationId = Organization::query()->where('name', 'Organização padrão')->value('id');
             $categorias = $baseOrganizationId
@@ -85,7 +95,16 @@ class OrganizationController extends Controller
             'phone' => ['nullable', 'string', 'max:30'],
             'settings' => ['sometimes', 'array'],
             'active' => ['sometimes', 'boolean'],
+            'manager_id' => ['sometimes', 'nullable', 'uuid', 'exists:users,id'],
         ]);
+        $managerId = $data['manager_id'] ?? null;
+        unset($data['manager_id']);
+        if (array_key_exists('manager_id', $request->all())) {
+            if ($managerId && ! $organization->users()->role('gestor')->whereKey($managerId)->exists()) {
+                return response()->json(['message' => 'O gestor selecionado não pertence a esta organização.'], 422);
+            }
+            $data['settings'] = [...($organization->settings ?? []), 'manager_id' => $managerId];
+        }
         $organization->update($data);
 
         return response()->json(['success' => true, 'data' => $organization->fresh()->loadCount('users')]);
