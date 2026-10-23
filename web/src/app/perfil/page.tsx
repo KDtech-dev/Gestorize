@@ -30,6 +30,7 @@ function ProfileContent() {
   const [form, setForm] = useState<Form>(emptyForm);
   const [initial, setInitial] = useState<Form>(emptyForm);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [avatarLoadFailed, setAvatarLoadFailed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -40,7 +41,7 @@ function ProfileContent() {
     apiFetch<unknown>('/me').then((payload) => {
       const current = profileFrom(payload);
       const values = toForm(current);
-      setProfile(current); setForm(values); setInitial(values);
+      setProfile(current); setAvatarLoadFailed(false); setForm(values); setInitial(values);
     }).catch((reason) => setError(reason instanceof Error ? reason.message : 'Não foi possível carregar o perfil.')).finally(() => setLoading(false));
   }, []);
 
@@ -91,7 +92,7 @@ function ProfileContent() {
       const response = await apiFetch<unknown>('/me', { method: 'PUT', body: JSON.stringify(payload) });
       const updated = profileFrom(response);
       const values = toForm(updated);
-      setProfile(updated); setForm(values); setInitial(values);
+      setProfile(updated); setAvatarLoadFailed(false); setForm(values); setInitial(values);
       updateUser({ name: updated.name ?? '', email: updated.email ?? '', role: updated.role });
       setSuccess('Seus dados foram atualizados.');
     } catch (reason) { setError(reason instanceof Error ? reason.message : 'Confira os dados e tente novamente.'); }
@@ -116,7 +117,7 @@ function ProfileContent() {
   return <>
     <div className="page-heading"><div><span className="eyebrow">CONTA</span><h1>Meu perfil</h1><p>Visualize e atualize seus dados pessoais.</p></div><span className="role-pill profile-role">{profileRole(profile?.role)}</span></div>
     {loading ? <div className="data-panel table-loading"><span className="spinner" />Carregando seus dados…</div> : <form className="profile-form" onSubmit={save}>
-      <section className="profile-identity-card"><div className="profile-avatar-large">{(profile?.name ?? 'U').trim().split(' ').slice(0, 2).map((part) => part[0]).join('').toUpperCase()}</div><div><span className="eyebrow">PERFIL DE ACESSO</span><h2>{profile?.name ?? 'Usuário'}</h2><p>{profile?.email ?? ''}</p></div><span className="role-pill">{profileRole(profile?.role)}</span></section>
+      <section className="profile-identity-card"><div className="profile-avatar-large" aria-label="Foto de perfil">{profile?.avatar_url && !avatarLoadFailed ? <img src={profile.avatar_url} alt={`Foto de perfil de ${profile.name ?? 'usuário'}`} onError={() => setAvatarLoadFailed(true)} /> : <span>{(profile?.name ?? 'U').trim().split(' ').slice(0, 2).map((part) => part[0]).join('').toUpperCase()}</span>}</div><div><span className="eyebrow">PERFIL DE ACESSO</span><h2>{profile?.name ?? 'Usuário'}</h2><p>{profile?.email ?? ''}</p><small className="profile-photo-note">{profile?.avatar_url && !avatarLoadFailed ? 'Foto de perfil' : 'Sem foto de perfil'}</small></div><span className="role-pill">{profileRole(profile?.role)}</span></section>
       <section className="profile-section"><div className="profile-section-heading"><span className="eyebrow">INFORMAÇÕES</span><h2>Dados da conta e pessoais</h2></div><div className="profile-fields">{fields.slice(0, 5).map((field) => <label className="editor-field" key={field.key}><span>{field.label}</span><input type={field.type ?? 'text'} value={form[field.key]} onChange={(event) => update(field.key, event)} placeholder={field.placeholder ?? 'Não informado'} /></label>)}</div></section>
       <section className="profile-section"><div className="profile-section-heading"><span className="eyebrow">LOCALIZAÇÃO</span><h2>Endereço</h2><p>Campos vazios também podem ser preenchidos.</p></div><div className="profile-fields">{fields.slice(5).map((field) => <label className="editor-field" key={field.key}><span>{field.label}</span><input type={field.type ?? 'text'} value={form[field.key]} onChange={(event) => update(field.key, event)} placeholder={field.placeholder ?? 'Não informado'} /></label>)}</div></section>
       <section className="profile-section"><div className="profile-section-heading"><span className="eyebrow">SEGURANÇA</span><h2>Alterar senha</h2><p>A senha atual não é exibida. Deixe os campos vazios para mantê-la.</p></div><div className="profile-fields"><label className="editor-field"><span>Nova senha</span><input type="password" autoComplete="new-password" value={form.password} onChange={(event) => update('password', event)} placeholder="Mínimo de 8 caracteres" /></label><label className="editor-field"><span>Confirme a nova senha</span><input type="password" autoComplete="new-password" value={form.password_confirmation} onChange={(event) => update('password_confirmation', event)} placeholder="Repita a nova senha" /></label></div></section>
