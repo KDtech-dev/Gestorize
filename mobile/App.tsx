@@ -35,6 +35,7 @@ import Vendas from '@views/Vendas';
 import NovaVenda from '@views/Vendas/NovaVenda';
 import Organizacoes from '@views/Organizacoes';
 import FormularioOrganizacao from '@views/Organizacoes/FormularioOrganizacao';
+import AdministracaoGlobal from '@views/AdministracaoGlobal';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const navigationRef = createNavigationContainerRef<RootStackParamList>();
@@ -60,6 +61,7 @@ const AppNavigator = () => {
         ) : (
           <>
             <Stack.Screen name="Homepage" component={Homepage} />
+            {canAccess('AdministracaoGlobal') && <Stack.Screen name="AdministracaoGlobal" component={AdministracaoGlobal} />}
             {canAccess('Organizacoes') && <Stack.Screen name="Organizacoes" component={Organizacoes} />}
             {canAccess('OrganizacaoForm') && <Stack.Screen name="OrganizacaoForm" component={FormularioOrganizacao} />}
             {canAccess('Vendas') && <Stack.Screen name="Vendas" component={Vendas} />}

@@ -74,6 +74,12 @@ const Homepage = () => {
 
   const quickActions = [
     {
+      route: 'AdministracaoGlobal' as const,
+      icon: 'chart-box-outline' as const,
+      label: 'Visão global',
+      description: 'Acompanhe métricas gerais de organizações e usuários',
+    },
+    {
       route: 'Organizacoes' as const,
       icon: 'domain' as const,
       label: 'Organizações',
@@ -141,7 +147,7 @@ const Homepage = () => {
     ],
   };
   if (administradorGlobal) {
-    routeSectionsByRole.admin = [{ title: 'Administração global', routes: ['Organizacoes'] }];
+    routeSectionsByRole.admin = [{ title: 'Administração global', routes: ['AdministracaoGlobal', 'Organizacoes'] }];
   }
   const routeSections = routeSectionsByRole[user?.role ?? ''] ?? [
     { title: 'Seus acessos', routes: quickActions.map((item) => item.route) },

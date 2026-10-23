@@ -265,6 +265,7 @@ export type EnderecoType = {
 
 export type RootStackParamList = {
   Organizacoes: undefined;
+  AdministracaoGlobal: undefined;
   OrganizacaoForm: { modo: "criar" | "editar"; organizationId?: string };
   Vendas: undefined;
   NovaVenda: undefined;

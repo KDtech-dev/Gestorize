@@ -11,6 +11,7 @@ use App\Models\UnidadeMedida;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Carbon;
 
 class OrganizationController extends Controller
 {
@@ -26,6 +27,33 @@ class OrganizationController extends Controller
         });
 
         return response()->json(['success' => true, 'data' => $organizations]);
+    }
+
+    public function metrics()
+    {
+        $organizations = Organization::query()->withCount('users')->orderBy('name')->get();
+        $activeOrganizationIds = $organizations->where('active', true)->pluck('id');
+        $inactiveOrganizationIds = $organizations->where('active', false)->pluck('id');
+        $activeUsers = User::withoutGlobalScope('organization')->whereIn('organization_id', $activeOrganizationIds);
+        $inactiveUsers = User::withoutGlobalScope('organization')->whereIn('organization_id', $inactiveOrganizationIds);
+
+        return response()->json(['success' => true, 'data' => [
+            'organizations_total' => $organizations->count(),
+            'organizations_active' => $organizations->where('active', true)->count(),
+            'organizations_inactive' => $organizations->where('active', false)->count(),
+            'organizations_created_this_month' => $organizations->filter(fn (Organization $organization) => $organization->created_at?->greaterThanOrEqualTo(Carbon::now()->startOfMonth()))->count(),
+            'users_total' => User::withoutGlobalScope('organization')->whereNotNull('organization_id')->count(),
+            'users_active' => (clone $activeUsers)->count(),
+            'users_inactive' => (clone $inactiveUsers)->count(),
+            'managers_active' => (clone $activeUsers)->role('gestor')->count(),
+            'employees_active' => (clone $activeUsers)->role('funcionario')->count(),
+            'organizations' => $organizations->map(fn (Organization $organization) => [
+                'id' => $organization->id,
+                'name' => $organization->name,
+                'active' => $organization->active,
+                'users_count' => $organization->users_count,
+            ])->values(),
+        ]]);
     }
 
     public function store(Request $request)

@@ -22,6 +22,7 @@ Route::post('login', [AuthController::class, 'login']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('organizations')->middleware('global.admin')->group(function () {
         Route::get('/', [OrganizationController::class, 'index']);
+        Route::get('/metrics', [OrganizationController::class, 'metrics']);
         Route::post('/', [OrganizationController::class, 'store']);
         Route::put('/{organization}', [OrganizationController::class, 'update']);
     });
