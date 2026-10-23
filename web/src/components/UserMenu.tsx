@@ -2,13 +2,14 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+import { Icon } from '@iconify/react';
 import { Badge, Box, ButtonBase, Divider, ListItemIcon, ListItemText, Menu, MenuItem, Typography } from '@mui/material';
 import { UserAvatar } from '@/components/UserAvatar';
 
 const menuItems = [
-  { href: '/perfil', label: 'Meu perfil', icon: '◉' },
-  { href: '/configuracoes', label: 'Configurações', icon: '⚙' },
-  { href: '/ajuda', label: 'Central de ajuda', icon: '?' },
+  { href: '/perfil', label: 'Meu perfil', icon: 'mdi:account-circle-outline' },
+  { href: '/configuracoes', label: 'Configurações', icon: 'mdi:cog-outline' },
+  { href: '/ajuda', label: 'Central de ajuda', icon: 'mdi:help-circle-outline' },
 ];
 
 export function UserMenu({ name, email, role, imageUrl, signOut }: { name: string; email: string; role: string; imageUrl?: string | null; signOut: () => Promise<void> }) {
@@ -83,7 +84,7 @@ export function UserMenu({ name, email, role, imageUrl, signOut }: { name: strin
         {menuItems.slice(0, 1).map((item) => (
           <MenuItem key={item.href} component={Link} href={item.href} onClick={() => setAnchorEl(null)} sx={{ minHeight: 42, gap: 1.25, '&:hover': { backgroundColor: 'var(--surface)' } }}>
             <ListItemIcon sx={{ minWidth: '24px !important', color: 'inherit', fontSize: 17, justifyContent: 'center' }}>
-              <Box component="span" aria-hidden="true">{item.icon}</Box>
+              <Icon icon={item.icon} width={18} height={18} aria-hidden="true" />
             </ListItemIcon>
             <ListItemText primary={item.label} slotProps={{ primary: { sx: { fontSize: 13, fontWeight: 600 } } }} />
           </MenuItem>
@@ -92,7 +93,7 @@ export function UserMenu({ name, email, role, imageUrl, signOut }: { name: strin
         {menuItems.slice(1).map((item) => (
           <MenuItem key={item.href} component={Link} href={item.href} onClick={() => setAnchorEl(null)} sx={{ minHeight: 42, gap: 1.25, '&:hover': { backgroundColor: 'var(--surface)' } }}>
             <ListItemIcon sx={{ minWidth: '24px !important', color: 'inherit', fontSize: 17, justifyContent: 'center' }}>
-              <Box component="span" aria-hidden="true">{item.icon}</Box>
+              <Icon icon={item.icon} width={18} height={18} aria-hidden="true" />
             </ListItemIcon>
             <ListItemText primary={item.label} slotProps={{ primary: { sx: { fontSize: 13, fontWeight: 600 } } }} />
           </MenuItem>
@@ -108,7 +109,7 @@ export function UserMenu({ name, email, role, imageUrl, signOut }: { name: strin
           }}
         >
           <ListItemIcon sx={{ minWidth: '24px !important', color: 'inherit', fontSize: 17, justifyContent: 'center' }}>
-            <Box component="span" aria-hidden="true">↪</Box>
+            <Icon icon="mdi:logout" width={18} height={18} aria-hidden="true" />
           </ListItemIcon>
           <ListItemText primary="Sair" slotProps={{ primary: { sx: { fontSize: 13, fontWeight: 600 } } }} />
         </MenuItem>
