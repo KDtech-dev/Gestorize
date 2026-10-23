@@ -29,6 +29,7 @@ class FuncionarioService
                 'name'     => $dados['name'],
                 'email'    => $dados['email'],
                 'password' => $dados['password'],
+                'must_change_password' => ($dados['role'] ?? null) === 'gestor',
             ]);
 
             $this->definirAcesso($user, $dados);
@@ -44,7 +45,12 @@ class FuncionarioService
 
     public function listar(): LengthAwarePaginator
     {
-        return Funcionario::with(['user.roles', 'user.permissions', 'endereco'])
+        return Funcionario::query()
+            ->whereHas('user', fn ($query) => $query->whereDoesntHave(
+                'roles',
+                fn ($roles) => $roles->where('name', 'admin'),
+            ))
+            ->with(['user.roles', 'user.permissions', 'endereco'])
             ->latest()
             ->paginate(15);
     }

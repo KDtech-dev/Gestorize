@@ -30,7 +30,7 @@ class StoreClienteRequest extends FormRequest
         }
 
         if (isset($data['pf']['rg'])) {
-            $data['pf']['rg'] = preg_replace('/\D/', '', $data['pf']['rg']);
+            $data['pf']['rg'] = strtoupper(preg_replace('/[^0-9x]/i', '', $data['pf']['rg']));
         }
 
         if (isset($data['pf']['data_nascimento'])) {
@@ -81,7 +81,7 @@ class StoreClienteRequest extends FormRequest
 
             'nome' => ['required', 'string', 'max:255',],
             'tipo' => ['required', 'string', Rule::in(['pf', 'pj']),],
-            'email' => ['nullable', 'email', 'max:255', 'unique:clientes,email',],
+            'email' => ['nullable', 'email', 'max:255', Rule::unique('clientes', 'email')->where('organization_id', $this->user()?->organization_id),],
             'telefone' => ['nullable', 'string', 'max:20',],
 
             'avatar' => ['nullable', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048',],
@@ -97,12 +97,12 @@ class StoreClienteRequest extends FormRequest
 
             'pf' => ['required_if:tipo,pf', 'array',],
             'pf.genero' => ['nullable', 'string', Rule::in(['masculino', 'feminino', 'outro',]),],
-            'pf.rg' => ['required_if:tipo,pf', 'string', 'max:20',],
-            'pf.cpf' => ['required_if:tipo,pf', 'string', 'size:11', 'unique:clientes_pf,cpf',],
+            'pf.rg' => ['required_if:tipo,pf', 'string', 'min:5', 'max:14', 'regex:/^\d{4,13}[0-9X]$/',],
+            'pf.cpf' => ['required_if:tipo,pf', 'string', 'size:11', Rule::unique('clientes_pf', 'cpf')->where('organization_id', $this->user()?->organization_id),],
             'pf.data_nascimento' => ['required_if:tipo,pf', 'date', 'before:today',],
 
             'pj' => ['required_if:tipo,pj', 'array',],
-            'pj.cnpj' => ['required_if:tipo,pj', 'string', 'size:14', 'unique:clientes_pj,cnpj',],
+            'pj.cnpj' => ['required_if:tipo,pj', 'string', 'size:14', Rule::unique('clientes_pj', 'cnpj')->where('organization_id', $this->user()?->organization_id),],
             'pj.razao_social' => ['required_if:tipo,pj', 'string', 'max:255',],
             'pj.nome_fantasia' => ['nullable', 'string', 'max:255',],
             'pj.nome_responsavel' => ['required_if:tipo,pj', 'string', 'max:255',],
@@ -114,14 +114,23 @@ class StoreClienteRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'nome.required' => 'Informe o nome completo do cliente.',
             'tipo.in' => 'validation.cliente_tipo.in',
             'pf.required_if' => 'validation.cliente_pf.required_if',
-            'pf.cpf.required_if' => 'validation.cpf.required_if',
+            'pf.rg.required_if' => 'Informe o RG.',
+            'pf.rg.min' => 'O RG deve conter pelo menos 5 caracteres.',
+            'pf.rg.max' => 'O RG deve conter no máximo 14 caracteres.',
+            'pf.rg.regex' => 'Informe um RG válido, usando números e X no final quando houver.',
+            'pf.cpf.required_if' => 'Informe o CPF.',
             'pf.cpf.size' => 'validation.cpf.size',
             'pf.cpf.unique' => 'validation.cpf.unique',
+            'pf.data_nascimento.required_if' => 'Informe a data de nascimento.',
+            'pj.cnpj.required_if' => 'Informe o CNPJ.',
+            'pj.razao_social.required_if' => 'Informe a razão social.',
+            'pj.nome_responsavel.required_if' => 'Informe o nome do responsável.',
+            'pj.cpf_responsavel.required_if' => 'Informe o CPF do responsável.',
             'pf.data_nascimento.before' => 'validation.data_nascimento.before',
             'pj.required_if' => 'validation.cliente_pj.required_if',
-            'pj.cnpj.required_if' => 'validation.cnpj.required_if',
             'pj.cnpj.size' => 'validation.cnpj.size',
             'pj.cnpj.unique' => 'validation.cnpj.unique',
             'pj.cpf_responsavel.size' => 'validation.cpf_responsavel.size',

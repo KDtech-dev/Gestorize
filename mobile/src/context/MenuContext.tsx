@@ -85,9 +85,12 @@ export const MenuProvider = ({ children, navigationRef }: MenuProviderProps) => 
     },
   ];
 
-  const mainMenu = allMainMenu.filter((item) => canAccessRoute(user, item.route));
+  const mainMenu = user?.must_change_password
+    ? []
+    : allMainMenu.filter((item) => canAccessRoute(user, item.route));
 
   const bottomMenu = [
+    ...(!user?.must_change_password ? [
     {
       icon: 'cog' as const,
       label: 'Configurações',
@@ -98,6 +101,7 @@ export const MenuProvider = ({ children, navigationRef }: MenuProviderProps) => 
       label: 'Ajuda',
       onPress: () => handleMenuAction(() => navigate('Ajuda')),
     },
+    ] : []),
     {
       icon: 'logout' as const,
       label: 'Sair',

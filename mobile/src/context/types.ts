@@ -57,6 +57,17 @@ export type UserType = {
   nome: string;
   name?: string;
   email: string;
+  organization_id?: string | null;
+  must_change_password?: boolean;
+  organization_name?: string | null;
+  organization?: {
+    id: string;
+    name: string;
+    document?: string | null;
+    email?: string | null;
+    phone?: string | null;
+    settings?: Record<string, unknown> | null;
+  } | null;
   role: string;
   permissions?: string[];
   avatar_url?: string | null;
@@ -160,6 +171,8 @@ export type ProdutoType = {
   id: string;
   nome: string;
   codigo_barras?: string | null;
+  etiqueta_status?: 'pendente' | 'impresso';
+  etiqueta_impressa_em?: StringfiedDate | null;
   descricao: string | null;
   preco_custo: number | null;
   porcentagem_lucro: number | null;
@@ -254,12 +267,16 @@ export type EnderecoType = {
 };
 
 export type RootStackParamList = {
+  Organizacoes: undefined;
+  AdministracaoGlobal: undefined;
+  OrganizacaoForm: { modo: "criar" | "editar"; organizationId?: string };
   Vendas: undefined;
   NovaVenda: undefined;
   Relatorios: undefined;
   Configuracoes: undefined;
   Ajuda: undefined;
   Login: undefined;
+  TrocarSenhaPrimeiroAcesso: undefined;
   ResetPassword: undefined;
   ForgoutPassword: undefined;
   Homepage: undefined;
@@ -268,6 +285,7 @@ export type RootStackParamList = {
   Funcionarios: { novoFuncionario: boolean } | undefined;
   Clientes: { novoCliente: boolean } | undefined;
   Produtos: { novoProduto: boolean } | undefined;
+  CentralEtiquetas: undefined;
   Fornecedores: { novoFornecedor: boolean } | undefined;
   NovoCliente: {
     modo: "criar" | "editar";

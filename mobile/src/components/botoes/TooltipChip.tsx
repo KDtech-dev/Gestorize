@@ -5,10 +5,11 @@ import { useTheme } from '@context/ThemeContext';
 type Props = {
   label: string;
   active?: boolean;
+  disabled?: boolean;
   onPress?: () => void;
 };
 
-const TooltipChip = ({ label, active = false, onPress }: Props) => {
+const TooltipChip = ({ label, active = false, disabled = false, onPress }: Props) => {
   const { colors } = useTheme();
 
   const backgroundColor = active
@@ -26,9 +27,10 @@ const TooltipChip = ({ label, active = false, onPress }: Props) => {
   return (
     <Pressable
       onPress={onPress}
+      disabled={disabled}
       accessibilityRole="button"
-      accessibilityState={{ selected: active }}
-      style={[styles.container, { backgroundColor, borderColor, borderWidth: 1 }]}
+      accessibilityState={{ selected: active, disabled }}
+      style={[styles.container, { backgroundColor, borderColor, borderWidth: 1, opacity: disabled ? 0.5 : 1 }]}
     >
       <Text style={[styles.text, { color: textColor }]}>{label}</Text>
     </Pressable>

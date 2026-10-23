@@ -5,12 +5,13 @@ namespace App\Http\Requests;
 use App\Enums\PermissionEnum;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use App\Rules\BelongsToCurrentOrganization;
 
 class StoreFuncionarioRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        return ! $this->exists('permissions') || $this->user()?->can('acessos.gerenciar') === true;
     }
 
     protected function prepareForValidation(): void
@@ -30,8 +31,8 @@ class StoreFuncionarioRequest extends FormRequest
             'password' => ['required', 'string', 'min:8', 'confirmed',],
             'telefone' => ['nullable', 'string', 'max:20',],
             'data_nascimento' => ['required', 'date', 'before:today',],
-            'cpf' => ['required', 'string', 'size:11', Rule::unique('funcionarios', 'cpf'),],
-            'endereco_id' => ['nullable', 'uuid', Rule::exists('enderecos', 'id'),],
+            'cpf' => ['required', 'string', 'size:11', Rule::unique('funcionarios', 'cpf')->where('organization_id', $this->user()?->organization_id),],
+            'endereco_id' => ['nullable', 'uuid', new BelongsToCurrentOrganization('enderecos')],
             'role' => ['required', 'string', Rule::in(['gestor', 'funcionario',]),],
             'permissions' => ['sometimes', 'array',],
             'permissions.*' => ['required', 'string', 'distinct', Rule::in(PermissionEnum::values()),],

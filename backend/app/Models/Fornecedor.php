@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Support\Facades\Storage;
+use App\Models\Concerns\BelongsToOrganization;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -10,7 +11,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Fornecedor extends Model
 {
-    use HasUuids, HasFactory;
+    use HasUuids, HasFactory, BelongsToOrganization;
 
     protected $table = 'fornecedores';
 

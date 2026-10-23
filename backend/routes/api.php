@@ -15,12 +15,30 @@ use App\Http\Controllers\Api\RelatorioController;
 use App\Http\Controllers\Api\UnidadeMedidaController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\VendaController;
+use App\Http\Controllers\Api\OrganizationController;
+use App\Http\Controllers\Api\EtiquetaController;
 
 Route::post('login', [AuthController::class, 'login']);
 
 Route::middleware('auth:sanctum')->group(function () {
+    Route::prefix('organizations')->middleware('global.admin')->group(function () {
+        Route::get('/', [OrganizationController::class, 'index']);
+        Route::get('/metrics', [OrganizationController::class, 'metrics']);
+        Route::post('/', [OrganizationController::class, 'store']);
+        Route::put('/{organization}', [OrganizationController::class, 'update']);
+    });
+    Route::post('/primeiro-acesso/alterar-senha', [AuthController::class, 'trocarSenhaPrimeiroAcesso'])->middleware('throttle:5,1');
+    Route::put('/acessos/papeis/{role}/permissoes', [AcessoController::class, 'definirDoPapel'])->middleware('global.admin');
 
+    Route::middleware('tenant.context')->group(function () {
     Route::get('/dashboard/resumo', DashboardController::class);
+    Route::prefix('etiquetas')->middleware('permission:produtos.ver')->group(function () {
+        Route::get('/produtos', [EtiquetaController::class, 'produtos']);
+        Route::get('/historico', [EtiquetaController::class, 'historico']);
+        Route::post('/operacoes', [EtiquetaController::class, 'criarOperacao']);
+        Route::post('/operacoes/{id}/concluir', [EtiquetaController::class, 'concluir']);
+        Route::post('/operacoes/{id}/cancelar', [EtiquetaController::class, 'cancelar']);
+    });
     Route::post('/ajuda/contato', [AjudaController::class, 'contato'])->middleware('throttle:5,1');
 
     Route::get('/categorias', [CategoriaController::class, 'index'])->middleware('permission:produtos.ver');
@@ -39,7 +57,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/papeis', [AcessoController::class, 'papeis']);
         Route::get('/permissoes', [AcessoController::class, 'permissoes']);
 
-        Route::put('/papeis/{role}/permissoes', [AcessoController::class, 'definirDoPapel',]);
         Route::put('/users/{user}/permissoes', [AcessoController::class, 'definirDoUsuario',]);
     });
 
@@ -110,5 +127,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/{user}', [UserController::class, 'show'])->middleware('permission:users.ver');
         Route::put('/{user}', [UserController::class, 'update'])->middleware('permission:users.editar');
         Route::delete('/{user}', [UserController::class, 'destroy'])->middleware('permission:users.excluir');
+    });
     });
 });

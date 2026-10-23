@@ -89,7 +89,7 @@ export const funcionarioSchema = z
         data_nascimento: dataNascimentoSchema,
 
         role: z.enum(
-            ["admin", "gestor", "funcionario"],
+            ["gestor", "funcionario"],
             {
                 message: "Selecione um perfil.",
             }

@@ -6,8 +6,10 @@ import {
     NativeSyntheticEvent,
     StyleSheet,
     Text,
+    TouchableOpacity,
     View,
 } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -30,7 +32,7 @@ const PAGE_SIZE = 10;
 
 const Produtos = () => {
     const navigation = useNavigation<Navigation>();
-    const { colors } = useTheme();
+    const { colors, isDark } = useTheme();
     const { user } = useAuth();
     const podeCriar = can(user, 'produtos.criar');
 
@@ -188,6 +190,26 @@ const Produtos = () => {
                     },
                 ]}
             >
+                <TouchableOpacity
+                    accessibilityRole="button"
+                    accessibilityLabel="Abrir Central de Impressão de Etiquetas"
+                    activeOpacity={0.88}
+                    onPress={() => navigation.navigate('CentralEtiquetas')}
+                    style={[styles.labelsAccess, { backgroundColor: isDark ? '#2563EB' : colors.primary }]}
+                >
+                    <View style={styles.labelsIcon}>
+                        <MaterialCommunityIcons name="tag-multiple-outline" size={22} color="#fff" />
+                    </View>
+                    <View style={styles.labelsCopy}>
+                        <Text style={styles.labelsTitle}>Central de etiquetas</Text>
+                        <Text style={styles.labelsSubtitle}>Gerar e acompanhar impressões</Text>
+                    </View>
+                    <View style={styles.labelsAction}>
+                        <Text style={styles.labelsActionText}>Abrir</Text>
+                        <MaterialCommunityIcons name="arrow-right" size={17} color="#fff" />
+                    </View>
+                </TouchableOpacity>
+
                 <SearchBar
                     placeholder="Busque por nome, categoria ou fornecedor"
                     value={search}
@@ -321,7 +343,7 @@ const styles = StyleSheet.create({
         top: 140,
         left: 0,
         right: 0,
-        marginTop: 12,
+        marginTop: 8,
         zIndex: 10,
     },
 
@@ -343,6 +365,13 @@ const styles = StyleSheet.create({
 
     listContent: {
         padding: 10,
-        paddingTop: 300,
+        paddingTop: 352,
     },
+    labelsAccess: { minHeight: 52, flexDirection: 'row', alignItems: 'center', gap: 10, marginHorizontal: 12, marginBottom: 8, paddingHorizontal: 15, borderRadius: 12, shadowColor: '#000', shadowOpacity: 0.16, shadowRadius: 4, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
+    labelsIcon: { width: 30, alignItems: 'center', justifyContent: 'center' },
+    labelsCopy: { flex: 1, minWidth: 0, gap: 2 },
+    labelsTitle: { color: '#fff', fontSize: 15, fontWeight: '800' },
+    labelsSubtitle: { color: '#ffffffd9', fontSize: 11 },
+    labelsAction: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+    labelsActionText: { color: '#fff', fontSize: 12, fontWeight: '800' },
 });

@@ -17,7 +17,7 @@ class CreateUserRequest extends FormRequest
             'name'                        => ['required', 'string', 'max:255'],
             'email'                       => ['required', 'email', 'unique:users,email'],
             'password'                    => ['required', 'string', 'min:8', 'confirmed'],
-            'role'                        => ['required', 'string', 'exists:roles,name'],
+            'role'                        => ['required', 'string', 'exists:roles,name', 'not_in:admin'],
             'funcionario.telefone'        => ['nullable', 'string', 'max:20'],
             'funcionario.data_nascimento' => ['nullable', 'date'],
             'funcionario.cpf'             => ['nullable', 'string', 'size:11'],

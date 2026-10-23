@@ -6,11 +6,14 @@ use App\Enums\RoleEnum;
 use App\Models\Endereco;
 use App\Models\User;
 use App\Models\Funcionario;
+use Database\Seeders\Concerns\SeedsDefaultOrganization;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
 class TestUsersSeeder extends Seeder
 {
+    use SeedsDefaultOrganization;
+
     public function run(): void
     {
         $admin = $this->criarUsuario(
@@ -93,10 +96,14 @@ class TestUsersSeeder extends Seeder
         string $dataNascimento,
         array $endereco,
     ): User {
-        $user = User::updateOrCreate(['email' => $email], [
+        $organizationId = $this->defaultOrganization()->id;
+        $user = User::query()->firstOrNew(['email' => $email]);
+        $user->fill([
             'name' => $nome,
             'password' => Hash::make('123456'),
         ]);
+        $user->forceFill(['organization_id' => $role === RoleEnum::ADMIN ? null : $organizationId]);
+        $user->save();
 
         $user->syncRoles([$role->value]);
 
@@ -104,16 +111,20 @@ class TestUsersSeeder extends Seeder
         $registroEndereco = $registroFuncionario?->endereco;
         if ($registroEndereco) {
             $registroEndereco->update($endereco);
+            $registroEndereco->forceFill(['organization_id' => $organizationId])->save();
         } else {
-            $registroEndereco = Endereco::create($endereco);
+            $registroEndereco = new Endereco($endereco);
+            $registroEndereco->forceFill(['organization_id' => $organizationId])->save();
         }
 
-        Funcionario::updateOrCreate(['id' => $user->id], [
+        $registroFuncionario = Funcionario::query()->firstOrNew(['id' => $user->id]);
+        $registroFuncionario->fill([
             'telefone' => $telefone,
             'cpf' => $cpf,
             'data_nascimento' => $dataNascimento,
             'endereco_id' => $registroEndereco->id,
         ]);
+        $registroFuncionario->forceFill(['organization_id' => $organizationId])->save();
 
         return $user;
     }

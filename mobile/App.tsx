@@ -33,6 +33,11 @@ import NovoFuncionario from '@views/Funcionarios/NovoFuncionario';
 import NovoOrcamento from '@views/Orcamentos/NovoOrcamento';
 import Vendas from '@views/Vendas';
 import NovaVenda from '@views/Vendas/NovaVenda';
+import Organizacoes from '@views/Organizacoes';
+import FormularioOrganizacao from '@views/Organizacoes/FormularioOrganizacao';
+import AdministracaoGlobal from '@views/AdministracaoGlobal';
+import TrocarSenhaPrimeiroAcesso from '@views/TrocarSenhaPrimeiroAcesso';
+import CentralEtiquetas from '@views/Produtos/CentralEtiquetas';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const navigationRef = createNavigationContainerRef<RootStackParamList>();
@@ -57,7 +62,13 @@ const AppNavigator = () => {
           </>
         ) : (
           <>
+            {user?.must_change_password ? (
+              <Stack.Screen name="TrocarSenhaPrimeiroAcesso" component={TrocarSenhaPrimeiroAcesso} />
+            ) : <>
             <Stack.Screen name="Homepage" component={Homepage} />
+            {canAccess('AdministracaoGlobal') && <Stack.Screen name="AdministracaoGlobal" component={AdministracaoGlobal} />}
+            {canAccess('Organizacoes') && <Stack.Screen name="Organizacoes" component={Organizacoes} />}
+            {canAccess('OrganizacaoForm') && <Stack.Screen name="OrganizacaoForm" component={FormularioOrganizacao} />}
             {canAccess('Vendas') && <Stack.Screen name="Vendas" component={Vendas} />}
             {canAccess('NovaVenda') && <Stack.Screen name="NovaVenda" component={NovaVenda} />}
             <Stack.Screen name="Configuracoes" component={Configuracoes} />
@@ -67,6 +78,7 @@ const AppNavigator = () => {
             {canAccess('Clientes') && <Stack.Screen name="Clientes" component={Clientes} />}
             {canAccessForm(user, 'clientes') && <Stack.Screen name="NovoCliente" component={NovoCliente} />}
             {canAccess('Produtos') && <Stack.Screen name="Produtos" component={Produtos} />}
+            {canAccess('Produtos') && <Stack.Screen name="CentralEtiquetas" component={CentralEtiquetas} />}
             {canAccessForm(user, 'produtos') && <Stack.Screen name="NovoProduto" component={NovoProduto} />}
             {canAccess('Fornecedores') && <Stack.Screen name="Fornecedores" component={Fornecedores} />}
             {canAccessForm(user, 'fornecedores') && <Stack.Screen name="NovoFornecedor" component={NovoFornecedor} />}
@@ -77,6 +89,7 @@ const AppNavigator = () => {
             {canAccess('Relatorios') && (
               <Stack.Screen name="Relatorios" component={Relatorios} />
             )}
+            </>}
           </>
         )}
       </Stack.Navigator>

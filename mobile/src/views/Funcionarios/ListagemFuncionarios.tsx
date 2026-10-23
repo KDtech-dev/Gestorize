@@ -76,7 +76,8 @@ const Funcionarios = () => {
             const response = await getFuncionarios();
 
             setFuncionarios(response.data.filter((funcionario) =>
-                String(funcionario.id) !== String(user?.id)
+                String(funcionario.id) !== String(user?.id) &&
+                funcionario.role?.toLowerCase() !== 'admin'
             ));
             setVisibleCount(PAGE_SIZE);
         } catch (error: any) {

@@ -6,12 +6,16 @@ use App\Models\Produto;
 use App\Models\Categoria;
 use App\Models\UnidadeMedida;
 use App\Models\Fornecedor;
+use Database\Seeders\Concerns\SeedsDefaultOrganization;
 use Illuminate\Database\Seeder;
 
 class ProdutosSeeder extends Seeder
 {
+    use SeedsDefaultOrganization;
+
     public function run(): void
     {
+        $organizationId = $this->defaultOrganization()->id;
         $alimentos  = Categoria::where('nome', 'Alimentos')->first()->id;
         $bebidas    = Categoria::where('nome', 'Bebidas')->first()->id;
         $limpeza    = Categoria::where('nome', 'Limpeza')->first()->id;
@@ -123,8 +127,9 @@ class ProdutosSeeder extends Seeder
             $diasDesdeEntrada = $temValidade && $validadeOffset < 0
                 ? abs($validadeOffset) + random_int(1, 30)
                 : random_int(0, 60);
-            $fornecedorId = Fornecedor::query()->orderBy('cnpj')->skip($indice % max(Fornecedor::count(), 1))->value('id');
-            $registro = Produto::updateOrCreate(['nome' => $produto['nome']], array_merge($produto, [
+            $totalFornecedores = Fornecedor::query()->where('organization_id', $organizationId)->count();
+            $fornecedorId = Fornecedor::query()->where('organization_id', $organizationId)->orderBy('cnpj')->skip($indice % max($totalFornecedores, 1))->value('id');
+            $registro = $this->seedOrganizationRecord(Produto::class, $organizationId, ['nome' => $produto['nome']], array_merge($produto, [
                 'data_entrada' => $hoje->copy()->subDays($diasDesdeEntrada)->toDateString(),
                 'validade' => $validade?->toDateString(),
                 'fornecedor_id' => $fornecedorId,

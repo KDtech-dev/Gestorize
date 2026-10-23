@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests;
 
+use App\Rules\BelongsToCurrentOrganization;
+
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreOrcamentoRequest extends FormRequest
@@ -15,9 +17,9 @@ class StoreOrcamentoRequest extends FormRequest
     {
         return [
             'titulo' => ['required', 'string', 'max:120'],
-            'cliente_id' => ['required', 'uuid', 'exists:clientes,id'],
+            'cliente_id' => ['required', 'uuid', new BelongsToCurrentOrganization('clientes')],
             'itens' => ['required', 'array', 'min:1'],
-            'itens.*.produto_id' => ['required_with:itens', 'uuid', 'distinct', 'exists:produtos,id'],
+            'itens.*.produto_id' => ['required_with:itens', 'uuid', 'distinct', new BelongsToCurrentOrganization('produtos')],
             'itens.*.quantidade' => ['required_with:itens', 'integer', 'min:1'],
         ];
     }

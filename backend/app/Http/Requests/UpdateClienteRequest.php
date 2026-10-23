@@ -26,7 +26,7 @@ class UpdateClienteRequest extends FormRequest
             $data['pf']['cpf'] = preg_replace('/\D/', '', $data['pf']['cpf']);
         }
         if (isset($data['pf']['rg'])) {
-            $data['pf']['rg'] = preg_replace('/\D/', '', $data['pf']['rg']);
+            $data['pf']['rg'] = strtoupper(preg_replace('/[^0-9x]/i', '', $data['pf']['rg']));
         }
 
         if (isset($data['pj']['cnpj'])) {
@@ -104,7 +104,7 @@ class UpdateClienteRequest extends FormRequest
                 'nullable',
                 'email',
                 'max:255',
-                Rule::unique('clientes', 'email')->ignore($this->route('id'))
+                Rule::unique('clientes', 'email')->where('organization_id', $this->user()?->organization_id)->ignore($this->route('id'))
             ],
             'telefone' => ['sometimes', 'nullable', 'string', 'max:20',],
             'imagem' => ['sometimes', 'nullable', 'string', 'max:500',],
@@ -120,12 +120,12 @@ class UpdateClienteRequest extends FormRequest
 
             'pf' => ['sometimes', 'array',],
             'pf.genero' => ['nullable', 'string', Rule::in(['masculino', 'feminino', 'outro',]),],
-            'pf.rg' => ['sometimes', 'nullable', 'string', 'max:30',],
+            'pf.rg' => ['sometimes', 'string', 'min:5', 'max:14', 'regex:/^\d{4,13}[0-9X]$/',],
             'pf.cpf' => [
                 'sometimes',
                 'string',
                 'size:11',
-                Rule::unique('clientes_pf', 'cpf')->ignore($pfId, 'id'),
+                Rule::unique('clientes_pf', 'cpf')->where('organization_id', $this->user()?->organization_id)->ignore($pfId, 'id'),
             ],
             'pf.data_nascimento' => ['sometimes', 'nullable', 'date', 'before:today',],
 
@@ -134,7 +134,7 @@ class UpdateClienteRequest extends FormRequest
                 'sometimes',
                 'string',
                 'size:14',
-                Rule::unique('clientes_pj', 'cnpj')->ignore($pjId, 'id'),
+                Rule::unique('clientes_pj', 'cnpj')->where('organization_id', $this->user()?->organization_id)->ignore($pjId, 'id'),
             ],
             'pj.razao_social' => ['sometimes', 'string', 'max:255',],
             'pj.nome_fantasia' => ['sometimes', 'nullable', 'string', 'max:255',],

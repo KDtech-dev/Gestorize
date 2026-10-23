@@ -51,6 +51,7 @@ class UserService
                 'name'     => $dados['name'],
                 'email'    => $dados['email'],
                 'password' => Hash::make($dados['password']),
+                'must_change_password' => ($dados['role'] ?? null) === 'gestor',
             ]);
 
 

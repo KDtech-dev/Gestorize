@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests;
 
+use App\Rules\BelongsToCurrentOrganization;
+
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Validator;
 use App\Models\Categoria;
@@ -22,9 +24,9 @@ class StoreProdutoRequest extends FormRequest
             'porcentagem_lucro' => ['required', 'numeric', 'min:0',],
             'preco_venda' => ['required', 'numeric', 'min:0',],
             'data_entrada' => ['required',  'date',],
-            'categoria_id' => ['nullable', 'uuid', 'exists:categorias,id'],
-            'fornecedor_id' => ['nullable', 'uuid', 'exists:fornecedores,id'],
-            'unidade_medida_id' => ['required', 'uuid', 'exists:unidades_medida,id',],
+            'categoria_id' => ['nullable', 'uuid', new BelongsToCurrentOrganization('categorias')],
+            'fornecedor_id' => ['nullable', 'uuid', new BelongsToCurrentOrganization('fornecedores')],
+            'unidade_medida_id' => ['required', 'uuid', new BelongsToCurrentOrganization('unidades_medida')],
             'estoque' => ['required', 'numeric', 'min:0',],
             'validade' => ['nullable', 'date', 'after_or_equal:data_entrada', 'after_or_equal:today'],
         ];

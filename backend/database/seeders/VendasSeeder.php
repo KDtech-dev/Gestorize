@@ -10,15 +10,20 @@ use App\Models\Produto;
 use App\Models\UnidadeMedida;
 use App\Models\User;
 use App\Models\Venda;
+use Database\Seeders\Concerns\SeedsDefaultOrganization;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
 class VendasSeeder extends Seeder
 {
+    use SeedsDefaultOrganization;
+
     public function run(): void
     {
         DB::transaction(function (): void {
+            $organizationId = $this->defaultOrganization()->id;
             $usuarios = User::query()
+                ->where('organization_id', $organizationId)
                 ->where(function ($query) {
                     $query->whereIn('email', ['funcionario@example.com', 'gestor@example.com', 'teste@email.com'])
                         ->orWhere('email', 'like', 'operador%@example.com');
@@ -30,11 +35,14 @@ class VendasSeeder extends Seeder
                 throw new \RuntimeException('Execute TestUsersSeeder antes de VendasSeeder para criar os usuários de demonstração.');
             }
 
-            $clientes = Cliente::query()->orderBy('created_at')->get();
+            $clientes = Cliente::query()->where('organization_id', $organizationId)->orderBy('created_at')->get();
+            if ($clientes->isEmpty()) {
+                throw new \RuntimeException('Execute ClientesSeeder antes de VendasSeeder para criar os clientes de demonstração.');
+            }
             $cliente = $clientes->firstOrFail();
 
             $categoria = Categoria::firstOrCreate(['nome' => 'Alimentos']);
-            $fornecedor = Fornecedor::updateOrCreate(
+            $fornecedor = $this->seedOrganizationRecord(Fornecedor::class, $organizationId,
                 ['cnpj' => '12.345.678/0001-90'],
                 [
                     'nome' => 'Fornecedor Geral',
@@ -50,7 +58,7 @@ class VendasSeeder extends Seeder
                 ['nome' => 'Unidade'],
             );
 
-            $produto = Produto::updateOrCreate(
+            $produto = $this->seedOrganizationRecord(Produto::class, $organizationId,
                 ['codigo_barras' => 'DEMO-CAFE-500G-001'],
                 [
                     'nome' => 'Café Especial 500g',
@@ -70,7 +78,7 @@ class VendasSeeder extends Seeder
             $quantidade = 2;
             $precoUnitario = (float) $produto->preco_venda;
             $subtotal = round($quantidade * $precoUnitario, 2);
-            $orcamento = Orcamento::updateOrCreate(
+            $orcamento = $this->seedOrganizationRecord(Orcamento::class, $organizationId,
                 ['titulo' => 'Orçamento demonstração convertido em venda'],
                 [
                     'cliente_id' => $cliente->id,
@@ -92,7 +100,7 @@ class VendasSeeder extends Seeder
                 'subtotal' => $subtotal,
             ]);
 
-            $venda = Venda::updateOrCreate(
+            $venda = $this->seedOrganizationRecord(Venda::class, $organizationId,
                 ['orcamento_id' => $orcamento->id],
                 [
                     'usuario_id' => $funcionario->id,
@@ -135,8 +143,7 @@ class VendasSeeder extends Seeder
                 $totalUnidadesHistorico += $quantidadeVenda;
                 $idVendaDemo = sprintf('00000000-0000-4000-8000-%012d', $indice + 1);
 
-                $vendaDemonstracao = Venda::query()->firstOrNew(['id' => $idVendaDemo]);
-                $vendaDemonstracao->forceFill([
+                $vendaDemonstracao = $this->seedOrganizationRecord(Venda::class, $organizationId, ['id' => $idVendaDemo], [
                     'usuario_id' => $usuario->id,
                     'orcamento_id' => null,
                     'cliente_id' => $clienteVenda->id,
@@ -145,7 +152,7 @@ class VendasSeeder extends Seeder
                     'desconto' => $descontoVenda,
                     'valor_total' => round($subtotalVenda - $descontoVenda, 2),
                     'vendido_em' => $vendidoEm,
-                ])->save();
+                ]);
                 $vendaDemonstracao->itens()->delete();
                 $vendaDemonstracao->itens()->create([
                     'produto_id' => $produto->id,

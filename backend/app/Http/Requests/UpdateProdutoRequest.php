@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests;
 
+use App\Rules\BelongsToCurrentOrganization;
+
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Validator;
 use App\Models\Categoria;
@@ -23,9 +25,9 @@ class UpdateProdutoRequest extends FormRequest
             'porcentagem_lucro' => ['sometimes', 'required', 'numeric', 'min:0',],
             'preco_venda' => ['sometimes', 'required', 'numeric', 'min:0',],
             'data_entrada' => ['sometimes', 'required', 'date',],
-            'categoria_id' => ['sometimes', 'required', 'uuid', 'exists:categorias,id',],
-            'fornecedor_id' => ['sometimes', 'required', 'uuid', 'exists:fornecedores,id',],
-            'unidade_medida_id' => ['sometimes', 'required', 'uuid', 'exists:unidades_medida,id',],
+            'categoria_id' => ['sometimes', 'required', 'uuid', new BelongsToCurrentOrganization('categorias')],
+            'fornecedor_id' => ['sometimes', 'required', 'uuid', new BelongsToCurrentOrganization('fornecedores')],
+            'unidade_medida_id' => ['sometimes', 'required', 'uuid', new BelongsToCurrentOrganization('unidades_medida')],
             'estoque' => ['sometimes', 'required', 'numeric', 'min:0',],
             'validade' => ['sometimes', 'nullable', 'date', 'after_or_equal:data_entrada', 'after_or_equal:today'],
         ];

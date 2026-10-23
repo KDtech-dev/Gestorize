@@ -12,6 +12,7 @@ export type WebUser = {
   avatar?: string | null;
   avatar_url?: string | null;
   permissions?: string[];
+  must_change_password?: boolean;
 };
 
 export const canSell = (user: WebUser | null) => !!user && (
@@ -52,7 +53,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (loading) return;
     if (!user && pathname !== '/login') router.replace('/login');
-    if (user && pathname === '/login') router.replace('/');
+    if (user?.must_change_password && pathname !== '/primeiro-acesso') router.replace('/primeiro-acesso');
+    if (user && !user.must_change_password && (pathname === '/login' || pathname === '/primeiro-acesso')) router.replace('/');
   }, [loading, pathname, router, user]);
 
   const signIn = async (email: string, password: string, remember: boolean) => {
