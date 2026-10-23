@@ -19,14 +19,15 @@ const Orcamento = ({ title, cliente, valor, status, onPress }: props) => {
   const textColor = isDark ? '#ffffff' : '#0f172a';
   const subText = isDark ? '#cbd5e1' : '#6b7280';
 
-  const circleColor = isDark ? colors.elevated : 'rgba(6, 32, 70, 0.22)';
+  const circleColor = isDark ? colors.elevated : 'rgba(6, 32, 70, 0.12)';
   const arrowColor = isDark ? '#ffffff' : '#062046';
   const statusColor = isDark
     ? (status === 'aprovado' ? '#bbf7d0' : '#fde68a')
     : (status === 'aprovado' ? '#15803d' : '#b45309');
-  const statusBg = isDark
-    ? (status === 'aprovado' ? '#14532d' : '#78350f')
-    : (status === 'aprovado' ? '#dcfce7' : '#fef3c7');
+  const valorFormatado = Number(valor).toLocaleString('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+  });
 
   return (
     <TouchableOpacity activeOpacity={0.9} onPress={onPress}>
@@ -37,7 +38,9 @@ const Orcamento = ({ title, cliente, valor, status, onPress }: props) => {
           {
             backgroundColor: cardBg,
             shadowColor: isDark ? '#ffffff' : '#000000',
-            shadowOpacity: isDark ? 0.08 : 0.8,
+            shadowOpacity: isDark ? 0.08 : 0.12,
+            borderWidth: 1,
+            borderColor: colors.border,
           },
         ]}
       >
@@ -51,12 +54,19 @@ const Orcamento = ({ title, cliente, valor, status, onPress }: props) => {
           >
             <Ionicons
               name="cart-outline"
-              size={compactLists ? 32 : 50}
+              size={compactLists ? 25 : 30}
               color={isDark ? '#ffffff' : '#062046'}
             />
           </View>
 
           <View style={styles.details}>
+            <View style={styles.statusLine}>
+              <Ionicons name={status === 'aprovado' ? 'checkmark-circle' : 'time-outline'} size={13} color={statusColor} />
+              <Text style={[styles.statusText, { color: statusColor }]}>
+                {status === 'aprovado' ? 'Aprovado' : 'Pendente'}
+              </Text>
+            </View>
+
             <Text
               numberOfLines={1}
               style={[
@@ -68,29 +78,19 @@ const Orcamento = ({ title, cliente, valor, status, onPress }: props) => {
               {title}
             </Text>
 
-            <View style={[styles.statusBadge, { backgroundColor: statusBg }]}>
-              <Ionicons name={status === 'aprovado' ? 'checkmark-circle' : 'time-outline'} size={14} color={statusColor} />
-              <Text style={[styles.statusText, { color: statusColor }]}>
-                {status === 'aprovado' ? 'Aprovado' : 'Pendente'}
+            <View style={styles.detailRow}>
+              <Ionicons name="person-outline" size={14} color={subText} />
+              <Text numberOfLines={1} style={[styles.clientText, { color: subText }]}>
+                {cliente}
               </Text>
             </View>
 
-            <Text
-              numberOfLines={1}
-              style={[
-                styles.subtitle,
-                compactLists && styles.subtitleCompact,
-                { color: subText },
-              ]}
-            >
-              Cliente: {cliente}
-            </Text>
-
-            {!compactLists && (
-              <Text style={[styles.subtitle, { color: subText }]}>
-              Valor: {Number(valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+            <View style={styles.valueLine}>
+              <Ionicons name="cash-outline" size={14} color={colors.primary} />
+              <Text numberOfLines={1} style={[styles.valueText, { color: colors.primary }]}>
+                {valorFormatado}
               </Text>
-            )}
+            </View>
           </View>
         </View>
 
@@ -103,15 +103,15 @@ const Orcamento = ({ title, cliente, valor, status, onPress }: props) => {
 export default Orcamento;
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 20,
-    paddingVertical: 20,
-    paddingHorizontal: 15,
-    marginBottom: 14,
+    borderRadius: 18,
+    paddingVertical: 16,
+    paddingHorizontal: 14,
+    marginBottom: 11,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    shadowRadius: 8,
-    elevation: 5,
+    shadowRadius: 10,
+    elevation: 3,
   },
   cardCompact: {
     borderRadius: 12,
@@ -130,35 +130,56 @@ const styles = StyleSheet.create({
   details: { flex: 1, minWidth: 0 },
 
   circle: {
-    width: 65,
-    height: 65,
-    borderRadius: 50,
+    width: 54,
+    height: 54,
+    borderRadius: 15,
     alignItems: 'center',
     justifyContent: 'center',
   },
   circleCompact: {
     width: 44,
     height: 44,
+    borderRadius: 12,
   },
 
   title: {
-    fontSize: 18,
-    fontWeight: '900',
-    marginBottom: 4,
+    fontSize: 16,
+    fontWeight: '800',
+    marginBottom: 2,
   },
   titleCompact: {
     fontSize: 15,
-    marginBottom: 0,
   },
 
-  subtitle: {
-    fontSize: 16,
-    marginTop: 2,
+  statusLine: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginBottom: 3,
   },
-  subtitleCompact: {
-    fontSize: 13,
-    marginTop: 0,
+  statusText: {
+    fontSize: 11,
+    fontWeight: '700',
   },
-  statusBadge: { alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 12, paddingHorizontal: 8, paddingVertical: 3, marginTop: 5 },
-  statusText: { fontSize: 12, fontWeight: '800' },
+  detailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    minWidth: 0,
+    marginTop: 3,
+  },
+  clientText: {
+    flex: 1,
+    fontSize: 12,
+  },
+  valueLine: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 4,
+  },
+  valueText: {
+    fontSize: 14,
+    fontWeight: '800',
+  },
 });
