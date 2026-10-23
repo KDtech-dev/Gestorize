@@ -13,7 +13,8 @@ class CategoriasSeeder extends Seeder
         foreach ([
             'Alimentos', 'Bebidas', 'Limpeza', 'Higiene Pessoal', 'Eletrônicos',
             'Roupas', 'Calçados', 'Móveis', 'Brinquedos', 'Ferramentas',
-            'Insumos', 'Produtos médicos/hospitalares',
+            'Insumos', 'Produtos médicos/hospitalares', 'Casa e decoração',
+            'Papelaria', 'Automotivo', 'Esporte e lazer',
         ] as $nome) {
             Categoria::firstOrCreate(['nome' => $nome]);
         }

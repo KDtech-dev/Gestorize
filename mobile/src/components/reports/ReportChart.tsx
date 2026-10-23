@@ -53,7 +53,7 @@ export const ReportChart = ({ type, data, total, dateRange }: ReportChartProps) 
           ? 'Orçamentos criados por período'
           : type === 'clientes'
             ? 'Novos clientes por período'
-            : type === 'vendas' ? 'Vendas concluídas por período' : type === 'faturamento' ? 'Faturamento de vendas por período' : 'Produtos cadastrados por categoria';
+            : type === 'vendas' ? 'Vendas concluídas por período' : type === 'faturamento' ? 'Faturamento de vendas por período' : 'Produtos cadastrados no período por categoria';
       return <View>
         <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
         {dateRange ? <Text style={[styles.dateRange, { color: colors.muted }]}>{dateRange}</Text> : null}
@@ -119,7 +119,7 @@ export const ReportChart = ({ type, data, total, dateRange }: ReportChartProps) 
       case 'produtos':
         return (
           <>
-            <Text style={[styles.title, { color: colors.text }]}>Produtos cadastrados por categoria</Text>
+            <Text style={[styles.title, { color: colors.text }]}>Produtos cadastrados no período por categoria</Text>
             {dateRange ? <Text style={[styles.dateRange, { color: colors.muted }]}>{dateRange}</Text> : null}
             <View style={styles.pieChartContainer}>
               <PieChart

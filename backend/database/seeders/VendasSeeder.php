@@ -19,7 +19,10 @@ class VendasSeeder extends Seeder
     {
         DB::transaction(function (): void {
             $usuarios = User::query()
-                ->whereIn('email', ['funcionario@example.com', 'gestor@example.com', 'teste@email.com'])
+                ->where(function ($query) {
+                    $query->whereIn('email', ['funcionario@example.com', 'gestor@example.com', 'teste@email.com'])
+                        ->orWhere('email', 'like', 'operador%@example.com');
+                })
                 ->orderBy('email')
                 ->get();
             $funcionario = $usuarios->firstWhere('email', 'funcionario@example.com');
@@ -55,7 +58,7 @@ class VendasSeeder extends Seeder
                     'preco_custo' => 18.00,
                     'porcentagem_lucro' => 50.00,
                     'preco_venda' => 27.00,
-                    'estoque' => 50,
+                    'estoque' => 500,
                     'data_entrada' => today()->toDateString(),
                     'validade' => today()->addMonths(8)->toDateString(),
                     'categoria_id' => $categoria->id,
@@ -110,40 +113,52 @@ class VendasSeeder extends Seeder
                 'subtotal' => $subtotal,
             ]);
 
-            // O estoque é redefinido acima para 50 em cada execução; manter 2 unidades vendidas.
+            // O saldo inicial é redefinido acima para 500 em cada execução.
             $produto->decrement('estoque', $quantidade);
 
             $formasPagamento = ['pix', 'dinheiro', 'debito', 'credito'];
-            foreach ($usuarios->values() as $usuarioIndex => $usuario) {
-                for ($vendaIndex = 0; $vendaIndex < 3; $vendaIndex++) {
-                    $dia = ($usuarioIndex * 2 + $vendaIndex) % 7;
-                    $vendidoEm = today()->subDays($dia)->setTime(9 + ($usuarioIndex * 2) + $vendaIndex, 15 + ($vendaIndex * 10));
-                    $clienteVenda = $clientes[($usuarioIndex + $vendaIndex) % $clientes->count()];
-                    $quantidadeVenda = 1 + (($usuarioIndex + $vendaIndex) % 3);
-                    $subtotalVenda = round($quantidadeVenda * $precoUnitario, 2);
+            $descontos = [0, 0, 0.03, 0.05, 0.08, 0.10];
+            $totalUnidadesHistorico = 0;
+            $usuarios = $usuarios->values();
+            $clientes = $clientes->values();
 
-                    $vendaDemonstracao = Venda::updateOrCreate(
-                        ['usuario_id' => $usuario->id, 'vendido_em' => $vendidoEm],
-                        [
-                            'cliente_id' => $clienteVenda->id,
-                            'cliente_nome' => $clienteVenda->nome,
-                            'forma_pagamento' => $formasPagamento[($usuarioIndex + $vendaIndex) % count($formasPagamento)],
-                            'desconto' => 0,
-                            'valor_total' => $subtotalVenda,
-                        ],
-                    );
-                    $vendaDemonstracao->itens()->delete();
-                    $vendaDemonstracao->itens()->create([
-                        'produto_id' => $produto->id,
-                        'produto_nome' => $produto->nome,
-                        'codigo_barras' => $produto->codigo_barras,
-                        'quantidade' => $quantidadeVenda,
-                        'preco_unitario' => $precoUnitario,
-                        'subtotal' => $subtotalVenda,
-                    ]);
-                    $produto->decrement('estoque', $quantidadeVenda);
-                }
+            // 120 vendas determinísticas distribuídas ao longo dos últimos 12 meses.
+            foreach (range(0, 119) as $indice) {
+                $usuario = $usuarios[$indice % $usuarios->count()];
+                $clienteVenda = $clientes[($indice * 7) % $clientes->count()];
+                $vendidoEm = today()
+                    ->subDays(($indice * 3) % 365)
+                    ->setTime(6 + ($indice % 5), ($indice * 17) % 60);
+                $quantidadeVenda = 1 + ($indice % 4);
+                $subtotalVenda = round($quantidadeVenda * $precoUnitario, 2);
+                $descontoVenda = round($subtotalVenda * $descontos[$indice % count($descontos)], 2);
+                $totalUnidadesHistorico += $quantidadeVenda;
+                $idVendaDemo = sprintf('00000000-0000-4000-8000-%012d', $indice + 1);
+
+                $vendaDemonstracao = Venda::query()->firstOrNew(['id' => $idVendaDemo]);
+                $vendaDemonstracao->forceFill([
+                    'usuario_id' => $usuario->id,
+                    'orcamento_id' => null,
+                    'cliente_id' => $clienteVenda->id,
+                    'cliente_nome' => $clienteVenda->nome,
+                    'forma_pagamento' => $formasPagamento[$indice % count($formasPagamento)],
+                    'desconto' => $descontoVenda,
+                    'valor_total' => round($subtotalVenda - $descontoVenda, 2),
+                    'vendido_em' => $vendidoEm,
+                ])->save();
+                $vendaDemonstracao->itens()->delete();
+                $vendaDemonstracao->itens()->create([
+                    'produto_id' => $produto->id,
+                    'produto_nome' => $produto->nome,
+                    'codigo_barras' => $produto->codigo_barras,
+                    'quantidade' => $quantidadeVenda,
+                    'preco_unitario' => $precoUnitario,
+                    'subtotal' => $subtotalVenda,
+                ]);
             }
+
+            // Recalcula o estoque a partir do saldo inicial para manter o seeder idempotente.
+            $produto->forceFill(['estoque' => max(0, 500 - $quantidade - $totalUnidadesHistorico)])->save();
         });
     }
 }

@@ -63,6 +63,25 @@ class TestUsersSeeder extends Seeder
                 'estado' => 'MG',
             ],
         );
+
+        foreach (range(1, 4) as $indice) {
+            $this->criarUsuario(
+                nome: "Operador de Demonstração {$indice}",
+                email: "operador{$indice}@example.com",
+                role: RoleEnum::FUNCIONARIO,
+                telefone: sprintf('(11) 94444-%04d', $indice),
+                cpf: sprintf('444.444.444-%02d', $indice),
+                dataNascimento: sprintf('199%d-0%d-15', $indice % 10, $indice + 1),
+                endereco: [
+                    'cep' => sprintf('0100%d-000', $indice),
+                    'logradouro' => 'Rua de Demonstração',
+                    'numero' => (string) (100 + $indice),
+                    'bairro' => 'Centro',
+                    'cidade' => 'São Paulo',
+                    'estado' => 'SP',
+                ],
+            );
+        }
     }
 
     private function criarUsuario(

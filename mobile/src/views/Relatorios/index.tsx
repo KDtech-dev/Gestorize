@@ -1,4 +1,4 @@
-import React, { useRef, useState, useMemo, useCallback } from 'react';
+import React, { useRef, useState, useCallback } from 'react';
 import {
   ActivityIndicator,
   View,
@@ -47,13 +47,15 @@ const formatCurrency = (value: number) => value.toLocaleString('pt-BR', {
   currency: 'BRL',
 });
 
-const formatPaymentLabel = (value: string) => ({
+const paymentLabels: Record<string, string> = {
   pix: 'Pix',
   dinheiro: 'Dinheiro',
   debito: 'Cartão de débito',
   credito: 'Cartão de crédito',
   nao_informado: 'Não informado',
-}[value] ?? value.replace(/_/g, ' '));
+};
+
+const formatPaymentLabel = (value: string) => paymentLabels[value] ?? value.replace(/_/g, ' ');
 
 const formatarDataCurta = (data: string) => {
   const [ano, mes, dia] = data.slice(0, 10).split('-');
@@ -97,35 +99,19 @@ const imprimirHtmlNoNavegador = (html: string) => {
   window.setTimeout(iniciarImpressao, 500);
 };
 
-const gerarHtmlRelatorio = (report: RelatorioResponse, periodo: PeriodType, tipo: ReportType) => {
+const gerarHtmlRelatorio = (reports: Record<ReportType, RelatorioResponse>, periodo: PeriodType) => {
+  const resumo = reports.vendas;
   const periodoLabel = periods.find((item) => item.id === periodo)?.label ?? periodo;
-  const tipoLabel = reportTypes.find((item) => item.id === tipo)?.label ?? tipo;
-  const isProdutos = tipo === 'produtos';
-  const linhas = isProdutos
-    ? report.serie.categorias.map((item) => ({ rotulo: item.nome, valor: item.quantidade }))
-    : report.serie.rotulos.map((rotulo, index) => ({ rotulo, valor: report.serie.valores[index] ?? 0 }));
-  const maxValor = Math.max(...linhas.map((item) => item.valor), 0);
-  const formatarValor = (value: number) => tipo === 'movimentacao' ? formatCurrency(value) : String(value);
   const formatarVariacao = (value: number | null) => value == null
     ? 'Sem base de comparação'
     : `${value > 0 ? '+' : ''}${value.toLocaleString('pt-BR')}% em relação ao período anterior`;
-  const linhaTabela = linhas.length
-    ? linhas.map((item) => {
-      const largura = maxValor > 0 ? Math.max((item.valor / maxValor) * 100, item.valor > 0 ? 2 : 0) : 0;
-      return `<tr><td>${escapeHtml(item.rotulo)}</td><td class="number">${escapeHtml(formatarValor(item.valor))}</td><td><div class="track"><div class="bar" style="width:${largura}%"></div></div></td></tr>`;
-    }).join('')
-    : '<tr><td colspan="3" class="empty">Nenhum registro neste período.</td></tr>';
-  const serieVendas = report.serie.rotulos_vendas.map((rotulo, index) => ({
-    rotulo,
-    quantidade: report.serie.vendas[index] ?? 0,
-    faturamento: report.serie.faturamento[index] ?? 0,
-  }));
-  const linhasVendas = serieVendas.length
-    ? serieVendas.map((item) => `<tr><td>${escapeHtml(item.rotulo)}</td><td class="number">${item.quantidade}</td><td class="number">${formatCurrency(item.faturamento)}</td></tr>`).join('')
-    : '<tr><td colspan="3" class="empty">Nenhuma venda registrada neste período.</td></tr>';
-  const formasPagamento = report.totais.formas_pagamento.length
-    ? report.totais.formas_pagamento.map((item) => `<tr><td>${escapeHtml(formatPaymentLabel(item.forma))}</td><td class="number">${item.quantidade}</td><td class="number">${formatCurrency(item.valor)}</td></tr>`).join('')
-    : '<tr><td colspan="3" class="empty">Nenhuma forma de pagamento registrada.</td></tr>';
+  const rows = (labels: string[], values: number[], formatValue: (value: number) => string = String) => {
+    if (!labels.length) return '<tr><td colspan="2" class="empty">Nenhum registro neste período.</td></tr>';
+    return labels.map((label, index) => `<tr><td>${escapeHtml(label)}</td><td class="number">${escapeHtml(formatValue(values[index] ?? 0))}</td></tr>`).join('');
+  };
+  const linhasVendas = reports.vendas.serie.rotulos_vendas.map((rotulo, index) => `<tr><td>${escapeHtml(rotulo)}</td><td class="number">${reports.vendas.serie.vendas[index] ?? 0}</td><td class="number">${formatCurrency(reports.vendas.serie.faturamento[index] ?? 0)}</td></tr>`).join('') || '<tr><td colspan="3" class="empty">Nenhuma venda registrada neste período.</td></tr>';
+  const formasPagamento = resumo.totais.formas_pagamento.map((item) => `<tr><td>${escapeHtml(formatPaymentLabel(item.forma))}</td><td class="number">${item.quantidade}</td><td class="number">${formatCurrency(item.valor)}</td></tr>`).join('') || '<tr><td colspan="3" class="empty">Nenhuma forma de pagamento registrada.</td></tr>';
+  const linhasProdutos = reports.produtos.serie.categorias.map((item) => `<tr><td>${escapeHtml(item.nome)}</td><td class="number">${item.quantidade}</td></tr>`).join('') || '<tr><td colspan="2" class="empty">Nenhum produto cadastrado neste período.</td></tr>';
 
   return `<!doctype html><html><head><meta charset="utf-8" /><title>Relatório Gestorize</title><style>
     @page { size: A4; margin: 18mm 14mm; }
@@ -146,43 +132,47 @@ const gerarHtmlRelatorio = (report: RelatorioResponse, periodo: PeriodType, tipo
     th { background: #f1f5f9; text-align: left; color: #475569; font-size: 9px; text-transform: uppercase; }
     th, td { padding: 8px; border-bottom: 1px solid #e2e8f0; }
     .number { text-align: right; white-space: nowrap; font-weight: bold; }
-    .track { height: 7px; background: #edf1f5; border-radius: 5px; overflow: hidden; }
-    .bar { height: 7px; background: #c69f36; border-radius: 5px; }
     .empty { color: #64748b; text-align: center; padding: 20px; }
     .note { background: #f8fafc; border-left: 3px solid #c69f36; padding: 10px 12px; margin-top: 18px; color: #475569; }
     .footer { border-top: 1px solid #e2e8f0; padding-top: 8px; margin-top: 24px; color: #94a3b8; font-size: 9px; }
     .section-caption { color: #64748b; margin: -3px 0 8px; }
   </style></head><body>
     <div class="brand">Gestorize · Relatórios</div>
-    <h1>${escapeHtml(tipoLabel)}</h1>
-    <p class="subtitle">Resumo das movimentações registradas no sistema</p>
+    <h1>Relatório consolidado</h1>
+    <p class="subtitle">Vendas, clientes, orçamentos e produtos</p>
     <div class="rule"></div>
-    <div class="meta"><span>Período: <strong>${escapeHtml(periodoLabel)} · ${formatarDataCurta(report.intervalo.inicio)} a ${formatarDataCurta(report.intervalo.fim)}</strong></span><span>Gerado em: ${new Date().toLocaleString('pt-BR')}</span></div>
+    <div class="meta"><span>Período: <strong>${escapeHtml(periodoLabel)} · ${formatarDataCurta(resumo.intervalo.inicio)} a ${formatarDataCurta(resumo.intervalo.fim)}</strong></span><span>Gerado em: ${new Date().toLocaleString('pt-BR')}</span></div>
     <div class="grid">
-      <div class="metric"><div class="metric-label">Valor em orçamentos</div><div class="metric-value">${formatCurrency(report.metricas.valor_orcado.valor)}</div><div class="metric-change">${escapeHtml(formatarVariacao(report.metricas.valor_orcado.variacao))}</div></div>
-      <div class="metric"><div class="metric-label">Orçamentos criados</div><div class="metric-value">${report.metricas.orcamentos.valor}</div><div class="metric-change">${escapeHtml(formatarVariacao(report.metricas.orcamentos.variacao))}</div></div>
-      <div class="metric"><div class="metric-label">Novos clientes</div><div class="metric-value">${report.metricas.clientes.valor}</div><div class="metric-change">${escapeHtml(formatarVariacao(report.metricas.clientes.variacao))}</div></div>
-      <div class="metric"><div class="metric-label">Vendas concluídas</div><div class="metric-value">${report.metricas.vendas.valor}</div><div class="metric-change">${escapeHtml(formatarVariacao(report.metricas.vendas.variacao))}</div></div>
-      <div class="metric"><div class="metric-label">Faturamento de vendas</div><div class="metric-value">${formatCurrency(report.metricas.faturamento_vendas.valor)}</div><div class="metric-change">${escapeHtml(formatarVariacao(report.metricas.faturamento_vendas.variacao))}</div></div>
+      <div class="metric"><div class="metric-label">Valor em orçamentos</div><div class="metric-value">${formatCurrency(resumo.metricas.valor_orcado.valor)}</div><div class="metric-change">${escapeHtml(formatarVariacao(resumo.metricas.valor_orcado.variacao))}</div></div>
+      <div class="metric"><div class="metric-label">Orçamentos criados</div><div class="metric-value">${resumo.metricas.orcamentos.valor}</div><div class="metric-change">${escapeHtml(formatarVariacao(resumo.metricas.orcamentos.variacao))}</div></div>
+      <div class="metric"><div class="metric-label">Novos clientes</div><div class="metric-value">${resumo.metricas.clientes.valor}</div><div class="metric-change">${escapeHtml(formatarVariacao(resumo.metricas.clientes.variacao))}</div></div>
+      <div class="metric"><div class="metric-label">Vendas concluídas</div><div class="metric-value">${resumo.metricas.vendas.valor}</div><div class="metric-change">${escapeHtml(formatarVariacao(resumo.metricas.vendas.variacao))}</div></div>
+      <div class="metric"><div class="metric-label">Faturamento de vendas</div><div class="metric-value">${formatCurrency(resumo.metricas.faturamento_vendas.valor)}</div><div class="metric-change">${escapeHtml(formatarVariacao(resumo.metricas.faturamento_vendas.variacao))}</div></div>
     </div>
     <h2>Resumo do período</h2>
     <table><tbody>
-      <tr><td>Orçamentos criados</td><td class="number">${report.totais.orcamentos}</td></tr>
-      <tr><td>Aprovações realizadas</td><td class="number">${report.totais.aprovacoes}</td></tr>
-      <tr><td>Orçamentos pendentes</td><td class="number">${report.totais.pendentes}</td></tr>
-      <tr><td>Produtos cadastrados</td><td class="number">${report.totais.produtos}</td></tr>
-      <tr><td>Vendas concluídas</td><td class="number">${report.totais.vendas}</td></tr>
-      <tr><td>Faturamento líquido das vendas</td><td class="number">${formatCurrency(report.totais.faturamento_vendas)}</td></tr>
-      <tr><td>Descontos concedidos nas vendas</td><td class="number">${formatCurrency(report.totais.descontos_vendas)}</td></tr>
+      <tr><td>Orçamentos criados</td><td class="number">${resumo.totais.orcamentos}</td></tr>
+      <tr><td>Aprovações realizadas</td><td class="number">${resumo.totais.aprovacoes}</td></tr>
+      <tr><td>Orçamentos pendentes</td><td class="number">${resumo.totais.pendentes}</td></tr>
+      <tr><td>Produtos cadastrados no período</td><td class="number">${resumo.totais.produtos}</td></tr>
+      <tr><td>Vendas concluídas</td><td class="number">${resumo.totais.vendas}</td></tr>
+      <tr><td>Faturamento líquido das vendas</td><td class="number">${formatCurrency(resumo.totais.faturamento_vendas)}</td></tr>
+      <tr><td>Descontos concedidos nas vendas</td><td class="number">${formatCurrency(resumo.totais.descontos_vendas)}</td></tr>
     </tbody></table>
     <h2>Vendas por período</h2>
     <p class="section-caption">Quantidade de vendas concluídas e faturamento líquido registrado em cada intervalo.</p>
     <table><thead><tr><th>Intervalo</th><th class="number">Vendas</th><th class="number">Faturamento</th></tr></thead><tbody>${linhasVendas}</tbody></table>
     <h2>Vendas por forma de pagamento</h2>
     <table><thead><tr><th>Forma</th><th class="number">Vendas</th><th class="number">Faturamento</th></tr></thead><tbody>${formasPagamento}</tbody></table>
-    <h2>${isProdutos ? 'Produtos cadastrados por categoria' : tipo === 'movimentacao' ? 'Valor em orçamentos por período' : tipo === 'orcamentos' ? 'Orçamentos criados por período' : tipo === 'vendas' ? 'Vendas concluídas por período' : 'Novos clientes por período'}</h2>
-    <table><thead><tr><th>${isProdutos ? 'Categoria' : 'Intervalo'}</th><th class="number">${tipo === 'movimentacao' ? 'Valor' : 'Quantidade'}</th><th>Distribuição</th></tr></thead><tbody>${linhaTabela}</tbody></table>
-    <div class="note">${escapeHtml(report.nota)}</div>
+    <h2>Orçamentos por período</h2>
+    <table><thead><tr><th>Intervalo</th><th class="number">Valor orçado</th></tr></thead><tbody>${rows(reports.movimentacao.serie.rotulos, reports.movimentacao.serie.valores, formatCurrency)}</tbody></table>
+    <h2>Orçamentos criados por período</h2>
+    <table><thead><tr><th>Intervalo</th><th class="number">Quantidade</th></tr></thead><tbody>${rows(reports.orcamentos.serie.rotulos, reports.orcamentos.serie.valores)}</tbody></table>
+    <h2>Novos clientes por período</h2>
+    <table><thead><tr><th>Intervalo</th><th class="number">Quantidade</th></tr></thead><tbody>${rows(reports.clientes.serie.rotulos, reports.clientes.serie.valores)}</tbody></table>
+    <h2>Produtos cadastrados no período por categoria</h2>
+    <table><thead><tr><th>Categoria</th><th class="number">Produtos</th></tr></thead><tbody>${linhasProdutos}</tbody></table>
+    <div class="note">Faturamento considera o valor líquido das vendas após a aplicação dos descontos.</div>
     <div class="footer">Documento gerado pelo Gestorize com base nos dados registrados até o momento da emissão.</div>
   </body></html>`;
 };
@@ -190,9 +180,8 @@ const gerarHtmlRelatorio = (report: RelatorioResponse, periodo: PeriodType, tipo
 const Relatorios = ({ navigation }: Props) => {
   const { colors } = useTheme();
   const [selectedPeriod, setSelectedPeriod] = useState<PeriodType>('hoje');
-  const [selectedReportType, setSelectedReportType] =
-    useState<ReportType>('vendas');
-  const [report, setReport] = useState<RelatorioResponse | null>(null);
+  const [reports, setReports] = useState<Record<ReportType, RelatorioResponse> | null>(null);
+  const report = reports?.vendas ?? null;
   const [loading, setLoading] = useState(true);
   const [pdfLoading, setPdfLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -203,9 +192,16 @@ const Relatorios = ({ navigation }: Props) => {
     let active = true;
     setLoading(true);
     setLoadError(null);
-    setReport(null);
-    getRelatorio(selectedPeriod, selectedReportType)
-      .then((data) => { if (active) setReport(data); })
+    setReports(null);
+    Promise.all(reportTypes.map((type) => getRelatorio(selectedPeriod, type)))
+      .then((data) => {
+        if (!active) return;
+        const complete = reportTypes.reduce((result, type, index) => {
+          result[type] = data[index];
+          return result;
+        }, {} as Record<ReportType, RelatorioResponse>);
+        setReports(complete);
+      })
       .catch((error) => {
         if (!active) return;
         setLoadError(formatErrorMessage(error, 'Não foi possível carregar os dados do relatório.'));
@@ -213,55 +209,7 @@ const Relatorios = ({ navigation }: Props) => {
       })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [selectedPeriod, selectedReportType]);
-
-  const chartData = useMemo(() => {
-    if (!report) return null;
-    switch (selectedReportType) {
-      case 'movimentacao':
-        return {
-          data: {
-            labels: report.serie.rotulos,
-            datasets: [{ data: report.serie.valores }],
-          },
-          total: `${report.totais.valor_orcado.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} em orçamentos`,
-        };
-      case 'orcamentos':
-        return {
-          data: {
-            labels: report.serie.rotulos,
-            datasets: [{ data: report.serie.valores }],
-          },
-          total: `${report.totais.orcamentos} criados · ${report.totais.aprovacoes} aprovações no período · ${report.totais.pendentes} pendentes`,
-        };
-      case 'clientes':
-        return {
-          data: {
-            labels: report.serie.rotulos,
-            datasets: [{ data: report.serie.valores }],
-          },
-          total: `${report.totais.clientes} novos clientes`,
-        };
-      case 'vendas':
-        return {
-          data: { labels: report.serie.rotulos, datasets: [{ data: report.serie.vendas }] },
-          total: `${report.totais.vendas} vendas concluídas · ${formatCurrency(report.totais.faturamento_vendas)} faturados`,
-        };
-      case 'produtos':
-        return {
-          data: report.serie.categorias.map((categoria, index) => ({
-            name: categoria.nome,
-            quantity: categoria.quantidade,
-            color: [colors.accent, colors.success, colors.primary, colors.error, '#64748B'][index % 5],
-            legendFontColor: colors.muted,
-            legendFontSize: 12,
-          })),
-          total: `${report.totais.produtos} produtos cadastrados`,
-        };
-      default:
-        return null;
-    }
-  }, [selectedReportType, report, colors]);
+  }, [selectedPeriod]);
 
   const moeda = formatCurrency;
   const dateRange = report
@@ -269,12 +217,12 @@ const Relatorios = ({ navigation }: Props) => {
     : undefined;
 
   const gerarPdfRelatorio = useCallback(async () => {
-    if (!report) return;
+    if (!reports) return;
 
     setPdfLoading(true);
     let etapa = 'Preparar o relatório';
     try {
-      const html = gerarHtmlRelatorio(report, selectedPeriod, selectedReportType);
+      const html = gerarHtmlRelatorio(reports, selectedPeriod);
 
       // No navegador, criamos a janela com o HTML do relatório para imprimir/salvar como PDF.
       if (Platform.OS === 'web') {
@@ -295,7 +243,7 @@ const Relatorios = ({ navigation }: Props) => {
     } finally {
       setPdfLoading(false);
     }
-  }, [report, selectedPeriod, selectedReportType]);
+  }, [reports, selectedPeriod]);
 
   const handlePeriodChange = useCallback((period: PeriodType) => {
     setSelectedPeriod(period);
@@ -343,49 +291,29 @@ const Relatorios = ({ navigation }: Props) => {
           />
         </View>
 
-        {report && <View style={styles.metricsGrid}>
-          <MetricCard value={moeda(report.metricas.valor_orcado.valor)} change={report.metricas.valor_orcado.variacao} title="Valor em orçamentos" icon="currency-brl" iconColor={colors.success} />
-          <MetricCard value={String(report.metricas.orcamentos.valor)} change={report.metricas.orcamentos.variacao} title="Orçamentos criados" icon="file-document-outline" />
-          <MetricCard value={String(report.metricas.clientes.valor)} change={report.metricas.clientes.variacao} title="Clientes novos" icon="account-group" />
-          <MetricCard value={String(report.metricas.vendas.valor)} change={report.metricas.vendas.variacao} title="Vendas concluídas" icon="cart-check" iconColor={colors.primary} />
-          <MetricCard value={moeda(report.metricas.faturamento_vendas.valor)} change={report.metricas.faturamento_vendas.variacao} title="Faturamento de vendas" icon="cash-multiple" iconColor={colors.success} />
-        </View>}
-
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            Tipo de Relatório
-          </Text>
-
-          <FlatList
-            data={reportTypes}
-            horizontal
-            nestedScrollEnabled
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.chipContainer}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <TooltipChip
-                label={item.label}
-                active={selectedReportType === item.id}
-                onPress={() => setSelectedReportType(item.id)}
-              />
-            )}
-          />
-        </View>
+        {report && reports && <>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Visão geral</Text>
+          <View style={styles.metricsGrid}>
+            <MetricCard value={moeda(report.metricas.valor_orcado.valor)} change={report.metricas.valor_orcado.variacao} title="Valor em orçamentos" icon="currency-brl" iconColor={colors.success} />
+            <MetricCard value={String(report.metricas.orcamentos.valor)} change={report.metricas.orcamentos.variacao} title="Orçamentos criados" icon="file-document-outline" />
+            <MetricCard value={String(report.metricas.clientes.valor)} change={report.metricas.clientes.variacao} title="Clientes novos" icon="account-group" />
+            <MetricCard value={String(report.metricas.vendas.valor)} change={report.metricas.vendas.variacao} title="Vendas concluídas" icon="cart-check" iconColor={colors.primary} />
+            <MetricCard value={moeda(report.metricas.faturamento_vendas.valor)} change={report.metricas.faturamento_vendas.variacao} title="Faturamento de vendas" icon="cash-multiple" iconColor={colors.success} />
+            <MetricCard value={String(reports.produtos.totais.produtos)} change={null} title="Produtos novos no período" icon="package-variant" />
+          </View>
+        </>}
 
         {loading && <ActivityIndicator style={styles.loader} size="large" color={colors.primary} />}
         {!loading && loadError && <Text style={[styles.message, { color: colors.error }]}>{loadError}</Text>}
-        {!loading && chartData && report && (
-          <ReportChart
-            type={selectedReportType}
-            data={chartData.data}
-            total={chartData.total}
-            dateRange={dateRange}
-          />
-        )}
-
-        {!loading && selectedReportType === 'vendas' && report && (
+        {!loading && reports && report && (
           <>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Vendas</Text>
+            <ReportChart
+              type="vendas"
+              data={{ labels: report.serie.rotulos_vendas, datasets: [{ data: report.serie.vendas }] }}
+              total={`${report.totais.vendas} vendas concluídas`}
+              dateRange={dateRange}
+            />
             <ReportChart
               type="faturamento"
               data={{ labels: report.serie.rotulos_vendas, datasets: [{ data: report.serie.faturamento }] }}
@@ -405,6 +333,51 @@ const Relatorios = ({ navigation }: Props) => {
                 <Text style={[styles.breakdownValue, { color: colors.text }]}>{moeda(report.totais.descontos_vendas)}</Text>
               </View>
             </View>
+
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Orçamentos</Text>
+            <View style={styles.metricsGrid}>
+              <MetricCard value={moeda(reports.movimentacao.totais.valor_orcado)} change={reports.movimentacao.metricas.valor_orcado.variacao} title="Valor orçado" icon="currency-brl" iconColor={colors.success} />
+              <MetricCard value={String(reports.orcamentos.totais.orcamentos)} change={reports.orcamentos.metricas.orcamentos.variacao} title="Criados no período" icon="file-document-outline" />
+              <MetricCard value={String(reports.orcamentos.totais.aprovacoes)} change={null} title="Aprovados" icon="check-circle-outline" iconColor={colors.success} />
+              <MetricCard value={String(reports.orcamentos.totais.pendentes)} change={null} title="Pendentes" icon="clock-outline" iconColor={colors.accent} />
+            </View>
+            <ReportChart
+              type="movimentacao"
+              data={{ labels: reports.movimentacao.serie.rotulos, datasets: [{ data: reports.movimentacao.serie.valores }] }}
+              total={`${moeda(reports.movimentacao.totais.valor_orcado)} em orçamentos`}
+              dateRange={dateRange}
+            />
+            <ReportChart
+              type="orcamentos"
+              data={{ labels: reports.orcamentos.serie.rotulos, datasets: [{ data: reports.orcamentos.serie.valores }] }}
+              total={`${reports.orcamentos.totais.orcamentos} orçamentos criados`}
+              dateRange={dateRange}
+            />
+
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Clientes</Text>
+            <View style={styles.metricsGrid}>
+              <MetricCard value={String(reports.clientes.totais.clientes)} change={reports.clientes.metricas.clientes.variacao} title="Novos clientes" icon="account-group" />
+            </View>
+            <ReportChart
+              type="clientes"
+              data={{ labels: reports.clientes.serie.rotulos, datasets: [{ data: reports.clientes.serie.valores }] }}
+              total={`${reports.clientes.totais.clientes} novos clientes`}
+              dateRange={dateRange}
+            />
+
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Produtos</Text>
+            <ReportChart
+              type="produtos"
+              data={reports.produtos.serie.categorias.map((categoria, index) => ({
+                name: categoria.nome,
+                quantity: categoria.quantidade,
+                color: [colors.accent, colors.success, colors.primary, colors.error, '#64748B'][index % 5],
+                legendFontColor: colors.muted,
+                legendFontSize: 12,
+              }))}
+              total={`${reports.produtos.totais.produtos} produtos cadastrados no período`}
+              dateRange={dateRange}
+            />
           </>
         )}
 
@@ -416,7 +389,7 @@ const Relatorios = ({ navigation }: Props) => {
             variant="contained"
             color="primary"
             onPress={gerarPdfRelatorio}
-            disabled={!report || loading || pdfLoading}
+            disabled={!reports || loading || pdfLoading}
           />
         </View>
       </ScrollView>

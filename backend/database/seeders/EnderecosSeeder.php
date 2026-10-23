@@ -9,8 +9,7 @@ class EnderecosSeeder extends Seeder
 {
     public function run(): void
     {
-        Endereco::create([
-            'cep'         => '01001-000',
+        Endereco::updateOrCreate(['cep' => '01001-000', 'numero' => '100'], [
             'logradouro'  => 'Praça da Sé',
             'numero'      => '100',
             'complemento' => 'Sala 1',
@@ -19,8 +18,7 @@ class EnderecosSeeder extends Seeder
             'estado'      => 'SP',
         ]);
 
-        Endereco::create([
-            'cep'         => '20010-000',
+        Endereco::updateOrCreate(['cep' => '20010-000', 'numero' => '200'], [
             'logradouro'  => 'Rua da Assembléia',
             'numero'      => '200',
             'bairro'      => 'Centro',
@@ -28,8 +26,7 @@ class EnderecosSeeder extends Seeder
             'estado'      => 'RJ',
         ]);
 
-        Endereco::create([
-            'cep'         => '30140-110',
+        Endereco::updateOrCreate(['cep' => '30140-110', 'numero' => '1500'], [
             'logradouro'  => 'Av. Afonso Pena',
             'numero'      => '1500',
             'complemento' => 'Conj. 301',

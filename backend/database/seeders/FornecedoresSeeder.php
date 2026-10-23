@@ -25,7 +25,7 @@ class FornecedoresSeeder extends Seeder
             $categoriasPorNome['Bebidas']->id,
         ]);
 
-        foreach (range(1, 9) as $indice) {
+        foreach (range(1, 15) as $indice) {
             $fornecedor = Fornecedor::updateOrCreate(
                 ['cnpj' => sprintf('20.000.000/0001-%02d', $indice)],
                 [

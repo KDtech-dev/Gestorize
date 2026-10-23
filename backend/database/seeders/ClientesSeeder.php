@@ -9,7 +9,10 @@ class ClientesSeeder extends Seeder
 {
     public function run(): void
     {
-        $diasDesdeCadastro = [0, 2, 8, 20, 45, 90, 150, 240, 300, 360];
+        $diasDesdeCadastro = collect(range(0, 39))
+            ->map(fn (int $indice) => ($indice * 9) % 365)
+            ->sort()
+            ->values();
 
         foreach ($diasDesdeCadastro as $indice => $dias) {
             $email = 'cliente.demo.' . ($indice + 1) . '@example.com';

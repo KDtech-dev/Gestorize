@@ -19,11 +19,13 @@ class OrcamentoSeeder extends Seeder
     {
         $aprovadorId = User::query()->value('id');
 
-        $clienteId = Cliente::query()->orderBy('created_at')->value('id');
+        $clientes = Cliente::query()->orderBy('email')->get();
+        $totalProdutos = max(Produto::query()->count(), 1);
 
-        foreach (range(0, 19) as $indice) {
-            $dataCadastro = now()->subDays(($indice * 17) % 360);
+        foreach (range(0, 99) as $indice) {
+            $dataCadastro = now()->subDays(($indice * 37) % 365);
             $aprovado = $indice % 3 === 0;
+            $clienteId = $clientes[$indice % $clientes->count()]->id;
 
             $orcamento = Orcamento::updateOrCreate(
                 ['titulo' => 'Orçamento ' . str_pad((string) ($indice + 1), 3, '0', STR_PAD_LEFT)],
@@ -43,9 +45,9 @@ class OrcamentoSeeder extends Seeder
             ])->save();
 
             $orcamento->itens()->delete();
-            $itens = Produto::query()->inRandomOrder()->limit(2 + ($indice % 4))->get()
-                ->map(function (Produto $produto) use ($orcamento) {
-                    $quantidade = random_int(1, 10);
+            $itens = Produto::query()->orderBy('id')->skip(($indice * 7) % $totalProdutos)->limit(2 + ($indice % 4))->get()
+                ->map(function (Produto $produto, int $produtoIndex) use ($orcamento, $indice) {
+                    $quantidade = 1 + (($indice + $produtoIndex * 3) % 10);
                     $precoUnitario = (float) $produto->preco_venda;
 
                     return new OrcamentoItem([

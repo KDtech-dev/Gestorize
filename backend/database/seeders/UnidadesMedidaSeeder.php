@@ -46,5 +46,16 @@ class UnidadesMedidaSeeder extends Seeder
             'nome' => 'Pacote',
             'sigla' => 'PKG'
         ]);
+
+        foreach ([
+            'DZ' => 'Dúzia',
+            'PAR' => 'Par',
+            'FD' => 'Fardo',
+            'SC' => 'Saco',
+            'TB' => 'Tubo',
+            'GL' => 'Galão',
+        ] as $sigla => $nome) {
+            UnidadeMedida::firstOrCreate(['sigla' => $sigla], ['nome' => $nome]);
+        }
     }
 }

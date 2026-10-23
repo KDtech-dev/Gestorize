@@ -23,6 +23,10 @@ class ProdutosSeeder extends Seeder
         $brinquedos = Categoria::where('nome', 'Brinquedos')->first()->id;
         $insumos = Categoria::where('nome', 'Insumos')->first()->id;
         $medicos = Categoria::where('nome', 'Produtos médicos/hospitalares')->first()->id;
+        $casa = Categoria::where('nome', 'Casa e decoração')->first()->id;
+        $papelaria = Categoria::where('nome', 'Papelaria')->first()->id;
+        $automotivo = Categoria::where('nome', 'Automotivo')->first()->id;
+        $esporte = Categoria::where('nome', 'Esporte e lazer')->first()->id;
 
         $un  = UnidadeMedida::where('sigla', 'UN')->first()->id;
         $kg  = UnidadeMedida::where('sigla', 'KG')->first()->id;
@@ -31,6 +35,12 @@ class ProdutosSeeder extends Seeder
         $ml  = UnidadeMedida::where('sigla', 'ML')->first()->id;
         $cx  = UnidadeMedida::where('sigla', 'CX')->first()->id;
         $pkg = UnidadeMedida::where('sigla', 'PKG')->first()->id;
+        $dz = UnidadeMedida::where('sigla', 'DZ')->first()->id;
+        $par = UnidadeMedida::where('sigla', 'PAR')->first()->id;
+        $fd = UnidadeMedida::where('sigla', 'FD')->first()->id;
+        $sc = UnidadeMedida::where('sigla', 'SC')->first()->id;
+        $tb = UnidadeMedida::where('sigla', 'TB')->first()->id;
+        $gl = UnidadeMedida::where('sigla', 'GL')->first()->id;
 
         $produtos = [
             // Alimentos
@@ -85,6 +95,20 @@ class ProdutosSeeder extends Seeder
             ['nome' => 'Insumo para Limpeza Profissional', 'descricao' => 'Embalagem concentrada 1L', 'preco_custo' => 18.00, 'porcentagem_lucro' => 45, 'preco_venda' => 26.10, 'estoque' => 25, 'categoria_id' => $insumos, 'unidade_medida_id' => $l],
             ['nome' => 'Luvas de Procedimento', 'descricao' => 'Caixa com 100 unidades', 'preco_custo' => 22.00, 'porcentagem_lucro' => 50, 'preco_venda' => 33.00, 'estoque' => 40, 'categoria_id' => $medicos, 'unidade_medida_id' => $cx],
             ['nome' => 'Gaze Estéril', 'descricao' => 'Pacote hospitalar', 'preco_custo' => 7.00, 'porcentagem_lucro' => 55, 'preco_venda' => 10.85, 'estoque' => 60, 'categoria_id' => $medicos, 'unidade_medida_id' => $un],
+
+            // Novas categorias para ampliar comparações de mix e margem.
+            ['nome' => 'Luminária de Mesa LED', 'descricao' => 'Luminária articulável bivolt', 'preco_custo' => 38.00, 'porcentagem_lucro' => 55, 'preco_venda' => 58.90, 'estoque' => 24, 'categoria_id' => $casa, 'unidade_medida_id' => $un],
+            ['nome' => 'Jogo de Toalhas', 'descricao' => 'Conjunto com quatro peças', 'preco_custo' => 42.00, 'porcentagem_lucro' => 60, 'preco_venda' => 67.20, 'estoque' => 35, 'categoria_id' => $casa, 'unidade_medida_id' => $un],
+            ['nome' => 'Caderno Universitário', 'descricao' => 'Caderno com 200 folhas', 'preco_custo' => 12.00, 'porcentagem_lucro' => 50, 'preco_venda' => 18.00, 'estoque' => 100, 'categoria_id' => $papelaria, 'unidade_medida_id' => $un],
+            ['nome' => 'Caneta Esferográfica Azul', 'descricao' => 'Caixa com 12 unidades', 'preco_custo' => 8.00, 'porcentagem_lucro' => 65, 'preco_venda' => 13.20, 'estoque' => 80, 'categoria_id' => $papelaria, 'unidade_medida_id' => $dz],
+            ['nome' => 'Óleo Lubrificante 1L', 'descricao' => 'Lubrificante sintético automotivo', 'preco_custo' => 28.00, 'porcentagem_lucro' => 45, 'preco_venda' => 40.60, 'estoque' => 45, 'categoria_id' => $automotivo, 'unidade_medida_id' => $l],
+            ['nome' => 'Kit de Lâmpadas Automotivas', 'descricao' => 'Par de lâmpadas halógenas', 'preco_custo' => 18.00, 'porcentagem_lucro' => 55, 'preco_venda' => 27.90, 'estoque' => 50, 'categoria_id' => $automotivo, 'unidade_medida_id' => $par],
+            ['nome' => 'Bola de Futebol', 'descricao' => 'Bola tamanho oficial', 'preco_custo' => 55.00, 'porcentagem_lucro' => 60, 'preco_venda' => 88.00, 'estoque' => 30, 'categoria_id' => $esporte, 'unidade_medida_id' => $un],
+            ['nome' => 'Tapete de Yoga', 'descricao' => 'Tapete antiderrapante 6mm', 'preco_custo' => 32.00, 'porcentagem_lucro' => 60, 'preco_venda' => 51.20, 'estoque' => 28, 'categoria_id' => $esporte, 'unidade_medida_id' => $un],
+            ['nome' => 'Papel Toalha', 'descricao' => 'Fardo com seis rolos', 'preco_custo' => 28.00, 'porcentagem_lucro' => 45, 'preco_venda' => 40.60, 'estoque' => 32, 'categoria_id' => $higiene, 'unidade_medida_id' => $fd],
+            ['nome' => 'Desinfetante Concentrado', 'descricao' => 'Galão de cinco litros', 'preco_custo' => 24.00, 'porcentagem_lucro' => 50, 'preco_venda' => 36.00, 'estoque' => 26, 'categoria_id' => $limpeza, 'unidade_medida_id' => $gl],
+            ['nome' => 'Creme Dermatológico', 'descricao' => 'Bisnaga de uso tópico', 'preco_custo' => 14.00, 'porcentagem_lucro' => 55, 'preco_venda' => 21.70, 'estoque' => 40, 'categoria_id' => $medicos, 'unidade_medida_id' => $tb],
+            ['nome' => 'Terra Vegetal', 'descricao' => 'Saco para jardinagem', 'preco_custo' => 16.00, 'porcentagem_lucro' => 50, 'preco_venda' => 24.00, 'estoque' => 35, 'categoria_id' => $insumos, 'unidade_medida_id' => $sc],
         ];
 
         $hoje = now();
