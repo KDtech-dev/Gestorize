@@ -39,11 +39,11 @@ export function UserMenu({ name, email, role, imageUrl, signOut }: { name: strin
         onClose={() => setAnchorEl(null)}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-        MenuListProps={{
-          'aria-label': 'Menu do usuário',
-          sx: { py: 0.75 },
-        }}
         slotProps={{
+          list: {
+            'aria-label': 'Menu do usuário',
+            sx: { py: 0.75 },
+          },
           paper: {
             sx: {
               width: 260,
