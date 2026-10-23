@@ -85,7 +85,7 @@ export function UserMenu({ name, email, role, imageUrl, signOut }: { name: strin
             <ListItemIcon sx={{ minWidth: '24px !important', color: 'inherit', fontSize: 17, justifyContent: 'center' }}>
               <Box component="span" aria-hidden="true">{item.icon}</Box>
             </ListItemIcon>
-            <ListItemText primary={item.label} primaryTypographyProps={{ fontSize: 13, fontWeight: 600 }} />
+            <ListItemText primary={item.label} slotProps={{ primary: { sx: { fontSize: 13, fontWeight: 600 } } }} />
           </MenuItem>
         ))}
         <Divider />
@@ -94,7 +94,7 @@ export function UserMenu({ name, email, role, imageUrl, signOut }: { name: strin
             <ListItemIcon sx={{ minWidth: '24px !important', color: 'inherit', fontSize: 17, justifyContent: 'center' }}>
               <Box component="span" aria-hidden="true">{item.icon}</Box>
             </ListItemIcon>
-            <ListItemText primary={item.label} primaryTypographyProps={{ fontSize: 13, fontWeight: 600 }} />
+            <ListItemText primary={item.label} slotProps={{ primary: { sx: { fontSize: 13, fontWeight: 600 } } }} />
           </MenuItem>
         ))}
         <Divider />
@@ -110,7 +110,7 @@ export function UserMenu({ name, email, role, imageUrl, signOut }: { name: strin
           <ListItemIcon sx={{ minWidth: '24px !important', color: 'inherit', fontSize: 17, justifyContent: 'center' }}>
             <Box component="span" aria-hidden="true">↪</Box>
           </ListItemIcon>
-          <ListItemText primary="Sair" primaryTypographyProps={{ fontSize: 13, fontWeight: 600 }} />
+          <ListItemText primary="Sair" slotProps={{ primary: { sx: { fontSize: 13, fontWeight: 600 } } }} />
         </MenuItem>
       </Menu>
     </>

@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
 import Image from 'next/image';
+import Link from 'next/link';
+import { LoginInput } from '@/components/LoginInput';
 
 export default function LoginPage() {
   const { signIn, user, loading } = useAuth();
@@ -12,6 +14,7 @@ export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [remember, setRemember] = useState(false);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   useEffect(() => { if (!loading && user) router.replace('/'); }, [loading, router, user]);
@@ -20,7 +23,7 @@ export default function LoginPage() {
     event.preventDefault();
     setError('');
     setSubmitting(true);
-    try { await signIn(email, password); }
+    try { await signIn(email, password, remember); }
     catch (reason) { setError(reason instanceof Error ? reason.message : 'Não foi possível entrar.'); }
     finally { setSubmitting(false); }
   }
@@ -34,8 +37,12 @@ export default function LoginPage() {
     <section className="login-form-wrap"><button className="theme-toggle login-theme-toggle" onClick={toggle} aria-label={mode === 'dark' ? 'Ativar tema claro' : 'Ativar tema escuro'} title={mode === 'dark' ? 'Tema claro' : 'Tema escuro'}>{mode === 'dark' ? '☀' : '☾'}</button><form className="login-card" onSubmit={submit}>
       <div className="mobile-brand brand"><Image src={mode === 'dark' ? '/images/LogoLight.png' : '/images/Logo.png'} alt="Gestorize" width={58} height={50} /><span>Gestorize</span></div>
       <span className="eyebrow">BEM-VINDO DE VOLTA</span><h2>Acesse sua conta</h2><p className="muted">Entre com as credenciais usadas no aplicativo.</p>
-      <label className="field"><span>E-mail</span><input type="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="voce@empresa.com" required /></label>
-      <label className="field"><span>Senha</span><input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Sua senha" required /></label>
+      <div className="field login-field"><label htmlFor="login-email">E-mail</label><LoginInput id="login-email" type="email" autoComplete="username" value={email} onChange={setEmail} placeholder="seu@email.com" /></div>
+      <div className="field login-field"><label htmlFor="login-password">Senha</label><LoginInput id="login-password" type="password" autoComplete="current-password" value={password} onChange={setPassword} placeholder="Digite sua senha" /></div>
+      <div className="login-options">
+        <label className="remember-option"><input type="checkbox" checked={remember} onChange={(event) => setRemember(event.target.checked)} /><span>Lembre de mim</span></label>
+        <Link href="/ajuda">Esqueceu a senha?</Link>
+      </div>
       {error && <div className="form-error" role="alert">{error}</div>}
       <button className="primary-button login-submit" disabled={submitting}>{submitting ? 'Entrando…' : 'Entrar'}<span aria-hidden>→</span></button>
     </form></section>

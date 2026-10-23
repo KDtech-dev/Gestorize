@@ -17,7 +17,7 @@ export type WebUser = {
 type AuthValue = {
   user: WebUser | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
+  signIn: (email: string, password: string, remember: boolean) => Promise<void>;
   signOut: () => Promise<void>;
   updateUser: (user: Partial<WebUser>) => void;
   can: (permission: string) => boolean;
@@ -50,8 +50,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (user && pathname === '/login') router.replace('/');
   }, [loading, pathname, router, user]);
 
-  const signIn = async (email: string, password: string) => {
-    await apiFetch('/login', { method: 'POST', body: JSON.stringify({ email, password, remember: true }) });
+  const signIn = async (email: string, password: string, remember: boolean) => {
+    await apiFetch('/login', { method: 'POST', body: JSON.stringify({ email, password, remember }) });
     await loadUser();
     router.replace('/');
   };
