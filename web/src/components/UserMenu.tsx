@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { Avatar, Badge, Box, ButtonBase, Divider, ListItemIcon, ListItemText, Menu, MenuItem, Typography } from '@mui/material';
+import { Badge, Box, ButtonBase, Divider, ListItemIcon, ListItemText, Menu, MenuItem, Typography } from '@mui/material';
+import { UserAvatar } from '@/components/UserAvatar';
 
 const menuItems = [
   { href: '/perfil', label: 'Meu perfil', icon: '◉' },
@@ -10,7 +11,7 @@ const menuItems = [
   { href: '/ajuda', label: 'Central de ajuda', icon: '?' },
 ];
 
-export function UserMenu({ name, email, role }: { name: string; email: string; role: string }) {
+export function UserMenu({ name, email, role, imageUrl, signOut }: { name: string; email: string; role: string; imageUrl?: string | null; signOut: () => Promise<void> }) {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const open = Boolean(anchorEl);
 
@@ -30,8 +31,7 @@ export function UserMenu({ name, email, role }: { name: string; email: string; r
         onFocus={(event) => setAnchorEl(event.currentTarget)}
         sx={{ borderRadius: 1.5, px: 1.25, py: 0.75, font: 'inherit' }}
       >
-        <span className="avatar top-avatar">{name.slice(0, 1).toUpperCase()}</span>
-        <strong>{name}</strong>
+        <UserAvatar name={name} imageUrl={imageUrl} className="top-avatar" />
       </ButtonBase>
       <Menu
         anchorEl={anchorEl}
@@ -67,9 +67,7 @@ export function UserMenu({ name, email, role }: { name: string; email: string; r
               anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
               sx={{ '& .MuiBadge-badge': { backgroundColor: '#16a34a', boxShadow: '0 0 0 2px var(--card)' } }}
             >
-              <Avatar sx={{ width: 34, height: 34, bgcolor: '#e8f1ff', color: '#005CE4', fontWeight: 800, fontSize: 14 }}>
-                {name.trim().split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase()}
-              </Avatar>
+              <UserAvatar name={name} imageUrl={imageUrl} size={34} />
             </Badge>
             <Box sx={{ display: 'flex', ml: 1.5, minWidth: 0, flexDirection: 'column' }}>
               <Typography sx={{ width: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 13, fontWeight: 700, lineHeight: 1.25 }}>
@@ -99,6 +97,21 @@ export function UserMenu({ name, email, role }: { name: string; email: string; r
             <ListItemText primary={item.label} primaryTypographyProps={{ fontSize: 13, fontWeight: 600 }} />
           </MenuItem>
         ))}
+        <Divider />
+        <MenuItem
+          onClick={() => { setAnchorEl(null); void signOut(); }}
+          sx={{
+            minHeight: 42,
+            gap: 1.25,
+            '&:hover': { backgroundColor: '#ef44441a', color: '#dc2626' },
+            '&:hover .MuiListItemText-primary': { color: '#dc2626' },
+          }}
+        >
+          <ListItemIcon sx={{ minWidth: '24px !important', color: 'inherit', fontSize: 17, justifyContent: 'center' }}>
+            <Box component="span" aria-hidden="true">↪</Box>
+          </ListItemIcon>
+          <ListItemText primary="Sair" primaryTypographyProps={{ fontSize: 13, fontWeight: 600 }} />
+        </MenuItem>
       </Menu>
     </>
   );

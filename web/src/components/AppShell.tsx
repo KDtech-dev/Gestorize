@@ -39,7 +39,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <header className="topbar">
         <Link href="/" className="brand topbar-brand"> <Image src={mode === 'light' ? '/images/LogoLight.png' : '/images/Logo.png'} alt="Gestorize" width={58} height={50} priority /><span>Gestorize</span></Link>
         <TopNavigation items={visibleNavigation} />
-        <div className="topbar-right"><button className="theme-toggle" onClick={toggle} aria-label={mode === 'dark' ? 'Ativar tema claro' : 'Ativar tema escuro'} data-tooltip={mode === 'dark' ? 'Tema claro' : 'Tema escuro'}>{mode === 'dark' ? '☀' : '☾'}</button><UserMenu name={user?.name ?? 'Usuário'} email={user?.email ?? ''} role={user?.role ?? 'Usuário'} /></div>
+        <div className="topbar-right"><button className="theme-toggle" onClick={toggle} aria-label={mode === 'dark' ? 'Ativar tema claro' : 'Ativar tema escuro'} data-tooltip={mode === 'dark' ? 'Tema claro' : 'Tema escuro'}>{mode === 'dark' ? '☀' : '☾'}</button><UserMenu name={user?.name ?? 'Usuário'} email={user?.email ?? ''} role={user?.role ?? 'Usuário'} imageUrl={user?.avatar_url ?? user?.avatar} signOut={signOut} /></div>
       </header>
       <div className="page-content">{children}</div>
     </main>

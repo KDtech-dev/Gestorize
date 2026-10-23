@@ -9,6 +9,8 @@ export type WebUser = {
   name: string;
   email: string;
   role?: string;
+  avatar?: string | null;
+  avatar_url?: string | null;
   permissions?: string[];
 };
 
