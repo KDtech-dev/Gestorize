@@ -8,7 +8,7 @@ import { dateTime, money, panelSx, paymentLabels } from './types';
 type Props = { sales: Sale[]; selectedId: string; filter: 'todas' | PaymentMethod; search: string; loading: boolean; onSelect: (id: string) => void; onFilter: (value: 'todas' | PaymentMethod) => void; onSearch: (value: string) => void };
 
 export function SalesHistory({ sales, selectedId, filter, search, loading, onSelect, onFilter, onSearch }: Props) {
-  return <Paper component="section" sx={{ ...panelSx, minWidth: 0, overflow: 'hidden' }}>
+  return <Paper component="section" className="sales-history-panel" sx={{ ...panelSx, minWidth: 0, overflow: 'hidden' }}>
     <Stack direction={{ xs: 'column', md: 'row' }} sx={{ p: 1.75, alignItems: { xs: 'stretch', md: 'center' }, justifyContent: 'space-between', gap: 1.25 }}>
       <Typography component="h2" sx={{ fontSize: 16, fontWeight: 800 }}>Histórico de vendas</Typography>
       <TextField size="small" value={search} onChange={(event) => onSearch(event.target.value)} placeholder="Nº da venda, operador ou cliente" slotProps={{ htmlInput: { 'aria-label': 'Buscar venda' }, input: { startAdornment: <InputAdornment position="start"><Icon icon="mdi:magnify" width={17} height={17} /></InputAdornment> } }} sx={{ width: { xs: '100%', md: 270 }, '& .MuiOutlinedInput-root': { borderRadius: '9px', fontSize: 12, bgcolor: 'var(--card)', color: 'var(--ink)' } }} />

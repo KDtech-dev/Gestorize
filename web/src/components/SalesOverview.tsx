@@ -1,10 +1,12 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Box, Paper, Stack, Typography } from '@mui/material';
+import { Box, Stack } from '@mui/material';
+import Link from 'next/link';
+import { Icon } from '@iconify/react';
 import { apiFetch, unwrap } from '@/lib/api';
+import { useAuth } from '@/context/AuthContext';
 import type { OperatorSummary, PaymentMethod, Sale } from '@/components/sales/types';
-import { panelSx } from '@/components/sales/types';
 import { SalesMetrics } from '@/components/sales/SalesMetrics';
 import { SalesHistory } from '@/components/sales/SalesHistory';
 import { SalesOperators } from '@/components/sales/SalesOperators';
@@ -21,6 +23,7 @@ function isToday(value: string, today: Date) {
 }
 
 export function SalesOverview() {
+  const { can } = useAuth();
   const [sales, setSales] = useState<Sale[]>([]);
   const [selectedId, setSelectedId] = useState('');
   const [filter, setFilter] = useState<'todas' | PaymentMethod>('todas');
@@ -65,22 +68,21 @@ export function SalesOverview() {
   }, [sales, filter, search]);
   const selected = sales.find((sale) => sale.id === selectedId) ?? visibleSales[0] ?? null;
 
-  return <Stack spacing={2.25} sx={{ pb: 2 }}>
-    <Box>
-      <Typography component="span" sx={{ color: 'var(--muted)', fontSize: 11, fontWeight: 800, letterSpacing: 1 }}>ACOMPANHAMENTO</Typography>
-      <Typography component="h1" sx={{ mt: 0.3, color: 'var(--ink)', font: '800 clamp(24px,2.5vw,30px) Manrope,sans-serif', letterSpacing: '-.5px' }}>Vendas</Typography>
-      <Typography sx={{ mt: 0.3, color: 'var(--muted)', fontSize: 14 }}>Histórico e resultados das vendas registradas.</Typography>
-    </Box>
+  return <div className="clients-page sales-overview-page">
+    <header className="clients-page-heading">
+      <div className="clients-heading-content"><span className="eyebrow"><Icon icon="mdi:cash-register" width={19} height={19} /><span>COMERCIAL</span></span><h1>Vendas</h1><p>Acompanhe o desempenho diário, consulte o histórico e os detalhes das vendas.</p></div>
+      <div className="clients-heading-actions">{can('vendas.criar') && <Link className="primary-button" href="/vendas/nova"><Icon icon="mdi:plus" width={20} height={20} />Nova venda</Link>}</div>
+    </header>
 
     <SalesMetrics count={todaysSales.length} revenue={revenue} average={average} operators={operators.length} ready={Boolean(today)} />
-    {error && <Paper sx={{ ...panelSx, px: 2, py: 1.5, color: '#b42318' }}>{error}</Paper>}
+    {error && <div className="inline-error sales-inline-error">{error}</div>}
 
-    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', xl: 'minmax(0,2.1fr) minmax(290px,.9fr)' }, gap: 1.75, alignItems: 'start' }}>
+    <Box className="sales-overview-grid" sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', xl: 'minmax(0,2.1fr) minmax(290px,.9fr)' }, gap: 1.75, alignItems: 'start' }}>
       <SalesHistory sales={visibleSales} selectedId={selected?.id ?? ''} filter={filter} search={search} loading={loading} onSelect={setSelectedId} onFilter={setFilter} onSearch={setSearch} />
       <Stack spacing={1.75}>
         <SalesOperators operators={operators} loading={loading} />
         <SaleDetails sale={selected} />
       </Stack>
     </Box>
-  </Stack>;
+  </div>;
 }
