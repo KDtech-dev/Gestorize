@@ -13,6 +13,7 @@ class VendaResource extends JsonResource
             'id' => $this->id,
             'valor_total' => $this->valor_total,
             'vendido_em' => $this->vendido_em,
+            'usuario_id' => $this->usuario_id,
             'vendedor' => $this->usuario?->name,
             'cliente_id' => $this->cliente_id,
             'orcamento_id' => $this->orcamento_id,

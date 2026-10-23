@@ -12,7 +12,7 @@ import type { PaymentMethod } from '@/components/sales/types';
 type Product = { id: string; nome: string; codigo_barras?: string; preco_venda: number | string; estoque: number };
 type Customer = SaleCustomer;
 type Quote = SaleQuote & { itens: Array<SaleQuote['itens'][number] & { produto?: Product | null }> };
-type Sale = { id: string; valor_total: number | string; vendido_em: string; vendedor?: string; cliente_nome?: string; orcamento_id?: string | null; forma_pagamento?: PaymentMethod | null; itens?: Array<{ id: string; produto_nome: string; quantidade: number; preco_unitario: number | string; subtotal: number | string }> };
+type Sale = { id: string; usuario_id?: string; valor_total: number | string; vendido_em: string; vendedor?: string; cliente_nome?: string; orcamento_id?: string | null; forma_pagamento?: PaymentMethod | null; itens?: Array<{ id: string; produto_nome: string; quantidade: number; preco_unitario: number | string; subtotal: number | string }> };
 type CartRow = { produto: Product; quantidade: number; precoUnitario?: number };
 
 function list<T>(payload: unknown): T[] {
@@ -54,7 +54,7 @@ export function SalesDesk() {
     const loadedSales = list<Sale>(salesData);
     const soldQuoteIds = new Set(loadedSales.map((sale) => sale.orcamento_id).filter((id): id is string => Boolean(id)));
     setProducts(list<Product>(productData));
-    setSales(loadedSales);
+    setSales(loadedSales.filter((sale) => sale.usuario_id === user?.id));
     setCustomers(list<Customer>(customerData));
     setQuotes(list<Quote>(quoteData).filter((quote) => quote.status === 'aprovado' && !soldQuoteIds.has(quote.id)));
   };
@@ -142,12 +142,12 @@ export function SalesDesk() {
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: 'var(--surface-soft)', color: 'var(--ink)' }}>
-      <Box component="header" sx={{ minHeight: 64, px: { xs: 1.5, md: 3 }, display: 'flex', alignItems: 'center', gap: 2, bgcolor: '#1d4ed8', color: '#fff' }}>
+      <Box component="header" sx={{ minHeight: 64, px: { xs: 1.5, md: 3 }, display: 'flex', alignItems: 'center', gap: 2, bgcolor: 'var(--top-navigation-bg)', color: 'var(--top-navigation-fg)' }}>
         <ButtonBase component={Link} href="/vendas" aria-label="Voltar ao histórico de vendas" sx={{ width: 34, height: 34, borderRadius: '9px', color: 'inherit', '&:hover': { bgcolor: '#ffffff20' } }}><Icon icon="mdi:arrow-left" width={21} height={21} /></ButtonBase>
         <Icon icon="mdi:cart-outline" width={22} height={22} />
         <Typography component="h1" sx={{ fontSize: 16, fontWeight: 800 }}>Nova venda</Typography>
-        <Box sx={{ px: 1, py: 0.45, borderRadius: 99, bgcolor: '#ffffff', color: '#1d4ed8', fontSize: 11, fontWeight: 700 }}>Em andamento</Box>
-        <Button onClick={() => setHistoryOpen((open) => !open)} startIcon={<Icon icon="mdi:history" width={17} height={17} />} sx={{ ml: { xs: 0, md: 1 }, px: 1, color: '#fff', fontSize: 11, textTransform: 'none', whiteSpace: 'nowrap' }}>Histórico ({sales.length})</Button>
+        <Box sx={{ px: 1, py: 0.45, borderRadius: 99, bgcolor: 'var(--top-navigation-fg)', color: 'var(--top-navigation-bg)', fontSize: 11, fontWeight: 700 }}>Em andamento</Box>
+        <Button onClick={() => setHistoryOpen((open) => !open)} startIcon={<Icon icon="mdi:history" width={17} height={17} />} sx={{ ml: { xs: 0, md: 1 }, px: 1, color: 'inherit', fontSize: 11, textTransform: 'none', whiteSpace: 'nowrap' }}>Histórico ({sales.length})</Button>
         <Stack direction="row" sx={{ alignItems: 'center', gap: { xs: 1, md: 2.5 }, ml: 'auto', fontSize: 11 }}>
           <Typography sx={{ color: 'inherit', fontSize: 'inherit' }}>Caixa web</Typography>
           <Typography sx={{ display: { xs: 'none', sm: 'block' }, color: 'inherit', fontSize: 'inherit' }}>Operador: {user?.name ?? '—'}</Typography>
