@@ -1,13 +1,13 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import type { CSSProperties } from 'react';
 import { Icon } from '@iconify/react';
 import { FormControl, InputLabel, MenuItem, Select } from '@mui/material';
 import { apiFetch } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import { RecordEditor } from '@/components/RecordEditor';
 import { UserAvatar } from '@/components/UserAvatar';
+import { EntityActionButton, EntityDirectoryHeading, EntityPageHeading, EntityPagination, EntitySummaryCard } from '@/components/entities/EntityPageParts';
 
 type Product = Record<string, any>;
 type Category = { id: string; nome: string };
@@ -22,18 +22,6 @@ function unwrapList(payload: unknown): Product[] {
 function money(value: unknown) {
   const amount = Number(value ?? 0);
   return Number.isFinite(amount) ? amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '—';
-}
-
-function ProductSummary({ label, value, icon, color }: { label: string; value: number | string; icon: string; color: string }) {
-  return <article className="client-summary-card product-summary-card" style={{ '--summary-color': color } as CSSProperties}>
-    <span className="client-summary-icon"><Icon icon={icon} width={22} height={22} /></span><span className="client-summary-label">{label}</span><strong>{value}</strong>
-  </article>;
-}
-
-function ProductAction({ label, icon, onClick, danger = false }: { label: string; icon: string; onClick: () => void; danger?: boolean }) {
-  return <button type="button" className={`client-action product-action${danger ? ' danger' : ''}`} aria-label={label} data-tooltip={label} onClick={(event) => { event.stopPropagation(); onClick(); }}>
-    <Icon icon={icon} width={19} height={19} />
-  </button>;
 }
 
 function ProductCard({ product, selected, onSelect, onEdit, onDelete }: { product: Product; selected: boolean; onSelect: () => void; onEdit: () => void; onDelete: () => void }) {
@@ -61,9 +49,9 @@ function ProductCard({ product, selected, onSelect, onEdit, onDelete }: { produc
     <footer className="client-card-footer">
       <span className="client-card-actions-label">Ações</span>
       <div className="client-card-actions">
-        <ProductAction label={selected ? 'Ocultar detalhes' : 'Ver detalhes'} icon={selected ? 'mdi:chevron-up' : 'mdi:eye-outline'} onClick={onSelect} />
-        <ProductAction label="Editar produto" icon="mdi:pencil-outline" onClick={onEdit} />
-        <ProductAction label="Excluir produto" icon="mdi:trash-can-outline" onClick={onDelete} danger />
+        <EntityActionButton label={selected ? 'Ocultar detalhes' : 'Ver detalhes'} icon={selected ? 'mdi:chevron-up' : 'mdi:eye-outline'} onClick={onSelect} />
+        <EntityActionButton label="Editar produto" icon="mdi:pencil-outline" onClick={onEdit} />
+        <EntityActionButton label="Excluir produto" icon="mdi:trash-can-outline" onClick={onDelete} danger />
       </div>
     </footer>
     {selected && <div className="client-card-details product-card-details">
@@ -74,16 +62,9 @@ function ProductCard({ product, selected, onSelect, onEdit, onDelete }: { produc
   </article>;
 }
 
-function ProductsHeading({ canCreate, onCreate }: { canCreate: boolean; onCreate: () => void }) {
-  return <header className="clients-page-heading">
-    <div className="clients-heading-content"><span className="eyebrow"><Icon icon="mdi:package-variant-closed" width={19} height={19} /><span>CATÁLOGO</span></span><h1>Produtos</h1><p>Consulte preços, estoque e informações dos produtos da sua organização.</p></div>
-    <div className="clients-heading-actions">{canCreate && <button className="primary-button" onClick={onCreate}><Icon icon="mdi:plus" width={20} height={20} />Novo produto</button>}</div>
-  </header>;
-}
-
 function ProductFilters({ search, category, stockStatus, categories, count, onSearch, onCategory, onStockStatus }: { search: string; category: string; stockStatus: string; categories: Category[]; count: number; onSearch: (value: string) => void; onCategory: (value: string) => void; onStockStatus: (value: string) => void }) {
   return <>
-    <header className="client-directory-heading"><div><span className="eyebrow">INVENTÁRIO</span><h2>Todos os produtos</h2><p>Busque pelo nome ou código, ou filtre por categoria.</p></div><span className="client-results-count">{count} resultado{count === 1 ? '' : 's'}</span></header>
+    <EntityDirectoryHeading eyebrow="INVENTÁRIO" title="Todos os produtos" description="Busque pelo nome ou código, ou filtre por categoria." count={count} />
     <div className="client-filters">
       <label className="search-field"><Icon icon="mdi:magnify" width={20} height={20} /><input type="search" aria-label="Buscar produtos ao digitar" value={search} onChange={(event) => onSearch(event.target.value)} placeholder="Buscar por nome, código ou categoria" /></label>
       <FormControl fullWidth className="client-type-select-field">
@@ -103,14 +84,6 @@ function ProductFilters({ search, category, stockStatus, categories, count, onSe
       </FormControl>
     </div>
   </>;
-}
-
-function ProductPagination({ page, totalPages, total, from, to, onChange }: { page: number; totalPages: number; total: number; from: number; to: number; onChange: (page: number) => void }) {
-  if (!total) return null;
-  return <nav className="client-pagination" aria-label="Paginação de produtos">
-    <span>Exibindo <strong>{from}–{to}</strong> de <strong>{total}</strong> produtos</span>
-    <div><button type="button" onClick={() => onChange(page - 1)} disabled={page <= 1} aria-label="Página anterior" title="Página anterior"><Icon icon="mdi:chevron-left" width={20} height={20} /></button><span>Página <strong>{page}</strong> de <strong>{totalPages}</strong></span><button type="button" onClick={() => onChange(page + 1)} disabled={page >= totalPages} aria-label="Próxima página" title="Próxima página"><Icon icon="mdi:chevron-right" width={20} height={20} /></button></div>
-  </nav>;
 }
 
 export function ProductsPage() {
@@ -184,18 +157,18 @@ export function ProductsPage() {
   }
 
   return <div className="clients-page products-page">
-    <ProductsHeading canCreate={can('produtos.criar')} onCreate={() => setEditing(null)} />
+    <EntityPageHeading eyebrow="CATÁLOGO" icon="mdi:package-variant-closed" title="Produtos" description="Consulte preços, estoque e informações dos produtos da sua organização." createLabel="Novo produto" canCreate={can('produtos.criar')} onCreate={() => setEditing(null)} />
     <section className="client-summary-grid" aria-label="Resumo de produtos">
-      <ProductSummary label="Total de produtos" value={loading ? '—' : products.length} icon="mdi:package-variant-closed" color="#005CE4" />
-      <ProductSummary label="Com estoque" value={loading ? '—' : inStock} icon="mdi:check-circle-outline" color="#0f9f73" />
-      <ProductSummary label="Sem estoque" value={loading ? '—' : outOfStock} icon="mdi:alert-circle-outline" color="#e58a16" />
+      <EntitySummaryCard compact label="Total de produtos" value={loading ? '—' : products.length} icon="mdi:package-variant-closed" color="#005CE4" />
+      <EntitySummaryCard compact label="Com estoque" value={loading ? '—' : inStock} icon="mdi:check-circle-outline" color="#0f9f73" />
+      <EntitySummaryCard compact label="Sem estoque" value={loading ? '—' : outOfStock} icon="mdi:alert-circle-outline" color="#e58a16" />
     </section>
 
     <section className="client-directory">
       <ProductFilters search={search} category={category} stockStatus={stockStatus} categories={categories} count={filtered.length} onSearch={(value) => changeFilter(value, setSearch)} onCategory={(value) => changeFilter(value, setCategory)} onStockStatus={(value) => changeFilter(value, setStockStatus)} />
       {error && <div className="inline-error">{error}</div>}
       {loading ? <div className="table-loading"><span className="spinner" />Carregando produtos…</div> : pageItems.length ? <div className="client-card-grid">{pageItems.map((product) => <ProductCard key={String(product.id)} product={product} selected={selectedId === product.id} onSelect={() => setSelectedId(selectedId === product.id ? null : String(product.id))} onEdit={() => setEditing(product)} onDelete={() => void deleteProduct(product)} />)}</div> : <div className="empty-state compact"><span className="empty-icon"><Icon icon="mdi:package-variant-closed" /></span><h2>{search || category || stockStatus ? 'Nenhum produto encontrado' : 'Ainda não há produtos'}</h2><p>{search || category || stockStatus ? 'Ajuste os filtros para ver outros produtos.' : 'Cadastre o primeiro produto para começar.'}</p></div>}
-      {!loading && <ProductPagination page={currentPage} totalPages={totalPages} total={filtered.length} from={(currentPage - 1) * PAGE_SIZE + 1} to={Math.min(currentPage * PAGE_SIZE, filtered.length)} onChange={setPage} />}
+      {!loading && <EntityPagination noun="produtos" page={currentPage} totalPages={totalPages} total={filtered.length} from={(currentPage - 1) * PAGE_SIZE + 1} to={Math.min(currentPage * PAGE_SIZE, filtered.length)} onChange={setPage} />}
     </section>
     {editing !== undefined && <RecordEditor module="produtos" row={editing} onClose={() => setEditing(undefined)} onSave={saveProduct} />}
   </div>;

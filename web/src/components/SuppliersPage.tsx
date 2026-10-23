@@ -1,13 +1,13 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import type { CSSProperties } from 'react';
 import { Icon } from '@iconify/react';
 import { FormControl, InputLabel, MenuItem, Select } from '@mui/material';
 import { apiFetch } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import { RecordEditor } from '@/components/RecordEditor';
 import { UserAvatar } from '@/components/UserAvatar';
+import { EntityActionButton, EntityDirectoryHeading, EntityPageHeading, EntityPagination, EntitySummaryCard } from '@/components/entities/EntityPageParts';
 
 type Supplier = Record<string, any>;
 const PAGE_SIZE = 9;
@@ -22,16 +22,6 @@ function cnpj(value: unknown) {
   const raw = String(value ?? '');
   const digits = raw.replace(/\D/g, '');
   return digits.length === 14 ? digits.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5') : raw || 'CNPJ não informado';
-}
-
-function SupplierSummary({ label, value, icon, color }: { label: string; value: number | string; icon: string; color: string }) {
-  return <article className="client-summary-card" style={{ '--summary-color': color } as CSSProperties}>
-    <span className="client-summary-icon"><Icon icon={icon} width={22} height={22} /></span><span className="client-summary-label">{label}</span><strong>{value}</strong>
-  </article>;
-}
-
-function SupplierAction({ label, icon, onClick, danger = false }: { label: string; icon: string; onClick: () => void; danger?: boolean }) {
-  return <button type="button" className={`client-action supplier-action${danger ? ' danger' : ''}`} aria-label={label} data-tooltip={label} onClick={(event) => { event.stopPropagation(); onClick(); }}><Icon icon={icon} width={19} height={19} /></button>;
 }
 
 function SupplierCard({ supplier, selected, onSelect, onEdit, onDelete }: { supplier: Supplier; selected: boolean; onSelect: () => void; onEdit: () => void; onDelete: () => void }) {
@@ -53,9 +43,9 @@ function SupplierCard({ supplier, selected, onSelect, onEdit, onDelete }: { supp
     <footer className="client-card-footer">
       <span className="client-card-actions-label">Ações</span>
       <div className="client-card-actions">
-        <SupplierAction label={selected ? 'Ocultar detalhes' : 'Ver detalhes'} icon={selected ? 'mdi:chevron-up' : 'mdi:eye-outline'} onClick={onSelect} />
-        <SupplierAction label="Editar fornecedor" icon="mdi:pencil-outline" onClick={onEdit} />
-        <SupplierAction label="Excluir fornecedor" icon="mdi:trash-can-outline" onClick={onDelete} danger />
+        <EntityActionButton label={selected ? 'Ocultar detalhes' : 'Ver detalhes'} icon={selected ? 'mdi:chevron-up' : 'mdi:eye-outline'} onClick={onSelect} />
+        <EntityActionButton label="Editar fornecedor" icon="mdi:pencil-outline" onClick={onEdit} />
+        <EntityActionButton label="Excluir fornecedor" icon="mdi:trash-can-outline" onClick={onDelete} danger />
       </div>
     </footer>
     {selected && <div className="client-card-details supplier-card-details">
@@ -68,16 +58,9 @@ function SupplierCard({ supplier, selected, onSelect, onEdit, onDelete }: { supp
   </article>;
 }
 
-function SuppliersHeading({ canCreate, onCreate }: { canCreate: boolean; onCreate: () => void }) {
-  return <header className="clients-page-heading">
-    <div className="clients-heading-content"><span className="eyebrow"><Icon icon="mdi:truck-outline" width={19} height={19} /><span>COMPRAS E PARCERIAS</span></span><h1>Fornecedores</h1><p>Consulte contatos, ramos de atividade e dados dos seus parceiros.</p></div>
-    <div className="clients-heading-actions">{canCreate && <button className="primary-button" onClick={onCreate}><Icon icon="mdi:plus" width={20} height={20} />Novo fornecedor</button>}</div>
-  </header>;
-}
-
 function SupplierFilters({ search, category, categories, count, onSearch, onCategory }: { search: string; category: string; categories: string[]; count: number; onSearch: (value: string) => void; onCategory: (value: string) => void }) {
   return <>
-    <header className="client-directory-heading"><div><span className="eyebrow">CADASTRO</span><h2>Todos os fornecedores</h2><p>Busque por nome, CNPJ, contato ou filtre pelo ramo de atividade.</p></div><span className="client-results-count">{count} resultado{count === 1 ? '' : 's'}</span></header>
+    <EntityDirectoryHeading eyebrow="CADASTRO" title="Todos os fornecedores" description="Busque por nome, CNPJ, contato ou filtre pelo ramo de atividade." count={count} />
     <div className="client-filters">
       <label className="search-field"><Icon icon="mdi:magnify" width={20} height={20} /><input type="search" aria-label="Buscar fornecedores ao digitar" value={search} onChange={(event) => onSearch(event.target.value)} placeholder="Buscar por nome, CNPJ, e-mail ou telefone" /></label>
       <FormControl fullWidth className="client-type-select-field">
@@ -89,14 +72,6 @@ function SupplierFilters({ search, category, categories, count, onSearch, onCate
       </FormControl>
     </div>
   </>;
-}
-
-function SupplierPagination({ page, totalPages, total, from, to, onChange }: { page: number; totalPages: number; total: number; from: number; to: number; onChange: (page: number) => void }) {
-  if (!total) return null;
-  return <nav className="client-pagination" aria-label="Paginação de fornecedores">
-    <span>Exibindo <strong>{from}–{to}</strong> de <strong>{total}</strong> fornecedores</span>
-    <div><button type="button" onClick={() => onChange(page - 1)} disabled={page <= 1} aria-label="Página anterior" title="Página anterior"><Icon icon="mdi:chevron-left" width={20} height={20} /></button><span>Página <strong>{page}</strong> de <strong>{totalPages}</strong></span><button type="button" onClick={() => onChange(page + 1)} disabled={page >= totalPages} aria-label="Próxima página" title="Próxima página"><Icon icon="mdi:chevron-right" width={20} height={20} /></button></div>
-  </nav>;
 }
 
 export function SuppliersPage() {
@@ -165,17 +140,17 @@ export function SuppliersPage() {
   }
 
   return <div className="clients-page suppliers-page">
-    <SuppliersHeading canCreate={can('fornecedores.criar')} onCreate={() => setEditing(null)} />
+    <EntityPageHeading eyebrow="COMPRAS E PARCERIAS" icon="mdi:truck-outline" title="Fornecedores" description="Consulte contatos, ramos de atividade e dados dos seus parceiros." createLabel="Novo fornecedor" canCreate={can('fornecedores.criar')} onCreate={() => setEditing(null)} />
     <section className="client-summary-grid" aria-label="Resumo de fornecedores">
-      <SupplierSummary label="Total de fornecedores" value={loading ? '—' : suppliers.length} icon="mdi:truck-outline" color="#005CE4" />
-      <SupplierSummary label="Com ramo cadastrado" value={loading ? '—' : withCategories} icon="mdi:shape-outline" color="#0f9f73" />
-      <SupplierSummary label="Com e-mail" value={loading ? '—' : withEmail} icon="mdi:email-outline" color="#8b5cf6" />
+      <EntitySummaryCard label="Total de fornecedores" value={loading ? '—' : suppliers.length} icon="mdi:truck-outline" color="#005CE4" />
+      <EntitySummaryCard label="Com ramo cadastrado" value={loading ? '—' : withCategories} icon="mdi:shape-outline" color="#0f9f73" />
+      <EntitySummaryCard label="Com e-mail" value={loading ? '—' : withEmail} icon="mdi:email-outline" color="#8b5cf6" />
     </section>
     <section className="client-directory">
       <SupplierFilters search={search} category={category} categories={categories} count={filtered.length} onSearch={(value) => changeFilter(value, setSearch)} onCategory={(value) => changeFilter(value, setCategory)} />
       {error && <div className="inline-error">{error}</div>}
       {loading ? <div className="table-loading"><span className="spinner" />Carregando fornecedores…</div> : pageItems.length ? <div className="client-card-grid">{pageItems.map((supplier) => <SupplierCard key={String(supplier.id)} supplier={supplier} selected={selectedId === supplier.id} onSelect={() => setSelectedId(selectedId === supplier.id ? null : String(supplier.id))} onEdit={() => setEditing(supplier)} onDelete={() => void deleteSupplier(supplier)} />)}</div> : <div className="empty-state compact"><span className="empty-icon"><Icon icon="mdi:truck-outline" /></span><h2>{search || category ? 'Nenhum fornecedor encontrado' : 'Ainda não há fornecedores'}</h2><p>{search || category ? 'Ajuste os filtros para ver outros fornecedores.' : 'Cadastre o primeiro fornecedor para começar.'}</p></div>}
-      {!loading && <SupplierPagination page={currentPage} totalPages={totalPages} total={filtered.length} from={(currentPage - 1) * PAGE_SIZE + 1} to={Math.min(currentPage * PAGE_SIZE, filtered.length)} onChange={setPage} />}
+      {!loading && <EntityPagination noun="fornecedores" page={currentPage} totalPages={totalPages} total={filtered.length} from={(currentPage - 1) * PAGE_SIZE + 1} to={Math.min(currentPage * PAGE_SIZE, filtered.length)} onChange={setPage} />}
     </section>
     {editing !== undefined && <RecordEditor module="fornecedores" row={editing} onClose={() => setEditing(undefined)} onSave={saveSupplier} />}
   </div>;

@@ -1,12 +1,12 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import type { CSSProperties } from 'react';
 import { Icon } from '@iconify/react';
 import { FormControl, InputLabel, MenuItem, Select } from '@mui/material';
 import { apiFetch } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import { RecordEditor } from '@/components/RecordEditor';
+import { EntityActionButton, EntityDirectoryHeading, EntityPageHeading, EntityPagination, EntitySummaryCard } from '@/components/entities/EntityPageParts';
 
 type Quote = Record<string, any>;
 const PAGE_SIZE = 9;
@@ -35,16 +35,6 @@ function date(value: unknown) {
 }
 function clientName(quote: Quote) { return String(quote.cliente?.nome ?? quote.cliente_nome ?? 'Cliente não informado'); }
 
-function QuoteSummary({ label, value, icon, color }: { label: string; value: number | string; icon: string; color: string }) {
-  return <article className="client-summary-card" style={{ '--summary-color': color } as CSSProperties}>
-    <span className="client-summary-icon"><Icon icon={icon} width={22} height={22} /></span><span className="client-summary-label">{label}</span><strong>{value}</strong>
-  </article>;
-}
-
-function QuoteAction({ label, icon, onClick, danger = false }: { label: string; icon: string; onClick: () => void; danger?: boolean }) {
-  return <button type="button" className={`client-action quote-action${danger ? ' danger' : ''}`} aria-label={label} data-tooltip={label} onClick={(event) => { event.stopPropagation(); onClick(); }}><Icon icon={icon} width={19} height={19} /></button>;
-}
-
 function QuoteCard({ quote, selected, canEdit, canDelete, canApprove, onSelect, onEdit, onDelete, onApprove }: {
   quote: Quote; selected: boolean; canEdit: boolean; canDelete: boolean; canApprove: boolean;
   onSelect: () => void; onEdit: () => void; onDelete: () => void; onApprove: () => void;
@@ -69,10 +59,10 @@ function QuoteCard({ quote, selected, canEdit, canDelete, canApprove, onSelect, 
     <footer className="client-card-footer">
       <span className="client-card-actions-label">Ações</span>
       <div className="client-card-actions">
-        <QuoteAction label={selected ? 'Ocultar detalhes' : 'Ver detalhes'} icon={selected ? 'mdi:chevron-up' : 'mdi:eye-outline'} onClick={onSelect} />
-        {status === 'pendente' && canApprove && <QuoteAction label="Aprovar orçamento" icon="mdi:check-circle-outline" onClick={onApprove} />}
-        {status === 'pendente' && canEdit && <QuoteAction label="Editar orçamento" icon="mdi:pencil-outline" onClick={onEdit} />}
-        {status === 'pendente' && canDelete && <QuoteAction label="Excluir orçamento" icon="mdi:trash-can-outline" onClick={onDelete} danger />}
+        <EntityActionButton label={selected ? 'Ocultar detalhes' : 'Ver detalhes'} icon={selected ? 'mdi:chevron-up' : 'mdi:eye-outline'} onClick={onSelect} />
+        {status === 'pendente' && canApprove && <EntityActionButton label="Aprovar orçamento" icon="mdi:check-circle-outline" onClick={onApprove} />}
+        {status === 'pendente' && canEdit && <EntityActionButton label="Editar orçamento" icon="mdi:pencil-outline" onClick={onEdit} />}
+        {status === 'pendente' && canDelete && <EntityActionButton label="Excluir orçamento" icon="mdi:trash-can-outline" onClick={onDelete} danger />}
       </div>
     </footer>
     {selected && <div className="client-card-details quote-card-details">
@@ -85,16 +75,9 @@ function QuoteCard({ quote, selected, canEdit, canDelete, canApprove, onSelect, 
   </article>;
 }
 
-function QuotesHeading({ canCreate, onCreate }: { canCreate: boolean; onCreate: () => void }) {
-  return <header className="clients-page-heading">
-    <div className="clients-heading-content"><span className="eyebrow"><Icon icon="mdi:file-document-outline" width={19} height={19} /><span>VENDAS E NEGOCIAÇÃO</span></span><h1>Orçamentos</h1><p>Crie propostas, acompanhe aprovações e consulte os valores negociados.</p></div>
-    <div className="clients-heading-actions">{canCreate && <button className="primary-button" onClick={onCreate}><Icon icon="mdi:plus" width={20} height={20} />Novo orçamento</button>}</div>
-  </header>;
-}
-
 function QuoteFilters({ search, status, count, onSearch, onStatus }: { search: string; status: string; count: number; onSearch: (value: string) => void; onStatus: (value: string) => void }) {
   return <>
-    <header className="client-directory-heading"><div><span className="eyebrow">NEGOCIAÇÃO</span><h2>Todos os orçamentos</h2><p>Busque pelo título ou cliente e filtre pelo status da proposta.</p></div><span className="client-results-count">{count} resultado{count === 1 ? '' : 's'}</span></header>
+    <EntityDirectoryHeading eyebrow="NEGOCIAÇÃO" title="Todos os orçamentos" description="Busque pelo título ou cliente e filtre pelo status da proposta." count={count} />
     <div className="client-filters quote-filters">
       <label className="search-field"><Icon icon="mdi:magnify" width={20} height={20} /><input type="search" aria-label="Buscar orçamentos ao digitar" value={search} onChange={(event) => onSearch(event.target.value)} placeholder="Buscar por título ou cliente" /></label>
       <FormControl fullWidth className="client-type-select-field">
@@ -105,14 +88,6 @@ function QuoteFilters({ search, status, count, onSearch, onStatus }: { search: s
       </FormControl>
     </div>
   </>;
-}
-
-function QuotePagination({ page, totalPages, total, from, to, onChange }: { page: number; totalPages: number; total: number; from: number; to: number; onChange: (page: number) => void }) {
-  if (!total) return null;
-  return <nav className="client-pagination" aria-label="Paginação de orçamentos">
-    <span>Exibindo <strong>{from}–{to}</strong> de <strong>{total}</strong> orçamentos</span>
-    <div><button type="button" onClick={() => onChange(page - 1)} disabled={page <= 1} aria-label="Página anterior" title="Página anterior"><Icon icon="mdi:chevron-left" width={20} height={20} /></button><span>Página <strong>{page}</strong> de <strong>{totalPages}</strong></span><button type="button" onClick={() => onChange(page + 1)} disabled={page >= totalPages} aria-label="Próxima página" title="Próxima página"><Icon icon="mdi:chevron-right" width={20} height={20} /></button></div>
-  </nav>;
 }
 
 export function QuotesPage() {
@@ -177,18 +152,18 @@ export function QuotesPage() {
   function changeFilter(value: string, setter: (value: string) => void) { setter(value); setPage(1); }
 
   return <div className="clients-page quotes-page">
-    <QuotesHeading canCreate={canCreate} onCreate={() => setEditing(null)} />
+    <EntityPageHeading eyebrow="VENDAS E NEGOCIAÇÃO" icon="mdi:file-document-outline" title="Orçamentos" description="Crie propostas, acompanhe aprovações e consulte os valores negociados." createLabel="Novo orçamento" canCreate={canCreate} onCreate={() => setEditing(null)} />
     <section className="client-summary-grid quote-summary-grid" aria-label="Resumo de orçamentos">
-      <QuoteSummary label="Total de orçamentos" value={loading ? '—' : quotes.length} icon="mdi:file-document-multiple-outline" color="#005CE4" />
-      <QuoteSummary label="Pendentes" value={loading ? '—' : quotes.filter((quote) => statusOf(quote) === 'pendente').length} icon="mdi:clock-outline" color="#e78a12" />
-      <QuoteSummary label="Aprovados" value={loading ? '—' : quotes.filter((quote) => statusOf(quote) === 'aprovado').length} icon="mdi:check-circle-outline" color="#0f9f73" />
-      <QuoteSummary label="Convertidos em venda" value={loading ? '—' : quotes.filter((quote) => statusOf(quote) === 'vendido').length} icon="mdi:cash-check" color="#8b5cf6" />
+      <EntitySummaryCard label="Total de orçamentos" value={loading ? '—' : quotes.length} icon="mdi:file-document-multiple-outline" color="#005CE4" />
+      <EntitySummaryCard label="Pendentes" value={loading ? '—' : quotes.filter((quote) => statusOf(quote) === 'pendente').length} icon="mdi:clock-outline" color="#e78a12" />
+      <EntitySummaryCard label="Aprovados" value={loading ? '—' : quotes.filter((quote) => statusOf(quote) === 'aprovado').length} icon="mdi:check-circle-outline" color="#0f9f73" />
+      <EntitySummaryCard label="Convertidos em venda" value={loading ? '—' : quotes.filter((quote) => statusOf(quote) === 'vendido').length} icon="mdi:cash-check" color="#8b5cf6" />
     </section>
     <section className="client-directory">
       <QuoteFilters search={search} status={status} count={filtered.length} onSearch={(value) => changeFilter(value, setSearch)} onStatus={(value) => changeFilter(value, setStatus)} />
       {error && <div className="inline-error">{error}</div>}
       {loading ? <div className="table-loading"><span className="spinner" />Carregando orçamentos…</div> : pageItems.length ? <div className="client-card-grid">{pageItems.map((quote) => <QuoteCard key={String(quote.id)} quote={quote} selected={selectedId === String(quote.id)} canEdit={canEdit} canDelete={canDelete} canApprove={canApprove} onSelect={() => setSelectedId(selectedId === String(quote.id) ? null : String(quote.id))} onEdit={() => setEditing(quote)} onDelete={() => void deleteQuote(quote)} onApprove={() => void approveQuote(quote)} />)}</div> : <div className="empty-state compact"><span className="empty-icon"><Icon icon="mdi:file-document-outline" /></span><h2>{search || status ? 'Nenhum orçamento encontrado' : 'Ainda não há orçamentos'}</h2><p>{search || status ? 'Ajuste a busca ou o status para ver outras propostas.' : 'Crie o primeiro orçamento para registrar uma proposta comercial.'}</p></div>}
-      {!loading && <QuotePagination page={currentPage} totalPages={totalPages} total={filtered.length} from={(currentPage - 1) * PAGE_SIZE + 1} to={Math.min(currentPage * PAGE_SIZE, filtered.length)} onChange={setPage} />}
+      {!loading && <EntityPagination noun="orçamentos" page={currentPage} totalPages={totalPages} total={filtered.length} from={(currentPage - 1) * PAGE_SIZE + 1} to={Math.min(currentPage * PAGE_SIZE, filtered.length)} onChange={setPage} />}
     </section>
     {editing !== undefined && <RecordEditor module="orcamentos" row={editing} onClose={() => setEditing(undefined)} onSave={saveQuote} />}
   </div>;
