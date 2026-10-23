@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { Icon } from '@iconify/react';
-import { Box, CircularProgress, Link as MuiLink, Paper, Stack, Typography } from '@mui/material';
+import { Box, CircularProgress, Link as MuiLink, Paper, Stack, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
 import { MetricCard, QuickAccessCard, type Metric, type QuickItem, type SummaryKey } from '@/components/DashboardCards';
 
 type Report = { totais: Record<string, number>; serie: { rotulos: string[]; valores: number[] } };
@@ -32,17 +32,26 @@ function PanelTitle({ eyebrow, title, description, action }: { eyebrow: string; 
 
 const panelSx = { minWidth: 0, minHeight: { xs: 350, md: 380 }, p: { xs: 1.9, md: 2.5 }, border: '1px solid var(--line)', borderRadius: '17px', bgcolor: 'var(--card)', boxShadow: '0 8px 30px #1d392a06' };
 
-export function ReportPanels({ report, loading }: { report: Report | null; loading: boolean }) {
+type ActivityType = 'orcamentos' | 'vendas';
+
+export function ReportPanels({ report, budgetReport, loading, activityType, onActivityTypeChange }: { report: Report | null; budgetReport: Report | null; loading: boolean; activityType: ActivityType; onActivityTypeChange: (type: ActivityType) => void }) {
   const maxValue = Math.max(...(report?.serie.valores ?? []), 1);
+  const activityLabel = activityType === 'vendas' ? 'vendas' : 'orçamentos';
 
   return (
     <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: 'minmax(0,1.65fr) minmax(260px,.8fr)' }, gap: 1.9 }}>
       <Paper component="article" sx={panelSx}>
         <PanelTitle
           eyebrow="ÚLTIMOS 7 DIAS"
-          title="Orçamentos criados"
+          title={activityType === 'vendas' ? 'Vendas realizadas' : 'Orçamentos criados'}
           description="Quantidade registrada em cada dia."
-          action={<MuiLink component={Link} href="/relatorios" underline="none" sx={{ flexShrink: 0, mt: 0.5, color: 'var(--primary)', fontSize: 12, fontWeight: 700 }}>Ver relatórios ↗</MuiLink>}
+          action={<Stack sx={{ alignItems: { xs: 'flex-start', sm: 'flex-end' }, gap: 0.75 }}>
+            <ToggleButtonGroup exclusive size="small" value={activityType} aria-label="Tipo de atividade exibida" onChange={(_, value: ActivityType | null) => { if (value) onActivityTypeChange(value); }} sx={{ '& .MuiToggleButtonGroup-grouped': { px: 1, py: 0.35, borderColor: 'var(--line)', color: 'var(--muted)', fontSize: 11, textTransform: 'none' }, '& .Mui-selected': { bgcolor: 'color-mix(in srgb, var(--primary) 10%, var(--card)) !important', color: 'var(--primary) !important' } }}>
+              <ToggleButton value="orcamentos">Orçamentos</ToggleButton>
+              <ToggleButton value="vendas">Vendas</ToggleButton>
+            </ToggleButtonGroup>
+            <MuiLink component={Link} href="/relatorios" underline="none" sx={{ color: 'var(--primary)', fontSize: 12, fontWeight: 700 }}>Ver relatórios ↗</MuiLink>
+          </Stack>}
         />
         {loading ? (
           <Stack direction="row" sx={{ minHeight: 280, alignItems: 'center', justifyContent: 'center', gap: 1, color: 'var(--muted)', fontSize: 13 }}><CircularProgress size={18} />Carregando atividade…</Stack>
@@ -62,7 +71,7 @@ export function ReportPanels({ report, loading }: { report: Report | null; loadi
             })}
           </Box>
         ) : (
-          <Box sx={{ minHeight: 170, display: 'grid', placeItems: 'center', color: 'var(--muted)', fontSize: 13 }}>Ainda não há orçamentos neste período.</Box>
+          <Box sx={{ minHeight: 170, display: 'grid', placeItems: 'center', color: 'var(--muted)', fontSize: 13 }}>Ainda não há {activityLabel} neste período.</Box>
         )}
       </Paper>
 
@@ -70,12 +79,12 @@ export function ReportPanels({ report, loading }: { report: Report | null; loadi
         <PanelTitle eyebrow="MOVIMENTAÇÃO RECENTE" title="Atividade de orçamentos" description="Eventos registrados durante esta semana." />
         {loading ? <Box sx={{ minHeight: 220, display: 'grid', placeItems: 'center', color: 'var(--muted)', fontSize: 13 }}>Atualizando…</Box> : <>
           <Stack direction="row" sx={{ alignItems: 'baseline', gap: 1.2, my: 3 }}>
-            <Typography component="strong" sx={{ color: 'var(--ink)', font: '800 38px Manrope,sans-serif', letterSpacing: '-1px' }}>{Number(report?.totais.orcamentos ?? 0).toLocaleString('pt-BR')}</Typography>
+            <Typography component="strong" sx={{ color: 'var(--ink)', font: '800 38px Manrope,sans-serif', letterSpacing: '-1px' }}>{Number(budgetReport?.totais.orcamentos ?? 0).toLocaleString('pt-BR')}</Typography>
             <Typography sx={{ color: 'var(--muted)', fontSize: 13 }}>criados na semana</Typography>
           </Stack>
           {[
-            { label: 'Aprovações registradas', value: report?.totais.aprovacoes ?? 0, color: '#16a34a', icon: 'mdi:check-circle' },
-            { label: 'Pendentes criados', value: report?.totais.pendentes ?? 0, color: '#f59e0b', icon: 'mdi:clock-outline' },
+            { label: 'Aprovações registradas', value: budgetReport?.totais.aprovacoes ?? 0, color: '#16a34a', icon: 'mdi:check-circle' },
+            { label: 'Pendentes criados', value: budgetReport?.totais.pendentes ?? 0, color: '#f59e0b', icon: 'mdi:clock-outline' },
           ].map((row) => (
             <Stack key={row.label} direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between', py: 1.6, borderTop: '1px solid var(--line)', color: 'var(--muted)' }}>
               <Stack direction="row" sx={{ alignItems: 'center', gap: 1, fontSize: 13 }}><Icon icon={row.icon} width={17} height={17} color={row.color} />{row.label}</Stack>

@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Cliente;
 use App\Models\Orcamento;
 use App\Models\Produto;
+use App\Models\Venda;
 use Carbon\CarbonImmutable;
 
 class RelatorioService
@@ -23,6 +24,9 @@ class RelatorioService
             ->with('categoria:id,nome')
             ->whereBetween('created_at', [$inicio, $fim])
             ->get(['id', 'categoria_id', 'created_at']);
+        $vendas = Venda::query()
+            ->whereBetween('vendido_em', [$inicio, $fim])
+            ->get(['vendido_em', 'valor_total']);
 
         $orcamentosAnteriores = Orcamento::query()
             ->whereBetween('created_at', [$inicioAnterior, $fimAnterior]);
@@ -30,10 +34,14 @@ class RelatorioService
             ->whereBetween('created_at', [$inicioAnterior, $fimAnterior]);
         $aprovacoes = Orcamento::query()
             ->whereBetween('aprovado_em', [$inicio, $fim]);
+        $vendasAnteriores = Venda::query()
+            ->whereBetween('vendido_em', [$inicioAnterior, $fimAnterior]);
 
         $valorOrcado = (float) $orcamentos->sum(fn ($item) => (float) $item->valor_total);
         $totalOrcamentos = $orcamentos->count();
         $totalClientes = $clientes->count();
+        $totalVendas = $vendas->count();
+        $faturamentoVendas = (float) $vendas->sum(fn ($item) => (float) $item->valor_total);
 
         return [
             'periodo' => $periodo,
@@ -42,7 +50,9 @@ class RelatorioService
                 'inicio' => $inicio->toDateString(),
                 'fim' => $fim->toDateString(),
             ],
-            'nota' => 'Este relatório resume orçamentos. Consulte vendas registradas e baixas de estoque no histórico de vendas.',
+            'nota' => $tipo === 'vendas'
+                ? 'Este relatório resume as vendas registradas no período.'
+                : 'Este relatório resume orçamentos. Consulte vendas registradas e baixas de estoque no histórico de vendas.',
             'metricas' => [
                 'valor_orcado' => [
                     'valor' => round($valorOrcado, 2),
@@ -56,6 +66,14 @@ class RelatorioService
                     'valor' => $totalClientes,
                     'variacao' => $this->variacao($totalClientes, (clone $clientesAnteriores)->count()),
                 ],
+                'vendas' => [
+                    'valor' => $totalVendas,
+                    'variacao' => $this->variacao($totalVendas, (clone $vendasAnteriores)->count()),
+                ],
+                'faturamento_vendas' => [
+                    'valor' => round($faturamentoVendas, 2),
+                    'variacao' => $this->variacao($faturamentoVendas, (float) (clone $vendasAnteriores)->sum('valor_total')),
+                ],
             ],
             'totais' => [
                 'valor_orcado' => round($valorOrcado, 2),
@@ -64,8 +82,10 @@ class RelatorioService
                 'pendentes' => $orcamentos->where('status', 'pendente')->count(),
                 'clientes' => $totalClientes,
                 'produtos' => $produtos->count(),
+                'vendas' => $totalVendas,
+                'faturamento_vendas' => round($faturamentoVendas, 2),
             ],
-            'serie' => $this->serie($periodo, $tipo, $orcamentos, $clientes, $produtos),
+            'serie' => $this->serie($periodo, $tipo, $orcamentos, $clientes, $produtos, $vendas),
         ];
     }
 
@@ -92,7 +112,7 @@ class RelatorioService
         return [$inicio, $fim, $inicioAnterior, $inicio->subSecond()];
     }
 
-    private function serie(string $periodo, string $tipo, $orcamentos, $clientes, $produtos): array
+    private function serie(string $periodo, string $tipo, $orcamentos, $clientes, $produtos, $vendas): array
     {
         if ($tipo === 'produtos') {
             $categorias = $produtos
@@ -108,12 +128,13 @@ class RelatorioService
         $valores = array_fill(0, count($buckets), 0);
         $eventos = match ($tipo) {
             'orcamentos' => $orcamentos,
+            'vendas' => $vendas,
             'clientes' => $clientes,
             default => $orcamentos,
         };
 
         foreach ($eventos as $evento) {
-            $data = CarbonImmutable::parse($evento->created_at);
+            $data = CarbonImmutable::parse($tipo === 'vendas' ? $evento->vendido_em : $evento->created_at);
             $chave = match ($periodo) {
                 'hoje' => sprintf('%02d', intdiv((int) $data->format('G'), 4) * 4),
                 'ano' => $data->format('m-Y'),

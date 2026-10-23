@@ -16,7 +16,7 @@ class RelatorioController extends Controller
     {
         $filtros = $request->validate([
             'periodo' => ['sometimes', 'in:hoje,semana,mes,ano'],
-            'tipo' => ['sometimes', 'in:movimentacao,orcamentos,clientes,produtos'],
+            'tipo' => ['sometimes', 'in:movimentacao,orcamentos,vendas,clientes,produtos'],
         ]);
 
         $dados = $this->service->gerar(

@@ -10,6 +10,8 @@ import { MetricsGrid, QuickAccess, ReportPanels } from '@/components/DashboardWi
 
 type Summary = { clientes: number | null; orcamentos_aprovados: number | null; orcamentos_pendentes: number | null; produtos_em_estoque: number | null };
 type Report = { totais: Record<string, number>; serie: { rotulos: string[]; valores: number[] } };
+type ActivityType = 'orcamentos' | 'vendas';
+const activityStorageKey = (userId: string) => `gestorize:dashboard:activity:${userId}`;
 
 const cards = [
   { key: 'clientes', label: 'Clientes cadastrados', icon: 'mdi:account-multiple-outline', permission: 'clientes.ver', href: '/clientes' },
@@ -19,12 +21,15 @@ const cards = [
 ] as const;
 
 export function Dashboard() {
-  const { can } = useAuth();
+  const { can, user } = useAuth();
   const [summary, setSummary] = useState<Summary | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
-  const [report, setReport] = useState<Report | null>(null);
+  const [chartReport, setChartReport] = useState<Report | null>(null);
+  const [budgetReport, setBudgetReport] = useState<Report | null>(null);
   const [reportLoading, setReportLoading] = useState(true);
+  const [activityType, setActivityType] = useState<ActivityType>('orcamentos');
+  const [activityPreferenceReady, setActivityPreferenceReady] = useState(false);
 
   useEffect(() => {
     apiFetch<unknown>('/dashboard/resumo')
@@ -34,12 +39,33 @@ export function Dashboard() {
   }, []);
 
   useEffect(() => {
+    if (!user?.id) return;
+    const saved = window.localStorage.getItem(activityStorageKey(user.id));
+    if (saved === 'vendas' || saved === 'orcamentos') setActivityType(saved);
+    setActivityPreferenceReady(true);
+  }, [user?.id]);
+
+  useEffect(() => {
     if (!can('relatorios.ver')) { setReportLoading(false); return; }
-    apiFetch<unknown>('/relatorios?periodo=semana&tipo=orcamentos')
-      .then((response) => setReport(unwrap<Report>(response as never)))
-      .catch(() => setReport(null))
+    if (!activityPreferenceReady) return;
+
+    setReportLoading(true);
+    const chartRequest = apiFetch<unknown>(`/relatorios?periodo=semana&tipo=${activityType}`)
+      .then((response) => unwrap<Report>(response as never));
+    const budgetRequest = activityType === 'orcamentos'
+      ? chartRequest
+      : apiFetch<unknown>('/relatorios?periodo=semana&tipo=orcamentos').then((response) => unwrap<Report>(response as never));
+
+    Promise.all([chartRequest, budgetRequest])
+      .then(([chart, budget]) => { setChartReport(chart); setBudgetReport(budget); })
+      .catch(() => { setChartReport(null); setBudgetReport(null); })
       .finally(() => setReportLoading(false));
-  }, [can]);
+  }, [activityType, activityPreferenceReady, can]);
+
+  const changeActivityType = (type: ActivityType) => {
+    setActivityType(type);
+    if (user?.id) window.localStorage.setItem(activityStorageKey(user.id), type);
+  };
 
   const visibleCards = cards.filter((card) => can(card.permission));
 
@@ -67,7 +93,7 @@ export function Dashboard() {
       <MetricsGrid metrics={[...visibleCards]} values={summary} loading={loading} />
       {can('relatorios.ver') ? (
         <Box sx={{ width: '100%', display: 'grid', gridTemplateColumns: { xs: '1fr', lg: 'minmax(0,2.2fr) minmax(280px,.8fr)' }, alignItems: 'start', gap: { xs: 3, lg: 2.5 } }}>
-          <ReportPanels report={report} loading={reportLoading} />
+          <ReportPanels report={chartReport} budgetReport={budgetReport} loading={reportLoading} activityType={activityType} onActivityTypeChange={changeActivityType} />
           <QuickAccess can={can} />
         </Box>
       ) : <QuickAccess can={can} />}
