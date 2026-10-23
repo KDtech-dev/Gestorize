@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { AppShell } from '@/components/AppShell';
 import { DataModule } from '@/components/DataModule';
+import { ClientsPage } from '@/components/ClientsPage';
+import { ProductsPage } from '@/components/ProductsPage';
 import { SalesOverview } from '@/components/SalesOverview';
 import { ReportsPage } from '@/components/ReportsPage';
 import { useAuth } from '@/context/AuthContext';
@@ -28,6 +30,8 @@ export default function ModulePage() {
   if (loading) return <div className="boot-screen"><span className="spinner" />Carregando…</div>;
   if (isGlobalAdmin || !config || !can(config.permission)) return <AppShell><section className="empty-state"><span className="empty-icon">⌁</span><h1>Acesso indisponível</h1><p>Seu perfil não possui acesso a esta área.</p></section></AppShell>;
   if (module === 'vendas') return <AppShell><SalesOverview /></AppShell>;
+  if (module === 'clientes') return <AppShell><ClientsPage /></AppShell>;
+  if (module === 'produtos') return <AppShell><ProductsPage /></AppShell>;
   return <AppShell>
     {module === 'relatorios' ? <ReportsPage /> : <DataModule title={config.title} endpoint={config.endpoint} module={module} />}
   </AppShell>;

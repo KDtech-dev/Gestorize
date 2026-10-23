@@ -6,6 +6,9 @@ import { ThemeProvider } from '@/context/ThemeContext';
 export const metadata: Metadata = {
   title: 'Gestorize',
   description: 'Gestão simples para o seu negócio.',
+  icons: {
+    icon: [{ url: '/favicon-16x16.png', type: 'image/png', sizes: '16x16' }],
+  },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
