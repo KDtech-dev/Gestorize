@@ -30,7 +30,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     if (isGlobalAdmin) return item.href === '/';
     return !item.permission || can(item.permission);
   });
-  const isNavigationActive = (href: string) => pathname === href || (href === '/clientes' && pathname.startsWith('/clientes/'));
+  const isNavigationActive = (href: string) => pathname === href || (['/clientes', '/produtos'].includes(href) && pathname.startsWith(`${href}/`));
 
   return <div className="app-frame">
     <aside className="sidebar">
@@ -49,7 +49,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <TopNavigation items={visibleNavigation} />
         <div className="topbar-right"><button className="theme-toggle" onClick={toggle} aria-label={mode === 'dark' ? 'Ativar tema claro' : 'Ativar tema escuro'} data-tooltip={mode === 'dark' ? 'Tema claro' : 'Tema escuro'}>{mode === 'dark' ? '☀' : '☾'}</button><UserMenu name={user?.name ?? 'Usuário'} email={user?.email ?? ''} role={user?.role ?? 'Usuário'} imageUrl={user?.avatar_url ?? user?.avatar} signOut={async () => { guardedSignOut(); }} /></div>
       </header>
-      <div className={`page-content ${pathname === '/' ? 'dashboard-content' : ''} ${['/clientes', '/clientes/nova', '/produtos', '/fornecedores', '/orcamentos', '/funcionarios', '/vendas', '/relatorios'].includes(pathname) ? 'clients-content' : ''}`}>{children}</div>
+      <div className={`page-content ${pathname === '/' ? 'dashboard-content' : ''} ${['/clientes', '/clientes/nova', '/produtos', '/produtos/nova', '/fornecedores', '/orcamentos', '/funcionarios', '/vendas', '/relatorios'].includes(pathname) ? 'clients-content' : ''}`}>{children}</div>
     </main>
   </div>;
 }

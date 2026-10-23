@@ -29,12 +29,21 @@ class StoreProdutoRequest extends FormRequest
             'unidade_medida_id' => ['required', 'uuid', new BelongsToCurrentOrganization('unidades_medida')],
             'estoque' => ['required', 'numeric', 'min:0',],
             'validade' => ['nullable', 'date', 'after_or_equal:data_entrada', 'after_or_equal:today'],
+            'imagens' => ['sometimes', 'array', 'max:10'],
+            'imagens.*' => ['image', 'mimes:jpeg,jpg,png,webp', 'max:10240'],
+            'imagem_principal' => ['sometimes', 'integer', 'min:0'],
         ];
     }
 
     public function withValidator(Validator $validator): void
     {
         $validator->after(function (Validator $validator) {
+            $imagens = $this->file('imagens', []);
+            $principal = $this->input('imagem_principal');
+            if ($principal !== null && (!count($imagens) || (int) $principal >= count($imagens))) {
+                $validator->errors()->add('imagem_principal', 'Selecione uma imagem principal válida.');
+            }
+
             $categoriaId = $this->input('categoria_id');
             if (!$categoriaId) return;
             $nome = Categoria::whereKey($categoriaId)->value('nome');
@@ -84,6 +93,11 @@ class StoreProdutoRequest extends FormRequest
 
             'validade.date' => 'A validade deve ser uma data válida.',
             'validade.after_or_equal' => 'A validade não pode ser anterior à data de entrada nem estar vencida.',
+            'imagens.array' => 'As imagens do produto são inválidas.',
+            'imagens.max' => 'Adicione no máximo 10 imagens ao produto.',
+            'imagens.*.image' => 'Todos os arquivos devem ser imagens.',
+            'imagens.*.mimes' => 'As imagens devem estar no formato JPG, PNG ou WEBP.',
+            'imagens.*.max' => 'Cada imagem pode ter até 10 MB.',
         ];
     }
 }

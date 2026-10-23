@@ -53,9 +53,22 @@ class ProdutoController extends Controller
     public function store(
         StoreProdutoRequest $request
     ): JsonResponse {
-        $produto = $this->service->criar(
-            $request->validated()
-        );
+        $dados = $request->validated();
+        $imagens = $dados['imagens'] ?? [];
+        $indiceImagemPrincipal = (int) ($dados['imagem_principal'] ?? 0);
+        unset($dados['imagens'], $dados['imagem_principal']);
+
+        $produto = $this->service->criar($dados);
+
+        foreach ($imagens as $indice => $imagem) {
+            $this->imagemService->adicionar(
+                $produto,
+                $imagem,
+                $indice === $indiceImagemPrincipal
+            );
+        }
+
+        $produto = $this->service->buscar($produto->id);
 
         return ResponseService::success(
             new ProdutoResource($produto),

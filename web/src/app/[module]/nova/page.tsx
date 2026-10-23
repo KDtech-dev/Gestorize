@@ -5,6 +5,7 @@ import { useParams, useSearchParams } from 'next/navigation';
 import { AppShell } from '@/components/AppShell';
 import { SalesDesk } from '@/components/SalesDesk';
 import { ClientEditorPage } from '@/components/entities/clients/ClientEditorPage';
+import { ProductEditorPage } from '@/components/entities/products/ProductEditorPage';
 import { canSell, useAuth } from '@/context/AuthContext';
 
 function NewModuleContent() {
@@ -12,6 +13,7 @@ function NewModuleContent() {
   const searchParams = useSearchParams();
   const { user, loading, can } = useAuth();
   const clientId = searchParams.get('id') || undefined;
+  const productId = searchParams.get('id') || undefined;
 
   if (loading) return <div className="boot-screen"><span className="spinner" />Carregando…</div>;
   if (params.module === 'clientes') {
@@ -21,6 +23,14 @@ function NewModuleContent() {
       return <AppShell><section className="empty-state"><span className="empty-icon">⌁</span><h1>Acesso indisponível</h1><p>Seu perfil não possui acesso a esta área.</p></section></AppShell>;
     }
     return <AppShell><ClientEditorPage clientId={clientId} /></AppShell>;
+  }
+  if (params.module === 'produtos') {
+    const isGlobalAdmin = user?.role === 'admin' && !user.organization_id;
+    const permission = productId ? 'produtos.editar' : 'produtos.criar';
+    if (isGlobalAdmin || !can('produtos.ver') || !can(permission)) {
+      return <AppShell><section className="empty-state"><span className="empty-icon">⌁</span><h1>Acesso indisponível</h1><p>Seu perfil não possui acesso a esta área.</p></section></AppShell>;
+    }
+    return <AppShell><ProductEditorPage productId={productId} /></AppShell>;
   }
   if (params.module !== 'vendas' || !canSell(user)) {
     return <AppShell><section className="empty-state"><span className="empty-icon">⌁</span><h1>Acesso indisponível</h1><p>Seu perfil não possui acesso a esta área.</p></section></AppShell>;

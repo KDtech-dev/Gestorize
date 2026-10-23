@@ -1,11 +1,11 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Icon } from '@iconify/react';
 import { FormControl, InputLabel, MenuItem, Select } from '@mui/material';
 import { apiFetch } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
-import { RecordEditor } from '@/components/RecordEditor';
 import { UserAvatar } from '@/components/UserAvatar';
 import { EntityActionButton, EntityDirectoryHeading, EntityPageHeading, EntityPagination, EntitySummaryCard } from '@/components/entities/EntityPageParts';
 
@@ -24,7 +24,7 @@ function money(value: unknown) {
   return Number.isFinite(amount) ? amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '—';
 }
 
-function ProductCard({ product, selected, onSelect, onEdit, onDelete }: { product: Product; selected: boolean; onSelect: () => void; onEdit: () => void; onDelete: () => void }) {
+function ProductCard({ product, selected, canEdit, onSelect, onEdit, onDelete }: { product: Product; selected: boolean; canEdit: boolean; onSelect: () => void; onEdit: () => void; onDelete: () => void }) {
   const name = String(product.nome ?? 'Produto');
   const imageUrl = product.imagem_principal?.url ?? product.imagens?.find((image: Product) => image.principal)?.url ?? product.imagens?.[0]?.url;
   const stock = Number(product.estoque ?? 0);
@@ -50,7 +50,7 @@ function ProductCard({ product, selected, onSelect, onEdit, onDelete }: { produc
       <span className="client-card-actions-label">Ações</span>
       <div className="client-card-actions">
         <EntityActionButton label={selected ? 'Ocultar detalhes' : 'Ver detalhes'} icon={selected ? 'mdi:chevron-up' : 'mdi:eye-outline'} onClick={onSelect} />
-        <EntityActionButton label="Editar produto" icon="mdi:pencil-outline" onClick={onEdit} />
+        {canEdit && <EntityActionButton label="Editar produto" icon="mdi:pencil-outline" onClick={onEdit} />}
         <EntityActionButton label="Excluir produto" icon="mdi:trash-can-outline" onClick={onDelete} danger />
       </div>
     </footer>
@@ -87,6 +87,7 @@ function ProductFilters({ search, category, stockStatus, categories, count, onSe
 }
 
 export function ProductsPage() {
+  const router = useRouter();
   const { can } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -95,7 +96,6 @@ export function ProductsPage() {
   const [stockStatus, setStockStatus] = useState('');
   const [page, setPage] = useState(1);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [editing, setEditing] = useState<Product | null | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -114,10 +114,8 @@ export function ProductsPage() {
     if (!can('produtos.criar')) return;
     const url = new URL(window.location.href);
     if (url.searchParams.get('novo') !== '1') return;
-    setEditing(null);
-    url.searchParams.delete('novo');
-    window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
-  }, [can]);
+    router.replace('/produtos/nova');
+  }, [can, router]);
 
   const filtered = useMemo(() => {
     const term = search.trim().toLocaleLowerCase();
@@ -134,11 +132,6 @@ export function ProductsPage() {
   const pageItems = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
   const inStock = products.filter((product) => Number(product.estoque) > 0).length;
   const outOfStock = products.length - inStock;
-
-  async function saveProduct(payload: Product, id?: string) {
-    await apiFetch(id ? `/produtos/${id}` : '/produtos', { method: id ? 'PUT' : 'POST', body: JSON.stringify(payload) });
-    await reload();
-  }
 
   async function deleteProduct(product: Product) {
     if (!window.confirm(`Excluir ${String(product.nome ?? 'este produto')}? Essa ação não pode ser desfeita.`)) return;
@@ -157,7 +150,7 @@ export function ProductsPage() {
   }
 
   return <div className="clients-page products-page">
-    <EntityPageHeading eyebrow="CATÁLOGO" icon="mdi:package-variant-closed" title="Produtos" description="Consulte preços, estoque e informações dos produtos da sua organização." createLabel="Novo produto" canCreate={can('produtos.criar')} onCreate={() => setEditing(null)} />
+    <EntityPageHeading eyebrow="CATÁLOGO" icon="mdi:package-variant-closed" title="Produtos" description="Consulte preços, estoque e informações dos produtos da sua organização." createLabel="Novo produto" canCreate={can('produtos.criar')} onCreate={() => router.push('/produtos/nova')} />
     <section className="client-summary-grid" aria-label="Resumo de produtos">
       <EntitySummaryCard compact label="Total de produtos" value={loading ? '—' : products.length} icon="mdi:package-variant-closed" color="#005CE4" />
       <EntitySummaryCard compact label="Com estoque" value={loading ? '—' : inStock} icon="mdi:check-circle-outline" color="#0f9f73" />
@@ -167,9 +160,8 @@ export function ProductsPage() {
     <section className="client-directory">
       <ProductFilters search={search} category={category} stockStatus={stockStatus} categories={categories} count={filtered.length} onSearch={(value) => changeFilter(value, setSearch)} onCategory={(value) => changeFilter(value, setCategory)} onStockStatus={(value) => changeFilter(value, setStockStatus)} />
       {error && <div className="inline-error">{error}</div>}
-      {loading ? <div className="table-loading"><span className="spinner" />Carregando produtos…</div> : pageItems.length ? <div className="client-card-grid">{pageItems.map((product) => <ProductCard key={String(product.id)} product={product} selected={selectedId === product.id} onSelect={() => setSelectedId(selectedId === product.id ? null : String(product.id))} onEdit={() => setEditing(product)} onDelete={() => void deleteProduct(product)} />)}</div> : <div className="empty-state compact"><span className="empty-icon"><Icon icon="mdi:package-variant-closed" /></span><h2>{search || category || stockStatus ? 'Nenhum produto encontrado' : 'Ainda não há produtos'}</h2><p>{search || category || stockStatus ? 'Ajuste os filtros para ver outros produtos.' : 'Cadastre o primeiro produto para começar.'}</p></div>}
+      {loading ? <div className="table-loading"><span className="spinner" />Carregando produtos…</div> : pageItems.length ? <div className="client-card-grid">{pageItems.map((product) => <ProductCard key={String(product.id)} product={product} selected={selectedId === String(product.id)} canEdit={can('produtos.editar')} onSelect={() => setSelectedId(selectedId === String(product.id) ? null : String(product.id))} onEdit={() => router.push(`/produtos/nova?id=${encodeURIComponent(String(product.id))}`)} onDelete={() => void deleteProduct(product)} />)}</div> : <div className="empty-state compact"><span className="empty-icon"><Icon icon="mdi:package-variant-closed" /></span><h2>{search || category || stockStatus ? 'Nenhum produto encontrado' : 'Ainda não há produtos'}</h2><p>{search || category || stockStatus ? 'Ajuste os filtros para ver outros produtos.' : 'Cadastre o primeiro produto para começar.'}</p></div>}
       {!loading && <EntityPagination noun="produtos" page={currentPage} totalPages={totalPages} total={filtered.length} from={(currentPage - 1) * PAGE_SIZE + 1} to={Math.min(currentPage * PAGE_SIZE, filtered.length)} onChange={setPage} />}
     </section>
-    {editing !== undefined && <RecordEditor module="produtos" row={editing} onClose={() => setEditing(undefined)} onSave={saveProduct} />}
   </div>;
 }
