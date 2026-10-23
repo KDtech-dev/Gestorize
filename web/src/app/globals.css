@@ -213,6 +213,47 @@ html:has(.theme-root[data-theme=dark]),html:has(.theme-root[data-theme=dark]) bo
 .supplier-card-contact{margin-top:11px}
 .supplier-card-details{grid-template-columns:repeat(2,minmax(0,1fr))}
 .supplier-card-details p strong{white-space:normal;word-break:break-word}
+.clients-page:not(.products-page) .client-summary-label{font-size:16px}
+.clients-page:not(.products-page) .client-summary-card>strong{font-size:30px}
+.clients-page:not(.products-page) .client-card-identity-copy strong{font-size:21px}
+.clients-page:not(.products-page) .client-card-identity-copy>span{font-size:16px}
+.clients-page:not(.products-page) .client-card-contact>span{font-size:16px}
+.clients-page:not(.products-page) .client-card-details p span{font-size:14px}
+.clients-page:not(.products-page) .client-card-details p strong{font-size:16px}
+.suppliers-page .supplier-primary-category{font-size:14px}
+.quote-summary-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+.quote-card-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.quote-title-button{min-width:0;display:flex;align-items:center;gap:12px;padding:0;border:0;background:transparent;color:inherit;text-align:left;cursor:pointer}
+.quote-card-icon{width:48px;height:48px;flex:none;display:grid;place-items:center;border:1px solid #c5d9fa;border-radius:13px;background:#edf4ff;color:#1260c4}
+.theme-root[data-theme=dark] .quote-card-icon{border-color:#31537f;background:#123563;color:#9bc4ff}
+.quote-title-copy{min-width:0;display:flex;flex-direction:column;gap:5px}
+.quote-title-copy strong{overflow:hidden;color:var(--ink);font:800 20px Manrope,sans-serif;text-overflow:ellipsis;white-space:nowrap}
+.quote-title-copy>span{overflow:hidden;color:var(--muted);font-size:16px;text-overflow:ellipsis;white-space:nowrap}
+.quote-status{flex:none;display:inline-flex;align-items:center;gap:7px;padding:7px 10px;border:1px solid #f0d5b1;border-radius:999px;background:#fff5e8;color:#9b5c11;font-size:14px;font-weight:800;white-space:nowrap}
+.quote-status>span{width:7px;height:7px;border-radius:50%;background:currentColor}
+.quote-status.aprovado{border-color:#b7e4d0;background:#eaf8f1;color:#14724e}
+.quote-status.vendido{border-color:#c4b5fd;background:#f5f3ff;color:#6d28d9}
+.quote-status.cancelado{border-color:#fecaca;background:#fff1f1;color:#b42332}
+.theme-root[data-theme=dark] .quote-status{border-color:#79582e;background:#493a26;color:#ffd18a}
+.theme-root[data-theme=dark] .quote-status.aprovado{border-color:#246b52;background:#123f37;color:#9be3c2}
+.theme-root[data-theme=dark] .quote-status.vendido{border-color:#6245a5;background:#34245f;color:#ddd0ff}
+.theme-root[data-theme=dark] .quote-status.cancelado{border-color:#8f4650;background:#512d3b;color:#ffb4bd}
+.quote-card-highlights{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:15px 0 0;padding:12px;border:1px solid var(--line);border-radius:11px;background:var(--surface)}
+.quote-card-highlights>div{min-width:0;display:flex;flex-direction:column;gap:5px}
+.quote-card-highlights>div+div{padding-left:12px;border-left:1px solid var(--line)}
+.quote-card-highlights span,.quote-items-list>span{color:var(--muted);font-size:14px;font-weight:600}
+.quote-card-highlights strong{overflow:hidden;color:var(--ink);font:800 19px Manrope,sans-serif;text-overflow:ellipsis;white-space:nowrap}
+.quote-card-meta{display:flex;align-items:center;gap:8px;margin:11px 0;color:var(--muted);font-size:15px}
+.quote-card-meta>span{display:flex;align-items:center;gap:7px}
+.quote-card-meta svg{color:#4384e7}
+.quote-card-details{grid-template-columns:repeat(2,minmax(0,1fr))}
+.quote-card-details p span{font-size:14px}
+.quote-card-details p strong{font-size:16px}
+.quote-items-list{grid-column:1/-1;display:grid;gap:8px;padding-top:11px;border-top:1px solid var(--line)}
+.quote-items-list>div{display:flex;justify-content:space-between;gap:12px;color:var(--ink);font-size:15px}
+.quote-items-list>div strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.quote-items-list>div span{flex:none;color:var(--muted)}
+.theme-root[data-theme=dark] .quote-card-highlights{border-color:var(--line);background:#05244d}
 .products-page .client-filters{grid-template-columns:minmax(230px,1.2fr) minmax(220px,1fr) minmax(220px,1fr)}
 .product-expiry{display:flex;align-items:center;gap:8px;margin-top:11px;padding:9px 11px;border:1px solid #f3d7a8;border-radius:9px;background:#fff8e9;color:#855313;font-size:13px}
 .product-expiry svg{flex:none;color:#c17a13}
@@ -221,7 +262,28 @@ html:has(.theme-root[data-theme=dark]),html:has(.theme-root[data-theme=dark]) bo
 .theme-root[data-theme=dark] .product-expiry svg,.theme-root[data-theme=dark] .product-expiry strong{color:#ffd18a}
 @media(max-width:1000px){.products-page .client-filters{grid-template-columns:repeat(2,minmax(0,1fr))}.products-page .client-filters .search-field{grid-column:1/-1}}
 @media(max-width:1000px){.client-card-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.client-filters{grid-template-columns:minmax(240px,.8fr) minmax(320px,1.2fr)}}
+@media(max-width:1000px){.quote-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:700px){
+  .clients-page:not(.products-page) .client-summary-label{font-size:14px}
+  .clients-page:not(.products-page) .client-summary-card>strong{font-size:24px}
+  .clients-page:not(.products-page) .client-card-identity-copy strong{font-size:17px}
+  .clients-page:not(.products-page) .client-card-identity-copy>span{font-size:14px}
+  .clients-page:not(.products-page) .client-card-contact>span{font-size:14px}
+  .clients-page:not(.products-page) .client-card-details p span{font-size:13px}
+  .clients-page:not(.products-page) .client-card-details p strong{font-size:15px}
+  .suppliers-page .supplier-primary-category{font-size:12px}
+  .quote-summary-grid{grid-template-columns:1fr}
+  .quote-card-icon{width:42px;height:42px}
+  .quote-title-copy strong{font-size:17px}
+  .quote-title-copy>span{font-size:14px}
+  .quote-status{padding:5px 7px;font-size:12px}
+  .quote-card-highlights{margin-top:12px;padding:10px}
+  .quote-card-highlights span,.quote-items-list>span{font-size:13px}
+  .quote-card-highlights strong{font-size:17px}
+  .quote-card-meta{font-size:14px}
+  .quote-card-details p span{font-size:13px}
+  .quote-card-details p strong{font-size:14px}
+  .quote-items-list>div{font-size:14px}
   .client-summary-grid{grid-template-columns:1fr;gap:8px;margin-bottom:14px}
   .client-summary-card{min-height:70px;grid-template-columns:1fr 38px;grid-template-rows:auto auto;column-gap:10px;padding:9px 13px;border-radius:11px}
   .client-summary-icon{grid-column:2;grid-row:1/3;width:38px;height:38px;border-radius:11px}

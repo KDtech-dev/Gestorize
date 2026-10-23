@@ -7,6 +7,7 @@ import { DataModule } from '@/components/DataModule';
 import { ClientsPage } from '@/components/ClientsPage';
 import { ProductsPage } from '@/components/ProductsPage';
 import { SuppliersPage } from '@/components/SuppliersPage';
+import { QuotesPage } from '@/components/QuotesPage';
 import { SalesOverview } from '@/components/SalesOverview';
 import { ReportsPage } from '@/components/ReportsPage';
 import { useAuth } from '@/context/AuthContext';
@@ -34,6 +35,7 @@ export default function ModulePage() {
   if (module === 'clientes') return <AppShell><ClientsPage /></AppShell>;
   if (module === 'produtos') return <AppShell><ProductsPage /></AppShell>;
   if (module === 'fornecedores') return <AppShell><SuppliersPage /></AppShell>;
+  if (module === 'orcamentos') return <AppShell><QuotesPage /></AppShell>;
   return <AppShell>
     {module === 'relatorios' ? <ReportsPage /> : <DataModule title={config.title} endpoint={config.endpoint} module={module} />}
   </AppShell>;
