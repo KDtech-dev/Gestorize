@@ -18,8 +18,17 @@ class VendasSeeder extends Seeder
     public function run(): void
     {
         DB::transaction(function (): void {
-            $funcionario = User::query()->where('email', 'funcionario@example.com')->firstOrFail();
-            $cliente = Cliente::query()->orderBy('created_at')->firstOrFail();
+            $usuarios = User::query()
+                ->whereIn('email', ['funcionario@example.com', 'gestor@example.com', 'teste@email.com'])
+                ->orderBy('email')
+                ->get();
+            $funcionario = $usuarios->firstWhere('email', 'funcionario@example.com');
+            if (!$funcionario || $usuarios->count() < 2) {
+                throw new \RuntimeException('Execute TestUsersSeeder antes de VendasSeeder para criar os usuários de demonstração.');
+            }
+
+            $clientes = Cliente::query()->orderBy('created_at')->get();
+            $cliente = $clientes->firstOrFail();
 
             $categoria = Categoria::firstOrCreate(['nome' => 'Alimentos']);
             $fornecedor = Fornecedor::updateOrCreate(
@@ -103,6 +112,38 @@ class VendasSeeder extends Seeder
 
             // O estoque é redefinido acima para 50 em cada execução; manter 2 unidades vendidas.
             $produto->decrement('estoque', $quantidade);
+
+            $formasPagamento = ['pix', 'dinheiro', 'debito', 'credito'];
+            foreach ($usuarios->values() as $usuarioIndex => $usuario) {
+                for ($vendaIndex = 0; $vendaIndex < 3; $vendaIndex++) {
+                    $dia = ($usuarioIndex * 2 + $vendaIndex) % 7;
+                    $vendidoEm = today()->subDays($dia)->setTime(9 + ($usuarioIndex * 2) + $vendaIndex, 15 + ($vendaIndex * 10));
+                    $clienteVenda = $clientes[($usuarioIndex + $vendaIndex) % $clientes->count()];
+                    $quantidadeVenda = 1 + (($usuarioIndex + $vendaIndex) % 3);
+                    $subtotalVenda = round($quantidadeVenda * $precoUnitario, 2);
+
+                    $vendaDemonstracao = Venda::updateOrCreate(
+                        ['usuario_id' => $usuario->id, 'vendido_em' => $vendidoEm],
+                        [
+                            'cliente_id' => $clienteVenda->id,
+                            'cliente_nome' => $clienteVenda->nome,
+                            'forma_pagamento' => $formasPagamento[($usuarioIndex + $vendaIndex) % count($formasPagamento)],
+                            'desconto' => 0,
+                            'valor_total' => $subtotalVenda,
+                        ],
+                    );
+                    $vendaDemonstracao->itens()->delete();
+                    $vendaDemonstracao->itens()->create([
+                        'produto_id' => $produto->id,
+                        'produto_nome' => $produto->nome,
+                        'codigo_barras' => $produto->codigo_barras,
+                        'quantidade' => $quantidadeVenda,
+                        'preco_unitario' => $precoUnitario,
+                        'subtotal' => $subtotalVenda,
+                    ]);
+                    $produto->decrement('estoque', $quantidadeVenda);
+                }
+            }
         });
     }
 }
