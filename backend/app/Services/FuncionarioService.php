@@ -44,7 +44,12 @@ class FuncionarioService
 
     public function listar(): LengthAwarePaginator
     {
-        return Funcionario::with(['user.roles', 'user.permissions', 'endereco'])
+        return Funcionario::query()
+            ->whereHas('user', fn ($query) => $query->whereDoesntHave(
+                'roles',
+                fn ($roles) => $roles->where('name', 'admin'),
+            ))
+            ->with(['user.roles', 'user.permissions', 'endereco'])
             ->latest()
             ->paginate(15);
     }

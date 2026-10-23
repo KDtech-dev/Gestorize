@@ -211,7 +211,13 @@ const Homepage = () => {
             <React.Fragment key={section.title}>
               <View style={styles.sectionHeading}>
                 <MaterialCommunityIcons name="lightning-bolt-outline" size={21} color={colors.primary} />
-                <Text variant="titleMedium" style={[styles.sectionTitle, { color: colors.text }]}>{section.title}</Text>
+                <Text
+                  variant="titleMedium"
+                  numberOfLines={2}
+                  style={[styles.sectionTitle, styles.actionSectionTitle, { color: colors.text }]}
+                >
+                  {section.title}
+                </Text>
               </View>
               <View style={styles.grid}>
                 {section.actions.map((item) => (
@@ -305,6 +311,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     fontSize: 18,
   },
+  actionSectionTitle: { flexShrink: 1 },
   metricsHeader: {
     flexDirection: 'row',
     alignItems: 'center',
