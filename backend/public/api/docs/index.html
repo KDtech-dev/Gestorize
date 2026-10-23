@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101827">
+  <title>Documentação da API | Gestorize</title>
+  <style>
+    :root{color-scheme:light;--bg:#f4f7fb;--panel:#fff;--ink:#172033;--muted:#68758b;--line:#e2e8f0;--brand:#3569e8;--nav:#111b2d;--code:#101827;--green:#12805c;--red:#c43f50;--orange:#a45a10}
+    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.7 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+    a{color:var(--brand);text-decoration:none}a:hover{text-decoration:underline}code,pre{font-family:ui-monospace,SFMono-Regular,Consolas,monospace}code{font-size:.92em;background:#edf2fa;padding:.12em .35em;border-radius:5px}
+    .layout{min-height:100vh}.topbar{position:sticky;top:0;z-index:5;background:var(--nav);color:#dce5f5;padding:12px clamp(18px,4vw,64px);display:flex;align-items:center;justify-content:space-between;gap:24px;box-shadow:0 4px 16px #10182720}.brand-row{display:flex;align-items:center;gap:10px;flex:0 0 auto}.brand-logo{width:42px;height:42px;object-fit:contain}.brand{font-weight:800;font-size:21px;color:white;letter-spacing:-.03em;line-height:1.2}.brand small{display:block;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#91a3c2;margin-top:3px}.topbar nav{display:flex;align-items:center;justify-content:flex-end;gap:5px;flex-wrap:wrap}.topbar nav a{color:#b9c7dd;padding:8px 12px;border-radius:8px;font-size:14px;font-weight:600;white-space:nowrap}.topbar nav a:hover{background:#ffffff12;color:#fff;text-decoration:none}
+    main{width:100%;padding:36px clamp(20px,3vw,50px) 90px;margin:0 auto}.content{width:100%;max-width:none;margin:0 auto}.hero{padding:38px clamp(24px,4vw,58px);border-radius:18px;background:linear-gradient(125deg,#15243c,#254c9c);color:#fff;box-shadow:0 18px 40px #1c37631c;text-align:center}.eyebrow{font-size:13px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#a9c3ff}.hero h1{font-size:clamp(36px,4vw,54px);line-height:1.12;margin:9px 0 14px;letter-spacing:-.04em}.hero p{max-width:850px;margin:0 auto;color:#d5e0f3;font-size:18px}.base{display:flex;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap;margin-top:25px}.base code{background:#ffffff18;color:#fff;padding:10px 14px}.badge{display:inline-flex;padding:4px 10px;border-radius:999px;background:#ffffff20;color:#e6edff;font-size:12px;font-weight:700}
+    section{margin-top:48px;scroll-margin-top:90px}h2{font-size:29px;line-height:1.25;margin:0 0 14px;letter-spacing:-.025em}h3{font-size:21px;margin:28px 0 10px}p{margin:9px 0 16px}.muted{color:var(--muted)}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.card{border:1px solid var(--line);border-radius:13px;background:var(--panel);padding:22px}.card h3{margin:0 0 10px}.card p:last-child{margin-bottom:0}.callout{border-left:4px solid var(--brand);background:#eaf0ff;padding:16px 19px;border-radius:0 9px 9px 0;margin:18px 0}.callout.warning{border-color:#d98b22;background:#fff5e7}.callout code{background:#ffffffb5}
+    .toolbar{display:flex;gap:10px;align-items:center;margin:20px 0}.toolbar input{width:min(520px,100%);padding:13px 15px;border:1px solid var(--line);border-radius:9px;background:var(--panel);font:inherit;color:var(--ink)}.toolbar select{padding:12px;border:1px solid var(--line);border-radius:9px;background:var(--panel);font:inherit;color:var(--ink)}
+    .route-accordion{margin-top:13px;border:1px solid var(--line);border-radius:12px;background:var(--panel);overflow:hidden}.route-accordion summary{cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:14px;padding:17px 20px;font-weight:750;font-size:18px}.route-accordion summary::-webkit-details-marker{display:none}.route-accordion summary:after{content:'＋';color:var(--brand);font-size:22px;font-weight:500}.route-accordion[open] summary:after{content:'−'}.route-accordion summary:hover{background:#f8faff}.route-accordion-body{padding:0 20px 20px}.route-accordion-description{margin:0 0 14px;color:var(--muted);font-size:15px}.route-count{font-size:12px;font-weight:650;color:var(--muted);background:#edf2fa;padding:4px 9px;border-radius:999px;margin-left:auto}
+    .operation-accordion{margin:11px 0;border:1px solid var(--line);border-radius:9px;background:#fff;overflow:hidden}.operation-accordion summary{display:flex;align-items:center;gap:12px;padding:14px 16px;list-style:none;cursor:pointer;font-size:15px}.operation-accordion summary::-webkit-details-marker{display:none}.operation-accordion summary:after{content:'＋';margin-left:auto;font-size:19px;color:var(--brand)}.operation-accordion[open] summary:after{content:'−'}.operation-accordion summary:hover{background:#f8faff}.operation-path{font:14px ui-monospace,SFMono-Regular,Consolas,monospace;overflow-wrap:anywhere}.operation-access{font-size:13px;color:var(--muted);margin-left:auto;text-align:right}.operation-body{padding:0 17px 17px;border-top:1px solid var(--line)}.operation-body h4{font-size:14px;text-transform:uppercase;letter-spacing:.06em;margin:17px 0 6px;color:#52617a}.operation-body p{font-size:15px;margin:5px 0 9px}.operation-body pre{margin:8px 0 14px;max-height:420px}.parameter-chip{display:inline-block;margin:3px 4px 3px 0;padding:4px 8px;border-radius:5px;background:#edf2fa;color:#354763;font:12px ui-monospace,SFMono-Regular,Consolas,monospace}
+    .table-wrap{overflow:auto;border:1px solid var(--line);border-radius:12px;background:var(--panel)}table{width:100%;border-collapse:collapse;font-size:15px;min-width:650px}th,td{text-align:left;vertical-align:top;padding:13px 15px;border-bottom:1px solid var(--line)}th{font-size:13px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);background:#f8faff;position:sticky;top:0}tr:last-child td{border-bottom:0}.method{display:inline-block;min-width:62px;text-align:center;border-radius:5px;padding:4px 8px;color:#fff;font-size:12px;font-weight:800;letter-spacing:.04em;flex:0 0 auto}.get{background:#16845d}.post{background:#3569e8}.put{background:#a15bc7}.patch{background:#bd7a18}.delete{background:#c74450}.endpoint{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:14px;white-space:nowrap}
+    .field-list{display:grid;grid-template-columns:180px 1fr;gap:0;border-top:1px solid var(--line);font-size:15px}.field-list div{padding:10px 9px;border-bottom:1px solid var(--line)}.field-list .name{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;color:#273d69}.required{color:#b93248;font-size:12px;font-weight:700}.optional{color:var(--muted);font-size:12px}
+    pre{overflow:auto;background:var(--code);color:#e7eef9;padding:18px;border-radius:10px;font-size:14px;line-height:1.65}pre .comment{color:#8ca0bd}.response-code{font-size:13px;font-weight:800}.ok{color:var(--green)}.err{color:var(--red)}.footer{border-top:1px solid var(--line);margin-top:60px;padding-top:22px;color:var(--muted);font-size:14px}
+    @media(max-width:850px){.topbar{align-items:flex-start;flex-direction:column;gap:10px}.topbar nav{justify-content:flex-start}.topbar nav a{padding:7px 9px;font-size:13px}main{padding-top:22px}.grid{grid-template-columns:1fr}}
+    @media(max-width:520px){.hero{padding:25px 18px}.field-list{grid-template-columns:125px 1fr}.toolbar{align-items:stretch;flex-direction:column}.operation-accordion summary{flex-wrap:wrap}.operation-access{width:100%;margin-left:72px;text-align:left}}
+  </style>
+</head>
+<body>
+<div class="layout">
+  <header class="topbar">
+    <div class="brand-row"><img class="brand-logo" src="/api/docs/gestorize-logo.png" alt="Logo da Gestorize" onerror="this.hidden=true"><div class="brand">Gestorize<small>API reference</small></div></div>
+    <nav aria-label="Navegação da documentação">
+      <a href="#inicio">Visão geral</a><a href="#autenticacao">Autenticação</a><a href="#respostas">Respostas e erros</a><a href="#rotas">Rotas</a><a href="#organizacoes">Organizações</a>
+    </nav>
+  </header>
+  <main>
+    <div class="content">
+    <header class="hero" id="inicio">
+      <div class="eyebrow">Referência da API</div>
+      <h1>Documentação Gestorize</h1>
+      <p>Rotas, permissões, parâmetros e formatos de resposta da API usada pelas aplicações web e mobile.</p>
+      <div class="base"><span class="badge">Base URL</span><code id="base-url">http://localhost:8000/api</code><span class="badge">Content-Type: application/json</span></div>
+    </header>
+
+    <section id="autenticacao">
+      <h2>Autenticação</h2>
+      <div class="grid">
+        <article class="card"><h3>Token Sanctum</h3><p>Faça <code>POST /login</code> com e-mail e senha. A resposta inclui <code>data.token</code>; envie esse valor nas demais rotas protegidas:</p><pre>Authorization: Bearer SEU_TOKEN
+Accept: application/json
+Content-Type: application/json</pre><p class="muted">O token expira em três horas. Use <code>POST /refresh</code> antes do vencimento para substituí-lo. O logout revoga o token atual.</p><pre>{
+  "success": true,
+  "message": null,
+  "data": {"token":"...","expires_at":"...","user":{}},
+  "meta": null
+}</pre></article>
+        <article class="card"><h3>Permissões e organização</h3><p>Além de autenticação, a rota pode exigir uma permissão específica. A conta deve estar vinculada a uma organização ativa para acessar dados operacionais; os registros retornados pertencem à organização do usuário.</p><p>As permissões individuais ampliam o papel do usuário. Elas não removem permissões herdadas do papel.</p></article>
+      </div>
+    </section>
+
+    <section id="respostas">
+      <h2>Respostas e erros</h2>
+      <p class="muted">A maioria dos endpoints usa o envelope abaixo. Alguns endpoints administrativos retornam <code>success</code> e <code>data</code> sem <code>message</code>; a listagem paginada de usuários também traz metadados de paginação do Laravel.</p>
+      <div class="grid">
+        <article class="card"><h3><span class="response-code ok">2xx · sucesso</span></h3><pre>{
+  "success": true,
+  "message": "Operação realizada com sucesso.",
+  "data": {},
+  "meta": null
+}</pre></article>
+        <article class="card"><h3><span class="response-code err">Erros da API</span></h3><pre>{
+  "success": false,
+  "message": "Descrição do erro.",
+  "code": 403
+}</pre></article>
+      </div>
+      <div class="table-wrap" style="margin-top:14px"><table><thead><tr><th>HTTP</th><th>Quando ocorre</th><th>Formato / observação</th></tr></thead><tbody>
+        <tr><td><code>201</code></td><td>Recurso criado (por exemplo, cliente, venda, funcionário, etiqueta).</td><td>Resposta de sucesso com o recurso criado em <code>data</code>.</td></tr>
+        <tr><td><code>401</code></td><td>Token ausente, inválido ou expirado.</td><td>Envelope de erro; autentique novamente ou atualize a sessão. Credenciais inválidas no login retornam <code>422</code>.</td></tr>
+        <tr><td><code>403</code></td><td>Sem permissão, organização inativa, ou conta global tentando acessar rota operacional.</td><td>Envelope de erro com a mensagem da API.</td></tr>
+        <tr><td><code>404</code></td><td>Recurso não encontrado ou fora do escopo da organização.</td><td>Envelope de erro. O registro de outra organização não deve ser revelado.</td></tr>
+        <tr><td><code>422</code></td><td>Campo ausente/inválido ou regra de negócio não atendida.</td><td>Falhas de validação incluem <code>errors</code> por campo; algumas regras de negócio retornam somente <code>success</code>, <code>message</code> e <code>code</code>.</td></tr>
+        <tr><td><code>429</code></td><td>Limite de tentativas excedido em rotas com throttle.</td><td>Resposta de limite de requisições.</td></tr>
+        <tr><td><code>500</code></td><td>Erro inesperado do servidor.</td><td>Envelope de erro; a mensagem depende da exceção gerada.</td></tr>
+      </tbody></table></div>
+      <div class="callout"><strong>Validação:</strong> o campo <code>errors</code> mapeia cada nome de campo para uma lista de mensagens. A resposta de erro inclui também <code>success: false</code> e o código HTTP.</div>
+      <pre>{
+  "success": false,
+  "message": "A quantidade deve ser pelo menos 1.",
+  "code": 422,
+  "errors": {"itens.0.quantidade": ["A quantidade deve ser pelo menos 1."]}
+}</pre>
+    </section>
+
+    <section id="rotas">
+      <h2>Catálogo de rotas</h2>
+      <p class="muted">Expanda uma área e depois uma rota para consultar parâmetros, corpo de requisição e exemplo de resposta. Rotas são relativas à Base URL; “Token” significa enviar <code>Authorization: Bearer</code>.</p>
+      <div class="toolbar"><input id="route-search" type="search" placeholder="Filtrar por rota, método ou descrição…" aria-label="Filtrar rotas"><select id="route-group" aria-label="Filtrar por grupo"><option value="">Todos os grupos</option></select></div>
+      <div id="route-tables"></div>
+    </section>
+
+    <section id="organizacoes">
+      <h2>Organizações e dados globais</h2>
+      <p>Clientes, funcionários, fornecedores, produtos, orçamentos, vendas e operações de etiquetas são isolados por organização. Papéis, permissões, categorias e unidades de medida são globais e compartilhados entre organizações.</p>
+      <p>Somente o administrador global pode listar, criar e alterar organizações, consultar métricas globais e ajustar os padrões globais dos papéis. Um Gestor administra usuários e permissões individuais dentro da própria organização. O Funcionário acessa os recursos permitidos pelo seu papel e pelas permissões adicionais da sua conta.</p>
+      <p>O README principal do repositório apresenta a arquitetura e as regras de acesso. O guia do backend descreve a instalação e a execução local da API.</p>
+    </section>
+    <footer class="footer">Gestorize API · Esta referência acompanha as rotas de <code>routes/api.php</code>. Confira o código de validação para regras específicas em evolução.</footer>
+    </div>
+  </main>
+</div>
+<script>
+const groups = [
+ {name:'Autenticação e perfil', routes:[
+  ['POST','/login','Público','Autentica e retorna token Sanctum. Corpo: email, password.'],
+  ['POST','/logout','Token','Revoga o token atual. Corpo também exige token.'],
+  ['POST','/refresh','Token','Substitui o token atual antes do vencimento. Corpo: token.'],
+  ['GET','/me','Token','Retorna o usuário autenticado, papel e permissões.'],
+  ['PUT','/me','Token','Atualiza perfil. Corpo: name, email; password, funcionario e endereco opcionais.'],
+  ['POST','/primeiro-acesso/alterar-senha','Token · limite 5/min','Corpo: current_password, password, password_confirmation.']
+ ]},
+ {name:'Organizações (admin global)',routes:[
+  ['GET','/organizations','Admin global','Lista organizações, gestores e contagem de usuários.'],
+  ['GET','/organizations/metrics','Admin global','Retorna totais e métricas de organizações/usuários.'],
+  ['POST','/organizations','Admin global','Cria organização e gestor inicial. Corpo: name e manager {name,email,password,cpf}; document,email,phone,settings opcionais.'],
+  ['PUT','/organizations/{organization}','Admin global','Atualiza organização. Corpo parcial: name, document, email, phone, settings, active, manager_id.']
+ ]},
+ {name:'Painel e relatórios',routes:[
+  ['GET','/dashboard/resumo','Token · contexto da organização','Resumo do painel da organização atual.'],
+  ['GET','/relatorios','admin ou relatorios.ver','Query opcional: periodo=hoje|semana|mes|ano; tipo=movimentacao|orcamentos|vendas|clientes|produtos.']
+ ]},
+ {name:'Clientes',routes:[
+  ['GET','/clientes','clientes.ver','Lista clientes da organização.'],['POST','/clientes','clientes.criar','Cria cliente PF ou PJ. Ver parâmetros de Clientes.'],
+  ['GET','/clientes/{id}','clientes.ver','Detalha cliente pelo UUID.'],['PUT','/clientes/{id}','clientes.editar','Atualiza parcialmente o cliente.'],
+  ['DELETE','/clientes/{id}','clientes.excluir','Remove cliente.'],['POST','/clientes/{id}/imagem','clientes.editar','Upload multipart: avatar (imagem até 2 MB).'],['DELETE','/clientes/{id}/imagem','clientes.editar','Remove avatar do cliente.']
+ ]},
+ {name:'Produtos e catálogos',routes:[
+  ['GET','/produtos','Papel admin/gestor/funcionario ou produtos.ver/vendas.ver/vendas.criar','Lista produtos.'],['GET','/produtos/codigo/{codigo}','Mesmo acesso de listagem','Busca produto pelo código de barras.'],
+  ['POST','/produtos','produtos.criar','Cria produto. Ver parâmetros de Produtos.'],['GET','/produtos/{id}','produtos.ver','Detalha produto.'],['PUT','/produtos/{produto}','produtos.editar','Atualiza produto.'],['DELETE','/produtos/{produto}','produtos.excluir','Remove produto.'],
+  ['POST','/produtos/{produto}/imagem','produtos.editar','Upload multipart: imagem; principal opcional.'],['DELETE','/produtos/{id}/imagem','produtos.editar','Remove imagem; corpo: imagem_id.'],['PUT','/produtos/{id}/imagem/principal','produtos.editar','Define imagem principal; corpo: imagem_id.'],['POST','/produtos/{produto}/imagem/principal','produtos.editar','Substitui a imagem principal; upload multipart com imagem.'],
+  ['GET','/categorias','produtos.ver','Lista categorias globais.'],['POST','/categorias','produtos.criar','Cria categoria global. Corpo: nome.'],['GET','/unidades-medida','produtos.ver','Lista unidades globais de medida.']
+ ]},
+ {name:'Fornecedores',routes:[
+  ['GET','/fornecedores','fornecedores.ver','Lista fornecedores da organização.'],['POST','/fornecedores','fornecedores.criar','Cria fornecedor. Ver parâmetros de Fornecedores.'],['GET','/fornecedores/{id}','fornecedores.ver','Detalha fornecedor.'],['PUT','/fornecedores/{id}','fornecedores.editar','Atualiza fornecedor.'],['DELETE','/fornecedores/{id}','fornecedores.excluir','Remove fornecedor.'],['POST','/fornecedores/{id}/imagem','fornecedores.editar','Upload multipart: avatar (imagem até 2 MB).'],['DELETE','/fornecedores/{id}/imagem','fornecedores.editar','Remove avatar.']
+ ]},
+ {name:'Funcionários e usuários',routes:[
+  ['GET','/funcionarios','users.ver','Lista funcionários da organização.'],['POST','/funcionarios','users.criar','Cria gestor ou funcionário. Ver parâmetros de Funcionários.'],['GET','/funcionarios/{id}','users.ver','Detalha funcionário.'],['PUT','/funcionarios/{id}','users.editar','Atualiza funcionário, papel e permissões individuais.'],['DELETE','/funcionarios/{id}','users.excluir','Remove funcionário (não permite exclusão protegida de administrador).'],['POST','/funcionarios/{id}/avatar','users.editar','Upload multipart: avatar (imagem até 2 MB).'],['DELETE','/funcionarios/{id}/avatar','users.editar','Remove avatar.'],
+  ['GET','/users','users.ver','Lista usuários, paginados em 15 por página; query page seleciona a página.'],['POST','/users','users.criar','Cria usuário; role não pode ser admin. Campos incluem name,email,password,password_confirmation,role,endereco.'],['GET','/users/{user}','users.ver','Detalha usuário.'],['PUT','/users/{user}','users.editar','Atualiza usuário (política de autorização aplicada).'],['DELETE','/users/{user}','users.excluir','Remove usuário (política de autorização aplicada).']
+ ]},
+ {name:'Acesso / papéis',description:'Esta área reúne as rotas de papéis, permissões disponíveis e permissões individuais. O GET /acessos/papeis retorna os papéis cadastrados e as permissões de cada um; gestores podem consultar e administrar permissões individuais na própria organização. Alterar o padrão de um papel é uma ação global exclusiva do administrador global.',routes:[
+  ['GET','/acessos/papeis','acessos.gerenciar','Lista os papéis e as permissões padrão associadas.'],['GET','/acessos/permissoes','acessos.gerenciar','Lista o catálogo global de permissões com nome, grupo e ação.'],['PUT','/acessos/users/{user}/permissoes','acessos.gerenciar','Substitui as permissões individuais adicionais do usuário. Corpo: permissions[].'],['PUT','/acessos/papeis/{role}/permissoes','Admin global','Substitui permissões padrão do papel para todas as organizações. Corpo: permissions[]. O papel admin não pode ser alterado.']
+ ]},
+ {name:'Orçamentos',routes:[
+  ['GET','/orcamentos','orcamentos.ver','Lista orçamentos da organização.'],['POST','/orcamentos','orcamentos.criar','Cria orçamento. Corpo: titulo, cliente_id, itens[].'],['GET','/orcamentos/{id}','orcamentos.ver','Detalha orçamento.'],['PUT','/orcamentos/{id}','orcamentos.editar','Atualiza orçamento; orçamento vendido não pode ser editado.'],['PATCH','/orcamentos/{id}/aprovar','orcamentos.criar ou orcamentos.editar ou orcamentos.aprovar','Aprova orçamento conforme autorização e regra de negócio.'],['DELETE','/orcamentos/{id}','orcamentos.excluir','Remove orçamento.']
+ ]},
+ {name:'Vendas',routes:[
+  ['GET','/vendas','vendas.ver','Lista vendas da organização.'],['POST','/vendas','admin/gestor/funcionario ou vendas.criar','Registra venda. Corpo: itens[]; cliente_id, orcamento_id, forma_pagamento e desconto opcionais. Atualiza o estoque.']
+ ]},
+ {name:'Etiquetas',routes:[
+  ['GET','/etiquetas/produtos','produtos.ver','Lista produtos e estado das etiquetas.'],['GET','/etiquetas/historico','produtos.ver','Lista até 100 operações recentes com itens.'],['POST','/etiquetas/operacoes','produtos.ver','Cria operação; tipo, idempotency_key e, para selecionados/reimpressao, itens[].'],['POST','/etiquetas/operacoes/{id}/concluir','produtos.ver','Confirma que a impressão foi realizada e registra o estado impresso.'],['POST','/etiquetas/operacoes/{id}/cancelar','produtos.ver','Cancela operação ainda pendente de confirmação.']
+ ]},
+ {name:'Ajuda',routes:[['POST','/ajuda/contato','Token · limite 5/min','Envia mensagem ao suporte; campos são validados pelo controller.']]}
+];
+const requestDetails = {
+ 'POST /login':{fields:'Body JSON: email e password obrigatórios.',example:{email:'gestor@example.com',password:'sua-senha'}},
+ 'POST /logout':{fields:'Body JSON: token obrigatório. Envie também o mesmo token no cabeçalho Bearer.',example:{token:'SEU_TOKEN'}},
+ 'POST /refresh':{fields:'Body JSON: token obrigatório. O token anterior é revogado.',example:{token:'SEU_TOKEN'}},
+ 'PUT /me':{fields:'Body JSON: name e email obrigatórios; password, funcionario e endereco são opcionais. Campos de endereço incluem cep, logradouro, numero, complemento, bairro, cidade e estado.',example:{name:'Nome atualizado',email:'gestor@example.com',funcionario:{telefone:'11999990000'},endereco:{cidade:'São Paulo',estado:'SP'}}},
+ 'POST /primeiro-acesso/alterar-senha':{fields:'Body JSON: current_password, password (mínimo 8 caracteres) e password_confirmation.',example:{current_password:'senha-inicial',password:'nova-senha-segura',password_confirmation:'nova-senha-segura'}},
+ 'POST /organizations':{fields:'Body JSON: name e manager.name, manager.email, manager.password e manager.cpf obrigatórios. document, email, phone e settings opcionais.',example:{name:'Empresa Exemplo',document:'00.000.000/0001-00',manager:{name:'Gestor Exemplo',email:'gestor@empresa.com',password:'senha-segura',cpf:'12345678901'}}},
+ 'PUT /organizations/{organization}':{fields:'Path: organization (UUID). Body parcial: name, document, email, phone, settings, active ou manager_id. manager_id deve ser gestor desta organização ou null.',example:{active:true,manager_id:'UUID_DO_GESTOR'}},
+ 'GET /relatorios':{fields:'Query opcional: periodo=hoje|semana|mes|ano; tipo=movimentacao|orcamentos|vendas|clientes|produtos.',queryExample:'?periodo=mes&tipo=vendas'},
+ 'POST /clientes':{fields:'Body JSON: nome e tipo (pf|pj). PF exige pf.cpf, pf.rg e pf.data_nascimento. PJ exige pj.cnpj, pj.razao_social, pj.nome_responsavel e pj.cpf_responsavel. endereco e contato são opcionais.',example:{nome:'Maria Silva',tipo:'pf',email:'maria@example.com',telefone:'11999990000',pf:{cpf:'12345678901',rg:'123456789',data_nascimento:'1990-05-10'}}},
+ 'PUT /clientes/{id}':{fields:'Path: id (UUID). Body parcial com os campos permitidos no cadastro; os campos pf/pj atualizam os dados correspondentes.',example:{nome:'Maria Silva Atualizada',telefone:'11988887777'}},
+ 'POST /clientes/{id}/imagem':{fields:'Path: id (UUID). multipart/form-data: avatar obrigatório, JPG/PNG/WebP até 2 MB.',bodyText:'multipart/form-data\navatar=<arquivo de imagem>'},
+ 'POST /produtos':{fields:'Body JSON: nome, preco_custo, porcentagem_lucro, preco_venda, data_entrada, unidade_medida_id e estoque obrigatórios. categoria_id, fornecedor_id, descricao e validade opcionais.',example:{nome:'Produto Exemplo',descricao:'Descrição breve',preco_custo:10,porcentagem_lucro:50,preco_venda:15,data_entrada:'2026-10-23',categoria_id:'UUID_DA_CATEGORIA',fornecedor_id:'UUID_DO_FORNECEDOR',unidade_medida_id:'UUID_DA_UNIDADE',estoque:20}},
+ 'PUT /produtos/{produto}':{fields:'Path: produto (UUID). Body parcial com campos de produto; campos de preço, estoque, data e IDs devem ser válidos quando enviados.',example:{preco_venda:16,estoque:18}},
+ 'POST /produtos/{produto}/imagem':{fields:'Path: produto (UUID). multipart/form-data: imagem obrigatória (JPG/PNG/WebP até 10 MB); principal booleano opcional.',bodyText:'multipart/form-data\nimagem=<arquivo de imagem>\nprincipal=true'},
+ 'DELETE /produtos/{id}/imagem':{fields:'Path: id do produto (UUID). Body JSON: imagem_id obrigatório (UUID).',example:{imagem_id:'UUID_DA_IMAGEM'}},
+ 'PUT /produtos/{id}/imagem/principal':{fields:'Path: id do produto (UUID). Body JSON: imagem_id obrigatório (UUID).',example:{imagem_id:'UUID_DA_IMAGEM'}},
+ 'POST /produtos/{produto}/imagem/principal':{fields:'Path: produto (UUID). multipart/form-data: imagem obrigatória (JPG/PNG/WebP até 10 MB).',bodyText:'multipart/form-data\nimagem=<arquivo de imagem>'},
+ 'POST /categorias':{fields:'Body JSON: nome obrigatório, único no catálogo global.',example:{nome:'Papelaria'}},
+ 'POST /fornecedores':{fields:'Body JSON: nome, cnpj e telefone obrigatórios. email, ramo_atividade, categoria_ids, nome_responsavel e chave_pix opcionais.',example:{nome:'Fornecedor Exemplo',cnpj:'12345678000190',email:'contato@fornecedor.com',telefone:'1133334444',ramo_atividade:'Alimentos',categoria_ids:['UUID_DA_CATEGORIA'],nome_responsavel:'João'}} ,
+ 'PUT /fornecedores/{id}':{fields:'Path: id (UUID). Body parcial com os campos permitidos no cadastro.',example:{telefone:'1133335555',nome_responsavel:'Ana'}},
+ 'POST /fornecedores/{id}/imagem':{fields:'Path: id (UUID). multipart/form-data: avatar obrigatório, JPG/PNG/WebP até 2 MB.',bodyText:'multipart/form-data\navatar=<arquivo de imagem>'},
+ 'POST /funcionarios':{fields:'Body JSON: name, email, password (mínimo 8), password_confirmation, data_nascimento, cpf (11 dígitos) e role (gestor|funcionario) obrigatórios. telefone, endereco_id e permissions opcionais; permissions exige acessos.gerenciar.',example:{name:'Funcionário Exemplo',email:'funcionario@empresa.com',password:'senha-segura',password_confirmation:'senha-segura',data_nascimento:'1995-03-20',cpf:'12345678901',role:'funcionario',permissions:['fornecedores.ver']}},
+ 'PUT /funcionarios/{id}':{fields:'Path: id (UUID). Body parcial com dados do funcionário. Para enviar permissions, o ator precisa de acessos.gerenciar.',example:{role:'funcionario',permissions:['clientes.ver','produtos.ver','fornecedores.ver']}},
+ 'POST /funcionarios/{id}/avatar':{fields:'Path: id (UUID). multipart/form-data: avatar obrigatório, JPG/PNG/WebP até 2 MB.',bodyText:'multipart/form-data\navatar=<arquivo de imagem>'},
+ 'GET /users':{fields:'Query opcional: page (página da paginação; 15 registros por página).',queryExample:'?page=2'},
+ 'POST /users':{fields:'Body JSON: name, email, password, password_confirmation, role e endereco. role não pode ser admin. Endereço exige cep (9 caracteres), logradouro, numero, bairro, cidade e estado; funcionario e permissions opcionais.',example:{name:'Operador Exemplo',email:'operador@empresa.com',password:'senha-segura',password_confirmation:'senha-segura',role:'funcionario',funcionario:{telefone:'11999990000',cpf:'12345678901'},endereco:{cep:'01001-000',logradouro:'Rua Exemplo',numero:'10',bairro:'Centro',cidade:'São Paulo',estado:'SP'}}},
+ 'PUT /users/{user}':{fields:'Path: user (UUID). Body parcial: name, email, password, role, funcionario, endereco ou permissions. A política de usuário também é aplicada.',example:{name:'Operador Atualizado'}},
+ 'PUT /acessos/users/{user}/permissoes':{fields:'Path: user (UUID da mesma organização). Body JSON: permissions obrigatório; lista pode estar vazia. Substitui as permissões individuais adicionais.',example:{permissions:['clientes.ver','produtos.ver','fornecedores.ver']}},
+ 'PUT /acessos/papeis/{role}/permissoes':{fields:'Path: role (UUID do papel). Body JSON: permissions obrigatório; lista pode estar vazia. Altera o padrão global; o papel admin não pode ser editado.',example:{permissions:['clientes.ver','clientes.criar','produtos.ver']}},
+ 'POST /orcamentos':{fields:'Body JSON: titulo, cliente_id e itens com pelo menos um produto e quantidade inteira >= 1.',example:{titulo:'Orçamento de demonstração',cliente_id:'UUID_DO_CLIENTE',itens:[{produto_id:'UUID_DO_PRODUTO',quantidade:2}]}},
+ 'PUT /orcamentos/{id}':{fields:'Path: id (UUID). Body parcial: titulo, cliente_id ou itens. Orçamentos vendidos não podem ser alterados.',example:{titulo:'Orçamento atualizado'}},
+ 'POST /vendas':{fields:'Body JSON: itens com pelo menos um produto e quantidade inteira >= 1. cliente_id, orcamento_id, forma_pagamento e desconto opcionais.',example:{cliente_id:'UUID_DO_CLIENTE',forma_pagamento:'pix',desconto:0,itens:[{produto_id:'UUID_DO_PRODUTO',quantidade:1}]}},
+ 'POST /etiquetas/operacoes':{fields:'Body JSON: tipo e idempotency_key UUID obrigatórios. Para selecionados/reimpressao, itens[] é obrigatório, com produto_id e quantidade de 1 a 50. Máximo 5.000 etiquetas.',example:{tipo:'selecionados',idempotency_key:'UUID_UNICO_DA_OPERACAO',itens:[{produto_id:'UUID_DO_PRODUTO',quantidade:3}]}},
+ 'POST /ajuda/contato':{fields:'Body JSON: mensagem obrigatória, entre 10 e 5.000 caracteres.',example:{mensagem:'Preciso de ajuda com o cadastro de produtos.'}}
+};
+const responseSamples={
+ 'Autenticação e perfil':{id:'UUID_DO_USUARIO',name:'Usuário Exemplo',email:'usuario@example.com',role:'gestor',permissions:['clientes.ver']},
+ 'Organizações (admin global)':{id:'UUID_DA_ORGANIZACAO',name:'Empresa Exemplo',active:true,users_count:3},
+ 'Painel e relatórios':{periodo:'mes',tipo:'vendas',intervalo:{inicio:'2026-10-01',fim:'2026-10-23'},totais:{valor_orcado:1200,orcamentos:8,aprovacoes:4,pendentes:3,clientes:5,produtos:2,vendas:6,faturamento_vendas:980,descontos_vendas:20,formas_pagamento:[]},serie:{rotulos:[],rotulos_vendas:[],valores:[],vendas:[],faturamento:[],categorias:[]}},
+ 'Clientes':{id:'UUID_DO_CLIENTE',nome:'Maria Silva',tipo:'pf',email:'maria@example.com',telefone:'11999990000'},
+ 'Produtos e catálogos':{id:'UUID_DO_PRODUTO',nome:'Produto Exemplo',codigo_barras:'7890000000012',preco_venda:15,estoque:20},
+ 'Fornecedores':{id:'UUID_DO_FORNECEDOR',nome:'Fornecedor Exemplo',cnpj:'12345678000190',telefone:'1133334444'},
+ 'Funcionários e usuários':{id:'UUID_DO_FUNCIONARIO',nome:'Funcionário Exemplo',email:'funcionario@empresa.com',role:'funcionario',permissions:['fornecedores.ver']},
+ 'Acesso / papéis':{id:'UUID_DO_PAPEL',name:'funcionario',label:'Funcionário',permissions:['Visualizar produtos','Visualizar fornecedores']},
+ 'Orçamentos':{id:'UUID_DO_ORCAMENTO',titulo:'Orçamento de demonstração',status:'pendente',valor_total:30,itens:[{produto_id:'UUID_DO_PRODUTO',quantidade:2}]},
+ 'Vendas':{id:'UUID_DA_VENDA',valor_total:15,vendido_em:'2026-10-23T10:30:00Z',forma_pagamento:'pix',desconto:0,itens:[{produto_id:'UUID_DO_PRODUTO',quantidade:1}]},
+ 'Etiquetas':{id:'UUID_DA_OPERACAO',tipo:'selecionados',status:'aguardando_confirmacao',total_produtos:1,total_etiquetas:3,itens:[{produto_id:'UUID_DO_PRODUTO',codigo_barras:'7890000000012',quantidade:3}]},
+ 'Ajuda':[]
+};
+const mount=document.getElementById('route-tables'), groupSelect=document.getElementById('route-group'), search=document.getElementById('route-search');
+for(const group of groups){const option=document.createElement('option');option.value=group.name;option.textContent=group.name;groupSelect.append(option)}
+function makeCode(title,value,parent){const heading=document.createElement('h4');heading.textContent=title;parent.append(heading);const pre=document.createElement('pre');pre.textContent=typeof value==='string'?value:JSON.stringify(value,null,2);parent.append(pre)}
+function responseFor(group,method,path){
+ const key=`${method} ${path}`, base=responseSamples[group.name]??{};
+ let data=base;
+ if(path==='/login'||path==='/refresh')data={token:'TOKEN_SANCTUM',expires_at:'2026-10-23T15:00:00Z',user:responseSamples['Autenticação e perfil']};
+ else if(path==='/logout'||path==='/ajuda/contato')data=[];
+ else if(path==='/acessos/users/{user}/permissoes')data={id:'UUID_DO_USUARIO',name:'Funcionário Exemplo',permissions:['clientes.ver','produtos.ver']};
+ else if(path.startsWith('/produtos/')&&path.includes('/imagem')&&method!=='DELETE')data={id:'UUID_DA_IMAGEM',url:'/storage/produtos/imagem.webp',principal:true};
+ else if(path.endsWith('/concluir')&&group.name==='Etiquetas')data={...base,status:'concluida'};
+ else if(path.endsWith('/cancelar')&&group.name==='Etiquetas')data={...base,status:'cancelada'};
+ else if(path==='/categorias')data=method==='GET'?[{id:'UUID_DA_CATEGORIA',nome:'Papelaria'}]:{id:'UUID_DA_CATEGORIA',nome:'Papelaria'};
+ else if(path==='/unidades-medida')data=[{id:'UUID_DA_UNIDADE',nome:'Unidade',sigla:'UN'}];
+ else if(path==='/acessos/permissoes')data=[{id:'produtos.ver',nome:'Visualizar produtos',grupo:'Produtos',acao:'Visualizar'}];
+ else if(path==='/etiquetas/produtos')data=[{id:'UUID_DO_PRODUTO',nome:'Produto Exemplo',codigo_barras:'7890000000012',etiqueta_status:'pendente'}];
+ else if(path==='/organizations/metrics')data={organizations_total:4,organizations_active:3,organizations_inactive:1,users_total:25,users_active:21,users_inactive:4,managers_active:3,employees_active:18,organizations:[]};
+ else if(path==='/dashboard/resumo')data={clientes:12,orcamentos_aprovados:4,orcamentos_pendentes:3,produtos_em_estoque:26};
+ else if(path==='/users'&&method==='GET')data={data:[base],current_page:1,per_page:15,total:1};
+ else if(method==='GET'&&!path.includes('{')&&!['/me','/relatorios','/organizations/metrics'].includes(path))data=Array.isArray(base)?base:[base];
+ else if(method==='DELETE'){
+  if(path.startsWith('/users/'))data=undefined;
+  else if((path.startsWith('/clientes/')||path.startsWith('/fornecedores/'))&&!path.endsWith('/imagem'))data=[];
+  else if(path==='/funcionarios/{id}')data={message:'Funcionário removido com sucesso.'};
+  else if(path.startsWith('/clientes/')||path.startsWith('/fornecedores/')||path.startsWith('/funcionarios/'))data=base;
+  else data=null;
+ }
+ const created=['POST /organizations','POST /clientes','POST /produtos','POST /categorias','POST /fornecedores','POST /funcionarios','POST /users','POST /orcamentos','POST /vendas','POST /etiquetas/operacoes'];
+ const status=created.includes(key)||key==='POST /produtos/{produto}/imagem'?201:200;
+ const result={success:true};
+ const directResponse=path==='/users'||path.startsWith('/users/')||path.startsWith('/organizations');
+ if(path.startsWith('/users/')&&method==='DELETE')result.message='Usuário removido com sucesso.';
+ else if(!directResponse)result.message=descriptionMessage(path,method);
+ if(data!==undefined)result.data=data;
+ if(!directResponse)result.meta=null;
+ return {status,body:result};
+}
+function descriptionMessage(path,method){
+ if(method==='GET')return null;
+ if(method==='DELETE'&&(path==='/clientes/{id}/imagem'||path==='/funcionarios/{id}/avatar'||path==='/funcionarios/{id}'))return null;
+ if(method==='DELETE'&&path==='/fornecedores/{id}/imagem')return 'Avatar do fornecedor removido com sucesso.';
+ if(method==='DELETE'&&path==='/produtos/{id}/imagem')return 'Imagem removida com sucesso.';
+ if(method==='DELETE')return 'Recurso removido com sucesso.';
+ if(path==='/login'||path==='/refresh')return null;
+ if(path==='/logout')return 'Logout realizado com sucesso.';
+ if(path==='/etiquetas/operacoes')return 'Operação aguardando confirmação da impressão.';
+ if(path.includes('/concluir'))return 'Impressão registrada conforme confirmação do usuário.';
+ if(path.includes('/cancelar'))return 'Operação cancelada.';
+ if(path==='/ajuda/contato')return 'Sua mensagem foi enviada ao suporte.';
+ return 'Operação realizada com sucesso.';
+}
+function render(){const q=search.value.trim().toLowerCase(), selected=groupSelect.value;mount.innerHTML='';for(const group of groups){if(selected&&group.name!==selected)continue;const rows=group.routes.filter(r=>!q||[group.name,group.description??'',...r].join(' ').toLowerCase().includes(q));if(!rows.length)continue;const details=document.createElement('details');details.className='route-accordion';details.open=!!q||group.name==='Acesso / papéis';const summary=document.createElement('summary');summary.append(document.createTextNode(group.name));const count=document.createElement('span');count.className='route-count';count.textContent=`${rows.length} rotas`;summary.append(count);details.append(summary);const body=document.createElement('div');body.className='route-accordion-body';if(group.description){const description=document.createElement('p');description.className='route-accordion-description';description.textContent=group.description;body.append(description)}for(const [method,path,access,description] of rows){const key=`${method} ${path}`, config=requestDetails[key]??{};const operation=document.createElement('details');operation.className='operation-accordion';const operationSummary=document.createElement('summary');const methodBadge=document.createElement('span');methodBadge.className=`method ${method.toLowerCase()}`;methodBadge.textContent=method;const operationPath=document.createElement('span');operationPath.className='operation-path';operationPath.textContent=path;const accessLabel=document.createElement('span');accessLabel.className='operation-access';accessLabel.textContent=access;operationSummary.append(methodBadge,operationPath,accessLabel);operation.append(operationSummary);const operationBody=document.createElement('div');operationBody.className='operation-body';const summaryText=document.createElement('p');summaryText.textContent=description;operationBody.append(summaryText);const pathParameters=[...path.matchAll(/\{([^}]+)\}/g)].map(match=>match[1]);const paramsHeading=document.createElement('h4');paramsHeading.textContent='Parâmetros';operationBody.append(paramsHeading);if(config.fields){const fields=document.createElement('p');fields.textContent=config.fields;operationBody.append(fields)}else if(pathParameters.length){const fields=document.createElement('p');fields.textContent=`Parâmetro de caminho: ${pathParameters.join(', ')}. ${method==='GET'||method==='DELETE'?'Sem corpo JSON.':'Consulte o corpo indicado na descrição desta rota.'}`;operationBody.append(fields)}else{const fields=document.createElement('p');fields.textContent=method==='GET'?'Sem parâmetros de caminho, query ou corpo.':'Sem parâmetros adicionais documentados.';operationBody.append(fields)}if(config.queryExample){const query=document.createElement('p');query.innerHTML=`Exemplo de query: <code>${config.queryExample}</code>`;operationBody.append(query)}if(config.example)makeCode('Exemplo de requisição (JSON)',config.example,operationBody);else if(config.bodyText)makeCode('Corpo da requisição',config.bodyText,operationBody);else if(method!=='GET'&&method!=='DELETE')makeCode('Corpo da requisição','Sem corpo JSON.',operationBody);const response=responseFor(group,method,path);makeCode(`Exemplo de resposta · HTTP ${response.status}`,response.body,operationBody);operation.append(operationBody);body.append(operation)}details.append(body);mount.append(details)}}
+search.addEventListener('input',render);groupSelect.addEventListener('change',render);render();
+document.getElementById('base-url').textContent=location.origin+'/api';
+</script>
+</body>
+</html>

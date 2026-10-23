@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Services\ResponseService;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -28,19 +29,19 @@ class EnsureOrganizationContext
         }
 
         if ($user?->must_change_password && ! $passwordBootstrapPath) {
-            return response()->json(['success' => false, 'message' => 'Troque sua senha inicial para continuar.'], 403);
+            return ResponseService::error('Troque sua senha inicial para continuar.', 403);
         }
 
         if ($isGlobalAdmin && ! $globalPathAllowed) {
-            return response()->json(['success' => false, 'message' => 'Acesso disponível somente dentro de uma organização.'], 403);
+            return ResponseService::error('Acesso disponível somente dentro de uma organização.', 403);
         }
 
         if (! $isGlobalAdmin && ! $user?->organization_id) {
-            return response()->json(['success' => false, 'message' => 'Sua conta ainda não está vinculada a uma organização.'], 403);
+            return ResponseService::error('Sua conta ainda não está vinculada a uma organização.', 403);
         }
 
         if ($user?->organization_id && ! $user->organization?->active) {
-            return response()->json(['success' => false, 'message' => 'Esta organização está inativa.'], 403);
+            return ResponseService::error('Esta organização está inativa.', 403);
         }
 
         return $next($request);

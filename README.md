@@ -63,6 +63,8 @@ php artisan serve --host=0.0.0.0
 
 A API ficará disponível em `http://localhost:8000/api`. Para acessar em um celular ou por outro dispositivo, use o IP da máquina que executa o Laravel no lugar de `localhost`.
 
+Com o servidor local em execução, consulte a [documentação interativa da API](http://localhost:8000/api/docs/) para ver as rotas, permissões, parâmetros e exemplos de resposta.
+
 O seeder principal cria permissões, papéis, usuários e dados demonstrativos, incluindo vendas feitas por mais de um usuário. Papéis, permissões, categorias e unidades de medida são globais e compartilhados entre organizações; os usuários e registros operacionais demonstrativos são associados à organização padrão. As credenciais de demonstração são:
 
 | Papel | E-mail | Senha |

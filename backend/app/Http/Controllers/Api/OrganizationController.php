@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Organization;
 use App\Models\Funcionario;
 use App\Models\User;
+use App\Services\ResponseService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -105,7 +106,7 @@ class OrganizationController extends Controller
         unset($data['manager_id']);
         if (array_key_exists('manager_id', $request->all())) {
             if ($managerId && ! $organization->users()->role('gestor')->whereKey($managerId)->exists()) {
-                return response()->json(['message' => 'O gestor selecionado não pertence a esta organização.'], 422);
+                return ResponseService::error('O gestor selecionado não pertence a esta organização.', 422);
             }
             $data['settings'] = [...($organization->settings ?? []), 'manager_id' => $managerId];
         }

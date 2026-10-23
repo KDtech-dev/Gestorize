@@ -10,8 +10,9 @@ use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Spatie\Permission\Exceptions\UnauthorizedException;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use Throwable;
 
 class Handler extends ExceptionHandler
@@ -45,6 +46,17 @@ class Handler extends ExceptionHandler
 
     public function render($request, Throwable $e): Response|JsonResponse
     {
+        if ($e instanceof ValidationException) {
+            $status = $e->status;
+
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'code' => $status,
+                'errors' => $e->errors(),
+            ], $status);
+        }
+
         if ($e instanceof AuthenticationException) {
             return ResponseService::exception(
                 $e,
@@ -83,6 +95,13 @@ class Handler extends ExceptionHandler
                 ],
                 Response::HTTP_NOT_FOUND
             );
+        }
+
+        if ($e instanceof HttpExceptionInterface) {
+            $status = $e->getStatusCode();
+            $message = trim($e->getMessage()) ?: (Response::$statusTexts[$status] ?? 'Erro na requisição.');
+
+            return ResponseService::error($message, $status);
         }
 
         return parent::render($request, $e);

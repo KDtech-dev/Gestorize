@@ -29,7 +29,7 @@ php artisan storage:link
 php artisan serve --host=0.0.0.0
 ```
 
-A API ficará em `http://localhost:8000/api`. Use o IP da máquina no lugar de `localhost` quando um dispositivo da rede, como um celular, precisar acessar a API.
+A API ficará em `http://localhost:8000/api`. A documentação das rotas fica em `http://localhost:8000/api/docs/` e é servida do diretório público do Laravel. Use o IP da máquina no lugar de `localhost` quando um dispositivo da rede, como um celular, precisar acessar a API.
 
 ## Seeders
 
