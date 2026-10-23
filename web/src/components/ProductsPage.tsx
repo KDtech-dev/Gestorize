@@ -53,6 +53,7 @@ function ProductCard({ product, selected, onSelect, onEdit, onDelete }: { produc
       <div><span>Preço de venda</span><strong>{money(product.preco_venda)}</strong></div>
       <div><span>Disponível</span><strong>{Number.isFinite(stock) ? `${stock}${unit}` : '—'}</strong></div>
     </div>
+    {product.validade && <div className="product-expiry"><Icon icon="mdi:calendar-clock-outline" width={18} height={18} /><span>Validade</span><strong>{new Date(`${product.validade}T00:00:00`).toLocaleDateString('pt-BR')}</strong></div>}
     <div className="client-card-contact product-card-relations">
       <span><Icon icon="mdi:shape-outline" width={17} height={17} /><span title={product.categoria_titulo ?? ''}>{product.categoria_titulo || 'Sem categoria'}</span></span>
       <span><Icon icon="mdi:truck-outline" width={17} height={17} /><span title={product.fornecedor_razao_social ?? ''}>{product.fornecedor_razao_social || 'Sem fornecedor'}</span></span>
@@ -69,7 +70,6 @@ function ProductCard({ product, selected, onSelect, onEdit, onDelete }: { produc
       <p><span>Preço de custo</span><strong>{money(product.preco_custo)}</strong></p>
       <p><span>Margem</span><strong>{Number(product.porcentagem_lucro ?? 0)}%</strong></p>
       <p><span>Unidade</span><strong>{product.unidade_medida_titulo ? `${product.unidade_medida_titulo}${unit}` : '—'}</strong></p>
-      <p><span>Validade</span><strong>{product.validade ? new Date(`${product.validade}T00:00:00`).toLocaleDateString('pt-BR') : '—'}</strong></p>
     </div>}
   </article>;
 }
@@ -81,7 +81,7 @@ function ProductsHeading({ canCreate, onCreate }: { canCreate: boolean; onCreate
   </header>;
 }
 
-function ProductFilters({ search, category, categories, count, onSearch, onCategory }: { search: string; category: string; categories: Category[]; count: number; onSearch: (value: string) => void; onCategory: (value: string) => void }) {
+function ProductFilters({ search, category, stockStatus, categories, count, onSearch, onCategory, onStockStatus }: { search: string; category: string; stockStatus: string; categories: Category[]; count: number; onSearch: (value: string) => void; onCategory: (value: string) => void; onStockStatus: (value: string) => void }) {
   return <>
     <header className="client-directory-heading"><div><span className="eyebrow">INVENTÁRIO</span><h2>Todos os produtos</h2><p>Busque pelo nome ou código, ou filtre por categoria.</p></div><span className="client-results-count">{count} resultado{count === 1 ? '' : 's'}</span></header>
     <div className="client-filters">
@@ -91,6 +91,14 @@ function ProductFilters({ search, category, categories, count, onSearch, onCateg
         <Select labelId="product-category-label" id="product-category-select" value={category} label="Categoria" onChange={(event) => onCategory(String(event.target.value))} MenuProps={{ disablePortal: true, slotProps: { paper: { sx: { backgroundColor: 'var(--card)', color: 'var(--ink)' } } } }}>
           <MenuItem value="">Todas as categorias</MenuItem>
           {categories.map((item) => <MenuItem key={item.id} value={item.id}>{item.nome}</MenuItem>)}
+        </Select>
+      </FormControl>
+      <FormControl fullWidth className="client-type-select-field">
+        <InputLabel id="product-stock-label">Estoque</InputLabel>
+        <Select labelId="product-stock-label" id="product-stock-select" value={stockStatus} label="Estoque" onChange={(event) => onStockStatus(String(event.target.value))} MenuProps={{ disablePortal: true, slotProps: { paper: { sx: { backgroundColor: 'var(--card)', color: 'var(--ink)' } } } }}>
+          <MenuItem value="">Todos os níveis</MenuItem>
+          <MenuItem value="available">Com estoque</MenuItem>
+          <MenuItem value="empty">Estoque zerado</MenuItem>
         </Select>
       </FormControl>
     </div>
@@ -111,6 +119,7 @@ export function ProductsPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
+  const [stockStatus, setStockStatus] = useState('');
   const [page, setPage] = useState(1);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [editing, setEditing] = useState<Product | null | undefined>(undefined);
@@ -141,10 +150,12 @@ export function ProductsPage() {
     const term = search.trim().toLocaleLowerCase();
     return products.filter((product) => {
       const matchesCategory = !category || String(product.categoria_id ?? '') === category;
+      const hasStock = Number(product.estoque) > 0;
+      const matchesStock = !stockStatus || (stockStatus === 'available' ? hasStock : !hasStock);
       const matchesSearch = !term || [product.nome, product.codigo_barras, product.categoria_titulo, product.fornecedor_razao_social].some((value) => String(value ?? '').toLocaleLowerCase().includes(term));
-      return matchesCategory && matchesSearch;
+      return matchesCategory && matchesStock && matchesSearch;
     });
-  }, [products, search, category]);
+  }, [products, search, category, stockStatus]);
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
   const pageItems = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
@@ -177,13 +188,13 @@ export function ProductsPage() {
     <section className="client-summary-grid" aria-label="Resumo de produtos">
       <ProductSummary label="Total de produtos" value={loading ? '—' : products.length} icon="mdi:package-variant-closed" color="#005CE4" />
       <ProductSummary label="Com estoque" value={loading ? '—' : inStock} icon="mdi:check-circle-outline" color="#0f9f73" />
-      <ProductSummary label="Estoque zerado" value={loading ? '—' : outOfStock} icon="mdi:alert-circle-outline" color="#e58a16" />
+      <ProductSummary label="Sem estoque" value={loading ? '—' : outOfStock} icon="mdi:alert-circle-outline" color="#e58a16" />
     </section>
 
     <section className="client-directory">
-      <ProductFilters search={search} category={category} categories={categories} count={filtered.length} onSearch={(value) => changeFilter(value, setSearch)} onCategory={(value) => changeFilter(value, setCategory)} />
+      <ProductFilters search={search} category={category} stockStatus={stockStatus} categories={categories} count={filtered.length} onSearch={(value) => changeFilter(value, setSearch)} onCategory={(value) => changeFilter(value, setCategory)} onStockStatus={(value) => changeFilter(value, setStockStatus)} />
       {error && <div className="inline-error">{error}</div>}
-      {loading ? <div className="table-loading"><span className="spinner" />Carregando produtos…</div> : pageItems.length ? <div className="client-card-grid">{pageItems.map((product) => <ProductCard key={String(product.id)} product={product} selected={selectedId === product.id} onSelect={() => setSelectedId(selectedId === product.id ? null : String(product.id))} onEdit={() => setEditing(product)} onDelete={() => void deleteProduct(product)} />)}</div> : <div className="empty-state compact"><span className="empty-icon"><Icon icon="mdi:package-variant-closed" /></span><h2>{search || category ? 'Nenhum produto encontrado' : 'Ainda não há produtos'}</h2><p>{search || category ? 'Ajuste os filtros para ver outros produtos.' : 'Cadastre o primeiro produto para começar.'}</p></div>}
+      {loading ? <div className="table-loading"><span className="spinner" />Carregando produtos…</div> : pageItems.length ? <div className="client-card-grid">{pageItems.map((product) => <ProductCard key={String(product.id)} product={product} selected={selectedId === product.id} onSelect={() => setSelectedId(selectedId === product.id ? null : String(product.id))} onEdit={() => setEditing(product)} onDelete={() => void deleteProduct(product)} />)}</div> : <div className="empty-state compact"><span className="empty-icon"><Icon icon="mdi:package-variant-closed" /></span><h2>{search || category || stockStatus ? 'Nenhum produto encontrado' : 'Ainda não há produtos'}</h2><p>{search || category || stockStatus ? 'Ajuste os filtros para ver outros produtos.' : 'Cadastre o primeiro produto para começar.'}</p></div>}
       {!loading && <ProductPagination page={currentPage} totalPages={totalPages} total={filtered.length} from={(currentPage - 1) * PAGE_SIZE + 1} to={Math.min(currentPage * PAGE_SIZE, filtered.length)} onChange={setPage} />}
     </section>
     {editing !== undefined && <RecordEditor module="produtos" row={editing} onClose={() => setEditing(undefined)} onSave={saveProduct} />}
