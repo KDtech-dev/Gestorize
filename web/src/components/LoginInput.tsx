@@ -32,8 +32,8 @@ export function LoginInput({ id, type, value, placeholder, autoComplete, onChang
         borderColor: focused ? 'var(--primary)' : 'transparent',
         borderRadius: '12px',
         backgroundColor: focused
-          ? isDark ? '#ffffff29' : '#0000000f'
-          : isDark ? '#ffffff17' : '#00000017',
+          ? isDark ? '#ffffff29' : '#00000008'
+          : isDark ? '#ffffff17' : '#0000000a',
         transition: 'background-color .16s, border-color .16s',
       }}
     >
@@ -59,7 +59,16 @@ export function LoginInput({ id, type, value, placeholder, autoComplete, onChang
           mx: 1.25,
           color: isDark ? '#fff' : '#000',
           fontSize: 18,
-          '& input': { p: 0, minWidth: 0 },
+          '& input': {
+            p: 0,
+            minWidth: 0,
+            '&:-webkit-autofill, &:-webkit-autofill:hover, &:-webkit-autofill:focus': {
+              WebkitBoxShadow: `0 0 0 100px ${isDark ? '#1d3c64' : '#f7f9fc'} inset`,
+              WebkitTextFillColor: isDark ? '#fff' : '#000',
+              caretColor: isDark ? '#fff' : '#000',
+              transition: 'background-color 999999s ease-out',
+            },
+          },
           '& input::placeholder': { color: isDark ? '#ffffff80' : '#00000080', opacity: 1 },
         }}
       />
