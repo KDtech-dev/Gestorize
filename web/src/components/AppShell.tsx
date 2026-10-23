@@ -5,18 +5,19 @@ import { usePathname } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
 import Image from 'next/image';
+import { Icon } from '@iconify/react';
 import { TopNavigation, type NavigationItem } from '@/components/TopNavigation';
 import { UserMenu } from '@/components/UserMenu';
 
 const navigation: NavigationItem[] = [
-  { href: '/', title: 'Visão geral', icon: '▦' },
-  { href: '/clientes', title: 'Clientes', icon: '◉', permission: 'clientes.ver' },
-  { href: '/produtos', title: 'Produtos', icon: '▣', permission: 'produtos.ver' },
-  { href: '/fornecedores', title: 'Fornecedores', icon: '⇄', permission: 'fornecedores.ver' },
-  { href: '/orcamentos', title: 'Orçamentos', icon: '▤', permission: 'orcamentos.ver' },
-  { href: '/vendas', title: 'Vendas', icon: '▥', permission: 'vendas.ver' },
-  { href: '/funcionarios', title: 'Funcionários', icon: '♙', permission: 'users.ver' },
-  { href: '/relatorios', title: 'Relatórios', icon: '⌁', permission: 'relatorios.ver' },
+  { href: '/', title: 'Visão geral', icon: 'mdi:view-dashboard-outline' },
+  { href: '/clientes', title: 'Clientes', icon: 'mdi:account-multiple-outline', permission: 'clientes.ver' },
+  { href: '/produtos', title: 'Produtos', icon: 'mdi:package-variant-closed', permission: 'produtos.ver' },
+  { href: '/fornecedores', title: 'Fornecedores', icon: 'mdi:truck-outline', permission: 'fornecedores.ver' },
+  { href: '/orcamentos', title: 'Orçamentos', icon: 'mdi:file-document-outline', permission: 'orcamentos.ver' },
+  { href: '/vendas', title: 'Vendas', icon: 'mdi:cash-register', permission: 'vendas.ver' },
+  { href: '/funcionarios', title: 'Funcionários', icon: 'mdi:account-cog-outline', permission: 'users.ver' },
+  { href: '/relatorios', title: 'Relatórios', icon: 'mdi:chart-box-outline', permission: 'relatorios.ver' },
 ];
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -28,7 +29,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <aside className="sidebar">
       <nav className="side-nav" aria-label="Navegação principal">
         {visibleNavigation.map((item) => <Link key={item.href} href={item.href} className={`nav-link ${pathname === item.href ? 'active' : ''}`} aria-label={item.title}>
-          <span className="nav-icon" data-tooltip={item.title}>{item.icon}</span><span>{item.title}</span>{pathname === item.href && <span className="nav-current" />}
+          <span className="nav-icon" data-tooltip={item.title}><Icon icon={item.icon} width={19} height={19} /></span><span>{item.title}</span>{pathname === item.href && <span className="nav-current" />}
         </Link>)}
       </nav>
       <div className="sidebar-bottom">

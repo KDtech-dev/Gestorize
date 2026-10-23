@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Box, Tab, Tabs } from '@mui/material';
+import { Icon } from '@iconify/react';
+import { Tab, Tabs } from '@mui/material';
 
 export type NavigationItem = {
   href: string;
@@ -71,7 +72,7 @@ export function TopNavigation({ items }: { items: NavigationItem[] }) {
           component={Link}
           href={item.href}
           value={item.href}
-          icon={<Box component="span" aria-hidden="true">{item.icon}</Box>}
+          icon={<Icon icon={item.icon} width={21} height={21} aria-hidden="true" />}
           iconPosition="top"
           label={item.title}
           aria-label={item.title}
