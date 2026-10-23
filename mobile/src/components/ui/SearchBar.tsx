@@ -1,4 +1,5 @@
 import { View, TextInput, StyleSheet } from 'react-native';
+import React from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@context/ThemeContext';
 
@@ -6,9 +7,10 @@ type Props = {
   value?: string;
   placeholder?: string;
   onChangeText?: (text: string) => void;
+  rightElement?: React.ReactNode;
 };
 
-const SearchBar = ({ value, onChangeText, placeholder }: Props) => {
+const SearchBar = ({ value, onChangeText, placeholder, rightElement }: Props) => {
   const { colors } = useTheme();
   const isDark = colors.background !== '#ffffff';
 
@@ -32,6 +34,7 @@ const SearchBar = ({ value, onChangeText, placeholder }: Props) => {
         placeholderTextColor={placeholderColor}
         style={[styles.input, { color: textColor }]}
       />
+      {rightElement}
     </View>
   );
 };

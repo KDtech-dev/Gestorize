@@ -4,16 +4,20 @@ namespace Database\Seeders;
 
 use App\Models\Fornecedor;
 use App\Models\Categoria;
+use Database\Seeders\Concerns\SeedsDefaultOrganization;
 use Illuminate\Database\Seeder;
 
 class FornecedoresSeeder extends Seeder
 {
+    use SeedsDefaultOrganization;
+
     public function run(): void
     {
+        $organizationId = $this->defaultOrganization()->id;
         $categorias = Categoria::all();
         $categoriasPorNome = $categorias->keyBy('nome');
 
-        $fornecedor = Fornecedor::updateOrCreate(['cnpj' => '12.345.678/0001-90'], [
+        $fornecedor = $this->seedOrganizationRecord(Fornecedor::class, $organizationId, ['cnpj' => '12.345.678/0001-90'], [
             'nome'            => 'Fornecedor Geral',
             'email'           => 'contato@fornecedor.com',
             'telefone'        => '(11) 99999-9999',
@@ -26,7 +30,7 @@ class FornecedoresSeeder extends Seeder
         ]);
 
         foreach (range(1, 15) as $indice) {
-            $fornecedor = Fornecedor::updateOrCreate(
+            $fornecedor = $this->seedOrganizationRecord(Fornecedor::class, $organizationId,
                 ['cnpj' => sprintf('20.000.000/0001-%02d', $indice)],
                 [
                     'nome' => "Fornecedor de Demonstração {$indice}",
