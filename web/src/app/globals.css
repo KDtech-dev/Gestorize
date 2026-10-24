@@ -623,3 +623,26 @@ html:has(.theme-root[data-theme=dark]),html:has(.theme-root[data-theme=dark]) bo
   .theme-root[data-theme=dark] .login-mobile-header p{color:#475569}
   .theme-root[data-theme=dark] .login-mobile-theme{border-color:#0f172a33;background:#0f172a0d;color:#0f172a}
 }
+
+/* Wide web directories use cards in a grid; phones keep the compact mobile rows above. */
+@media(min-width:701px){
+  .client-card-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+  .client-card{display:flex;flex-direction:column;align-items:stretch;padding:18px;border-radius:15px}
+  .client-card-top,.product-card-top,.supplier-card-top,.employee-card-top{grid-column:auto;grid-row:auto;align-items:center;justify-content:space-between;gap:12px}
+  .client-card-avatar{width:58px;height:58px}
+  .client-card-identity{flex:initial;gap:13px}
+  .client-card-identity-copy strong{font-size:19px}
+  .client-card-identity-copy>span{font-size:15px}
+  .client-card-contact,.product-card .client-card-relations,.supplier-card-contact,.employee-card-contact{grid-column:auto;grid-row:auto;grid-template-columns:1fr;gap:9px;min-height:58px;margin-top:0;padding:13px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .client-card-contact>span{font-size:14px}
+  .client-card-footer,.product-card .client-card-footer,.quote-card .client-card-footer{grid-column:auto;grid-row:auto;align-self:stretch;flex-direction:row;justify-content:space-between;gap:10px;margin-top:auto;padding:12px 0 0;border:0}
+  .client-card-actions-label{display:block}
+  .client-card-actions{flex-direction:row;gap:7px}
+  .client-card-details,.product-card-details,.quote-card-details{grid-column:auto;grid-row:auto;width:100%;margin-top:14px;padding:14px}
+  .product-card-highlights,.quote-card-highlights{grid-column:auto;grid-row:auto;width:auto;margin:15px 0 0;padding:12px}
+  .product-card-highlights strong,.quote-card-highlights strong{font-size:17px}
+  .product-expiry{grid-column:auto;grid-row:auto;width:auto;margin-top:11px}
+  .quote-card-heading{grid-column:auto;grid-row:auto;justify-content:space-between}
+  .quote-card-meta{grid-column:auto;grid-row:auto;margin:11px 0}
+}
+@media(min-width:1101px){.client-card-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
