@@ -19,7 +19,8 @@ export const codigo39Svg = (codigo: string, height = 64) => {
   const narrow = 2;
   const wide = 5;
   const gap = 2;
-  let x = 0;
+  // Code 39 requires a clear quiet zone before and after the start/stop bars.
+  let x = narrow * 10;
   const bars: string[] = [];
   [...valor].forEach((char, index) => {
     const pattern = CODE39[char];
@@ -31,7 +32,8 @@ export const codigo39Svg = (codigo: string, height = 64) => {
     });
     if (index < valor.length - 1) x += gap;
   });
-  return `<svg class="codigo" xmlns="http://www.w3.org/2000/svg" width="100%" height="14mm" viewBox="0 0 ${x} ${height}" role="img" aria-label="Código de barras ${escaparHtml(codigo)}"><rect width="100%" height="100%" fill="#fff"/><g fill="#111">${bars.join('')}</g></svg>`;
+  x += narrow * 10;
+  return `<svg class="codigo" xmlns="http://www.w3.org/2000/svg" width="100%" height="14mm" viewBox="0 0 ${x} ${height}" preserveAspectRatio="none" shape-rendering="crispEdges" role="img" aria-label="Código de barras ${escaparHtml(codigo)}"><rect width="100%" height="100%" fill="#fff"/><g fill="#111">${bars.join('')}</g></svg>`;
 };
 
 export type ProdutoEtiqueta = {

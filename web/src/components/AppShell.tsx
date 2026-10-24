@@ -50,7 +50,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <TopNavigation items={visibleNavigation} name={user?.name ?? 'Usuário'} email={user?.email ?? ''} imageUrl={user?.avatar_url ?? user?.avatar} darkMode={mode === 'dark'} onToggleTheme={toggle} onSignOut={guardedSignOut} />
         <div className="topbar-right"><button className="theme-toggle" onClick={toggle} aria-label={mode === 'dark' ? 'Ativar tema claro' : 'Ativar tema escuro'} data-tooltip={mode === 'dark' ? 'Tema claro' : 'Tema escuro'}>{mode === 'dark' ? '☀' : '☾'}</button><UserMenu name={user?.name ?? 'Usuário'} email={user?.email ?? ''} role={user?.role ?? 'Usuário'} imageUrl={user?.avatar_url ?? user?.avatar} signOut={async () => { guardedSignOut(); }} /></div>
       </header>
-      <div className={`page-content ${pathname === '/' ? 'dashboard-content' : ''} ${isEditorPage ? 'editor-content' : ''} ${['/clientes', '/clientes/nova', '/produtos', '/produtos/nova', '/fornecedores', '/orcamentos', '/funcionarios', '/vendas', '/relatorios'].includes(pathname) ? 'clients-content' : ''}`}>{children}</div>
+      <div className={`page-content ${pathname === '/' ? 'dashboard-content' : ''} ${isEditorPage ? 'editor-content' : ''} ${['/clientes', '/clientes/nova', '/produtos', '/produtos/nova', '/etiquetas', '/fornecedores', '/orcamentos', '/funcionarios', '/vendas', '/relatorios'].includes(pathname) ? 'clients-content' : ''}`}>{children}</div>
     </main>
   </div>;
 }

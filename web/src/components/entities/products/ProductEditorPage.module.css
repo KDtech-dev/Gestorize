@@ -1,3 +1,9 @@
 .page{max-width:none}
 .form{gap:18px}
-@media(max-width:700px){.form{gap:13px}}
+.titleButtons{display:flex;align-items:center;gap:9px}
+.printButton{min-height:50px;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:0 15px;border:1px solid #005ce4;border-radius:10px;background:transparent;color:#005ce4;font:700 15px 'DM Sans',Arial,sans-serif;white-space:nowrap;cursor:pointer;transition:background .16s,transform .16s}
+.printButton:hover:not(:disabled){transform:translateY(-1px);background:#005ce410}
+.printButton:disabled{opacity:.5;cursor:not-allowed}
+:global(.theme-root[data-theme=dark]) .printButton{border-color:#93c5fd;color:#bfdbfe}
+:global(.theme-root[data-theme=dark]) .printButton:hover:not(:disabled){background:#123563}
+@media(max-width:700px){.form{gap:13px}.titleButtons{flex-wrap:wrap}.printButton{min-height:47px;padding:0 13px;font-size:14px}}

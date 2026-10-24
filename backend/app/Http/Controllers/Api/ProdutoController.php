@@ -43,9 +43,30 @@ class ProdutoController extends Controller
     public function buscarPorCodigo(string $codigo): JsonResponse
     {
         $codigo = strtoupper(trim($codigo));
-        $produto = Produto::with(['categoria', 'fornecedor', 'unidadeMedida', 'imagens'])
+        $produtoQuery = Produto::with(['categoria', 'fornecedor', 'unidadeMedida', 'imagens']);
+        $produto = (clone $produtoQuery)
             ->where('codigo_barras', $codigo)
-            ->firstOrFail();
+            ->first();
+
+        if (!$produto) {
+            $idPrefix = strtolower(str_replace('-', '', $codigo));
+            if (strlen($idPrefix) >= 8 && strlen($idPrefix) <= 32 && ctype_xdigit($idPrefix)) {
+                $groups = [];
+                $offset = 0;
+                foreach ([8, 4, 4, 4, 12] as $length) {
+                    if ($offset >= strlen($idPrefix)) break;
+                    $groups[] = substr($idPrefix, $offset, $length);
+                    $offset += $length;
+                }
+                $matches = (clone $produtoQuery)
+                    ->where('id', 'like', implode('-', $groups) . '%')
+                    ->limit(2)
+                    ->get();
+                $produto = $matches->count() === 1 ? $matches->first() : null;
+            }
+        }
+
+        abort_if(!$produto, 404, 'Produto não encontrado pelo código de barras.');
 
         return ResponseService::success(new ProdutoResource($produto));
     }

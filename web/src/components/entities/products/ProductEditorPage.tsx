@@ -8,6 +8,7 @@ import { apiFetch } from '@/lib/api';
 import { useToast } from '@/context/ToastContext';
 import { useAuth } from '@/context/AuthContext';
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
+import { cancelLabelOperation, createLabelOperation, labelsPrintHtml, type LabelOperation } from '@/lib/labels';
 import { ProductEditorFields, type ProductForm, type ProductOption } from './ProductEditorFields';
 import { type ProductImage } from './ProductGallery';
 import styles from '../clients/ClientEditorPage.module.css';
@@ -91,6 +92,8 @@ export function ProductEditorPage({ productId }: { productId?: string }) {
   const [categoryName, setCategoryName] = useState('');
   const [categoryEditorOpen, setCategoryEditorOpen] = useState(false);
   const [creatingCategory, setCreatingCategory] = useState(false);
+  const [loadedProduct, setLoadedProduct] = useState<ProductData | null>(null);
+  const [printingLabel, setPrintingLabel] = useState(false);
   const imagesRef = useRef(images);
   imagesRef.current = images;
 
@@ -115,6 +118,7 @@ export function ProductEditorPage({ productId }: { productId?: string }) {
         setUnits(unwrapOptions(unitPayload));
         if (productPayload) {
           const product = unwrapData(productPayload) as ProductData;
+          setLoadedProduct(product);
           const normalizedForm = normalizeProduct(product);
           const normalizedImages = normalizeImages(product);
           setForm(normalizedForm);
@@ -157,6 +161,34 @@ export function ProductEditorPage({ productId }: { productId?: string }) {
   const isDirty = formChanged || imagesChanged || images.some((image) => !!image.file) || !!categoryName.trim();
   const canSave = !loading && !saving && !galleryError && Object.keys(validationErrors).length === 0 && (!isEdit || isDirty);
   const { requestNavigation, navigateWithoutConfirmation, dialog } = useUnsavedChangesGuard(isDirty);
+
+  async function printProductLabel() {
+    if (!productId || !loadedProduct?.codigo_barras || isDirty || printingLabel) return;
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      showToast('O navegador bloqueou a janela de impressão. Permita pop-ups para este site e tente novamente.', 'error');
+      return;
+    }
+    printWindow.document.title = 'Preparando etiqueta…';
+    printWindow.document.body.textContent = 'Preparando a impressão da etiqueta…';
+    setPrintingLabel(true);
+    let operation: LabelOperation | null = null;
+    try {
+      operation = await createLabelOperation('reimpressao', [{ produto_id: productId, quantidade: 1 }]);
+      printWindow.document.open();
+      printWindow.document.write(labelsPrintHtml(operation.itens));
+      printWindow.document.close();
+      showToast('A janela de impressão foi aberta. Confirme o resultado na Central de etiquetas.', 'info');
+    } catch (reason) {
+      printWindow.close();
+      if (operation) {
+        try { await cancelLabelOperation(operation.id); } catch { /* a operação poderá ser resolvida na central */ }
+      }
+      showToast(reason instanceof Error ? reason.message : 'Não foi possível imprimir a etiqueta.', 'error');
+    } finally {
+      setPrintingLabel(false);
+    }
+  }
 
   function change(name: keyof ProductForm, value: string) {
     setForm((current) => {
@@ -266,7 +298,10 @@ export function ProductEditorPage({ productId }: { productId?: string }) {
           <h1>{isEdit ? 'Editar produto' : 'Novo produto'}</h1>
           <p>{isEdit ? 'Atualize os dados, estoque e fotos deste produto.' : 'Cadastre um produto, organize seus dados e adicione fotos ao catálogo.'}</p>
         </div>
-        <button type="submit" form="product-editor-form" className={styles.saveButton} disabled={!canSave}>{saving ? <><span className={styles.buttonSpinner} />Salvando…</> : <><Icon icon="mdi:content-save-outline" width={21} height={21} />Salvar produto</>}</button>
+        <div className={pageStyles.titleButtons}>
+          {isEdit && loadedProduct?.codigo_barras && <button type="button" className={pageStyles.printButton} onClick={() => void printProductLabel()} disabled={loading || saving || printingLabel || isDirty}><Icon icon={printingLabel ? 'mdi:loading' : 'mdi:printer-outline'} width={20} height={20} />{printingLabel ? 'Preparando…' : 'Imprimir etiqueta'}</button>}
+          <button type="submit" form="product-editor-form" className={styles.saveButton} disabled={!canSave}>{saving ? <><span className={styles.buttonSpinner} />Salvando…</> : <><Icon icon="mdi:content-save-outline" width={21} height={21} />Salvar produto</>}</button>
+        </div>
       </div>
     </header>
 

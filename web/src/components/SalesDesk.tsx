@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Icon } from '@iconify/react';
 import { Alert, Box, Button, ButtonBase, Collapse, IconButton, InputAdornment, Paper, Stack, TextField, Typography } from '@mui/material';
 import { canSell, useAuth } from '@/context/AuthContext';
@@ -19,6 +19,12 @@ function list<T>(payload: unknown): T[] {
   let node = payload as { data?: unknown };
   for (let i = 0; i < 3 && node && !Array.isArray(node); i++) node = node.data as typeof node;
   return Array.isArray(node) ? node as T[] : [];
+}
+
+function record<T>(payload: unknown): T | null {
+  let node = payload as { data?: unknown; id?: unknown };
+  for (let i = 0; i < 4 && node && !node.id; i++) node = node.data as typeof node;
+  return node && node.id ? node as T : null;
 }
 
 const money = (value: unknown) => Number(value ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -44,6 +50,10 @@ export function SalesDesk() {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [dateLabel, setDateLabel] = useState('');
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
+  const searchValueRef = useRef('');
+  const scanTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scanKeysRef = useRef({ lastAt: 0, rapidKeys: 0 });
 
   const load = async () => {
     const [productData, salesData, customerData, quoteData] = await Promise.all([
@@ -64,7 +74,15 @@ export function SalesDesk() {
     load().catch((reason) => setError(reason instanceof Error ? reason.message : 'Erro ao carregar vendas.')).finally(() => setLoading(false));
   }, []);
 
-  const matchingProducts = useMemo(() => products.filter((product) => product.estoque > 0 && `${product.nome} ${product.codigo_barras ?? ''}`.toLocaleLowerCase().includes(search.toLocaleLowerCase())).slice(0, 8), [products, search]);
+  useEffect(() => {
+    if (window.matchMedia('(pointer: fine)').matches) searchInputRef.current?.focus();
+    return () => { if (scanTimerRef.current) clearTimeout(scanTimerRef.current); };
+  }, []);
+
+  const matchingProducts = useMemo(() => {
+    const term = search.trim().toLocaleLowerCase();
+    return products.filter((product) => product.estoque > 0 && `${product.nome} ${product.codigo_barras ?? ''} ${product.id}`.toLocaleLowerCase().includes(term)).slice(0, 8);
+  }, [products, search]);
   const rowPrice = (row: CartRow) => row.precoUnitario ?? Number(row.produto.preco_venda);
   const subtotal = cart.reduce((sum, row) => sum + rowPrice(row) * row.quantidade, 0);
   const rawDiscount = Math.max(0, Number(discountInput) || 0);
@@ -87,8 +105,75 @@ export function SalesDesk() {
       if (existing) return current.map((row) => row.produto.id === product.id ? { ...row, quantidade: Math.min(row.quantidade + 1, product.estoque) } : row);
       return [...current, { produto: product, quantidade: 1 }];
     });
+    searchValueRef.current = '';
     setSearch(''); setShowResults(false); setError('');
   };
+
+  async function resolveBarcode(value: string) {
+    if (scanTimerRef.current) clearTimeout(scanTimerRef.current);
+    scanTimerRef.current = null;
+    scanKeysRef.current = { lastAt: 0, rapidKeys: 0 };
+    const code = value.trim();
+    if (!code || quoteId) return;
+    searchValueRef.current = '';
+    setSearch('');
+    setError('');
+    const normalizedCode = code.toLocaleUpperCase();
+    const normalizedIdPrefix = normalizedCode.replace(/-/g, '');
+    const localMatches = products.filter((product) => product.codigo_barras?.trim().toLocaleUpperCase() === normalizedCode
+      || (normalizedIdPrefix.length >= 8 && product.id.replace(/-/g, '').toLocaleUpperCase().startsWith(normalizedIdPrefix)));
+    const localProduct = localMatches.length === 1 ? localMatches[0] : null;
+    if (localProduct) {
+      if (Number(localProduct.estoque) <= 0) {
+        setShowResults(false);
+        setError('Este produto está sem estoque disponível.');
+        return;
+      }
+      addProduct(localProduct);
+      return;
+    }
+    try {
+      const payload = await apiFetch<unknown>(`/produtos/codigo/${encodeURIComponent(code)}`);
+      const product = record<Product>(payload);
+      if (!product) throw new Error('Produto não encontrado pelo código de barras.');
+      if (Number(product.estoque) <= 0) {
+        setShowResults(false);
+        setError('Este produto está sem estoque disponível.');
+        return;
+      }
+      setProducts((current) => current.some((item) => item.id === product.id) ? current : [product, ...current]);
+      addProduct(product);
+    } catch (reason) {
+      searchValueRef.current = code;
+      setSearch(code);
+      setShowResults(true);
+      setError(reason instanceof Error ? reason.message : 'Produto não encontrado pelo código lido.');
+    }
+  }
+
+  function handleProductSearchKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      if (searchValueRef.current.trim()) void resolveBarcode(searchValueRef.current);
+      else setShowResults(false);
+      return;
+    }
+    if (event.key === 'Tab' && scanKeysRef.current.rapidKeys >= 5 && searchValueRef.current.trim().length >= 8) {
+      event.preventDefault();
+      void resolveBarcode(searchValueRef.current);
+      return;
+    }
+    if (event.key.length !== 1 || event.ctrlKey || event.altKey || event.metaKey) return;
+    const now = performance.now();
+    const interval = now - scanKeysRef.current.lastAt;
+    scanKeysRef.current = { lastAt: now, rapidKeys: interval > 0 && interval <= 120 ? scanKeysRef.current.rapidKeys + 1 : 1 };
+    if (scanTimerRef.current) clearTimeout(scanTimerRef.current);
+    scanTimerRef.current = setTimeout(() => {
+      const scannedCode = searchValueRef.current.trim();
+      if (scanKeysRef.current.rapidKeys >= 6 && scannedCode.length >= 8) void resolveBarcode(scannedCode);
+      else scanKeysRef.current = { lastAt: 0, rapidKeys: 0 };
+    }, 180);
+  }
 
   const changeQuantity = (productId: string, delta: number) => setCart((items) => items.map((item) => item.produto.id === productId ? { ...item, quantidade: Math.min(item.produto.estoque, Math.max(1, item.quantidade + delta)) } : item));
 
@@ -175,9 +260,9 @@ export function SalesDesk() {
         <Paper component="section" className="sales-product-panel" sx={{ ...panelSx, p: { xs: 1.5, md: 2.25 }, minWidth: 0, minHeight: { lg: 'calc(100vh - 114px)' }, display: 'flex', flexDirection: 'column' }}>
           <Box sx={{ position: 'relative', display: 'flex', gap: 1, mb: 1.75 }}>
             <Box sx={{ minWidth: 0, flex: 1, height: 56, px: 1.5, display: 'flex', alignItems: 'center', gap: 1.1, border: '1px solid #1d4ed8', borderRadius: '10px', bgcolor: 'var(--card)' }}>
-              <TextField fullWidth variant="standard" disabled={Boolean(quoteId)} value={search} onChange={(event) => { setSearch(event.target.value); setShowResults(Boolean(event.target.value)); }} onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); setShowResults(Boolean(search.trim())); } }} placeholder={quoteId ? 'Itens carregados do orçamento selecionado' : 'Buscar produto por nome ou código...'} slotProps={{ htmlInput: { 'aria-label': 'Buscar produto por nome ou código' }, input: { startAdornment: <InputAdornment position="start"><Icon icon="mdi:magnify" width={20} height={20} color="#1d4ed8" /></InputAdornment> } }} sx={{ minWidth: 0, flex: 1, '& .MuiInputBase-root': { color: 'var(--ink)', fontSize: 17 }, '& .MuiInputBase-input': { height: 54, boxSizing: 'border-box', py: 0 }, '& .MuiInput-root:before, & .MuiInput-root:after': { display: 'none' }, '& .MuiInputBase-input::placeholder': { color: 'var(--muted)', opacity: 0.8 }, '& .MuiInputBase-input.Mui-disabled': { opacity: 0.7, WebkitTextFillColor: 'var(--muted)' } }} />
+              <TextField fullWidth inputRef={searchInputRef} variant="standard" disabled={Boolean(quoteId)} value={search} onChange={(event) => { searchValueRef.current = event.target.value; setSearch(event.target.value); setShowResults(Boolean(event.target.value)); }} onKeyDown={handleProductSearchKeyDown} placeholder={quoteId ? 'Itens carregados do orçamento selecionado' : 'Buscar produto por nome ou código...'} slotProps={{ htmlInput: { 'aria-label': 'Buscar produto por nome ou código' }, input: { startAdornment: <InputAdornment position="start"><Icon icon="mdi:magnify" width={20} height={20} color="#1d4ed8" /></InputAdornment> } }} sx={{ minWidth: 0, flex: 1, '& .MuiInputBase-root': { color: 'var(--ink)', fontSize: 17 }, '& .MuiInputBase-input': { height: 54, boxSizing: 'border-box', py: 0 }, '& .MuiInput-root:before, & .MuiInput-root:after': { display: 'none' }, '& .MuiInputBase-input::placeholder': { color: 'var(--muted)', opacity: 0.8 }, '& .MuiInputBase-input.Mui-disabled': { opacity: 0.7, WebkitTextFillColor: 'var(--muted)' } }} />
             </Box>
-            <Button variant="contained" disabled={Boolean(quoteId)} onClick={() => setShowResults(Boolean(search.trim()))} sx={{ minWidth: 96, minHeight: 56, borderRadius: '10px', bgcolor: '#1d4ed8', textTransform: 'none', fontSize: 15, fontWeight: 800, '&:hover': { bgcolor: '#1e40af' } }}>Buscar</Button>
+            <Button variant="contained" disabled={Boolean(quoteId)} onClick={() => { if (search.trim()) void resolveBarcode(search); else setShowResults(false); }} sx={{ minWidth: 96, minHeight: 56, borderRadius: '10px', bgcolor: '#1d4ed8', textTransform: 'none', fontSize: 15, fontWeight: 800, '&:hover': { bgcolor: '#1e40af' } }}>Buscar</Button>
             {showResults && search.trim() && <Paper sx={{ ...panelSx, position: 'absolute', zIndex: 5, top: 52, left: 0, right: 90, maxHeight: 300, overflowY: 'auto', p: 0.75 }}>
               {matchingProducts.map((product) => <ButtonBase key={product.id} onClick={() => addProduct(product)} sx={{ width: '100%', minHeight: 58, px: 1, display: 'flex', justifyContent: 'flex-start', textAlign: 'left', borderRadius: '8px', '&:hover': { bgcolor: 'var(--surface-soft)' } }}>
                 <Icon icon="mdi:package-variant-closed" width={23} height={23} color="#1d4ed8" />

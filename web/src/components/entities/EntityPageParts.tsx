@@ -24,9 +24,10 @@ type EntityPageHeadingProps = {
   createLabel: string;
   canCreate: boolean;
   onCreate: () => void;
+  extraAction?: { label: string; icon: string; onClick: () => void };
 };
 
-export function EntityPageHeading({ eyebrow, icon, title, description, createLabel, canCreate, onCreate }: EntityPageHeadingProps) {
+export function EntityPageHeading({ eyebrow, icon, title, description, createLabel, canCreate, onCreate, extraAction }: EntityPageHeadingProps) {
   return (
     <header className={styles.pageHeading}>
       <div className={styles.headingCopy}>
@@ -34,9 +35,14 @@ export function EntityPageHeading({ eyebrow, icon, title, description, createLab
         <h1>{title}</h1>
         <p>{description}</p>
       </div>
-      {canCreate && <button type="button" className={styles.createButton} onClick={onCreate}>
-        <Icon icon="mdi:plus" width={20} height={20} />{createLabel}
-      </button>}
+      {(canCreate || extraAction) && <div className={styles.headingActions}>
+        {canCreate && <button type="button" className={styles.createButton} onClick={onCreate}>
+          <Icon icon="mdi:plus" width={20} height={20} />{createLabel}
+        </button>}
+        {extraAction && <button type="button" className={`${styles.createButton} ${styles.outlinedButton}`} onClick={extraAction.onClick}>
+          <Icon icon={extraAction.icon} width={20} height={20} />{extraAction.label}
+        </button>}
+      </div>}
     </header>
   );
 }

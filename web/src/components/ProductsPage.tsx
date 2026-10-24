@@ -150,7 +150,7 @@ export function ProductsPage() {
   }
 
   return <div className="clients-page products-page">
-    <EntityPageHeading eyebrow="CATÁLOGO" icon="mdi:package-variant-closed" title="Produtos" description="Consulte preços, estoque e informações dos produtos da sua organização." createLabel="Novo produto" canCreate={can('produtos.criar')} onCreate={() => router.push('/produtos/nova')} />
+    <EntityPageHeading eyebrow="CATÁLOGO" icon="mdi:package-variant-closed" title="Produtos" description="Consulte preços, estoque e informações dos produtos da sua organização." createLabel="Novo produto" canCreate={can('produtos.criar')} onCreate={() => router.push('/produtos/nova')} extraAction={{ label: 'Etiquetas', icon: 'mdi:tag-multiple-outline', onClick: () => router.push('/etiquetas') }} />
     <section className="client-summary-grid" aria-label="Resumo de produtos">
       <EntitySummaryCard compact label="Total de produtos" value={loading ? '—' : products.length} icon="mdi:package-variant-closed" color="#005CE4" />
       <EntitySummaryCard compact label="Com estoque" value={loading ? '—' : inStock} icon="mdi:check-circle-outline" color="#0f9f73" />

@@ -10,7 +10,10 @@
 .eyebrow svg{flex:none;color:#005CE4}
 .headingCopy h1{margin:2px 0 0;font-size:40px;letter-spacing:-1.2px}
 .headingCopy p{margin:0;font-size:19px;line-height:1.55}
+.headingActions{display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-wrap:wrap}
 .createButton{min-height:54px;display:flex;align-items:center;justify-content:center;gap:10px;padding:0 25px;border:0;border-radius:12px;background:var(--primary);color:#fff;font:inherit;font-size:16px;font-weight:700;white-space:nowrap;cursor:pointer}
+.outlinedButton{border:1px solid #005CE4;background:transparent;color:#005CE4;transition:background-color .16s ease,border-color .16s ease}
+.outlinedButton:hover{border-color:#0048b8;background:#005CE40d}
 .directoryHeading{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:18px}
 .directoryEyebrow{font-size:14px;color:var(--primary);font-weight:800;letter-spacing:.8px;text-transform:uppercase}
 .directoryHeading h2{margin:6px 0;font:800 28px Manrope,sans-serif;letter-spacing:-.5px}
@@ -32,6 +35,12 @@
 .cardActions{display:flex;align-items:center;gap:7px}
 :global(.theme-root[data-theme=dark]) .summaryCard{border-color:color-mix(in srgb,var(--summary-color) 38%,var(--line));background:color-mix(in srgb,var(--summary-color) 15%,#08244a)}
 :global(.theme-root[data-theme=dark]) .createButton{background:#005CE4;color:#fff}
+:global(.theme-root[data-theme=dark]) .outlinedButton{border-color:#93c5fd;background:transparent;color:#bfdbfe}
+:global(.theme-root[data-theme=dark]) .outlinedButton:hover{border-color:#bfdbfe;background:#123563}
 .createButton{background:#005CE4;color:#fff;transition:background-color .16s ease}
 .createButton:hover{background:#0048b8}
-@media(max-width:760px){.pageHeading{align-items:flex-start;flex-direction:column;gap:16px;min-height:0;padding:19px;margin-bottom:14px;border-radius:14px}.headingCopy h1{font-size:32px}.headingCopy p{font-size:16px;line-height:1.5}.createButton{align-self:flex-end;min-height:48px;padding:0 15px;border-radius:10px;font-size:14px}.directoryHeading{align-items:flex-start;flex-direction:column;gap:9px;margin-bottom:13px}.directoryHeading h2{font-size:23px}.directoryHeading p{font-size:15px;line-height:1.5}.pagination{align-items:flex-start;flex-direction:column;font-size:14px}.pagination>div{width:100%;justify-content:space-between}.summaryCard{min-height:70px;grid-template-columns:1fr 38px;column-gap:10px;padding:9px 13px;border-radius:11px}.summaryIcon{width:38px;height:38px}.summaryLabel{font-size:14px}.summaryCard>strong{font-size:24px}.compactSummary>strong{font-size:22px}}
+.createButton.outlinedButton{border:1px solid #005CE4;background:transparent;color:#005CE4}
+.createButton.outlinedButton:hover{border-color:#0048b8;background:#005CE40d;color:#005CE4}
+:global(.theme-root[data-theme=dark]) .createButton.outlinedButton{border-color:#93c5fd;background:transparent;color:#bfdbfe}
+:global(.theme-root[data-theme=dark]) .createButton.outlinedButton:hover{border-color:#bfdbfe;background:#123563;color:#bfdbfe}
+@media(max-width:760px){.pageHeading{align-items:flex-start;flex-direction:column;gap:16px;min-height:0;padding:19px;margin-bottom:14px;border-radius:14px}.headingCopy h1{font-size:32px}.headingCopy p{font-size:16px;line-height:1.5}.headingActions{width:100%;justify-content:flex-end}.createButton{align-self:auto;min-height:48px;padding:0 15px;border-radius:10px;font-size:14px}.directoryHeading{align-items:flex-start;flex-direction:column;gap:9px;margin-bottom:13px}.directoryHeading h2{font-size:23px}.directoryHeading p{font-size:15px;line-height:1.5}.pagination{align-items:flex-start;flex-direction:column;font-size:14px}.pagination>div{width:100%;justify-content:space-between}.summaryCard{min-height:70px;grid-template-columns:1fr 38px;column-gap:10px;padding:9px 13px;border-radius:11px}.summaryIcon{width:38px;height:38px}.summaryLabel{font-size:14px}.summaryCard>strong{font-size:24px}.compactSummary>strong{font-size:22px}}
