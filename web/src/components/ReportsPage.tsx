@@ -99,7 +99,7 @@ function ReportHeading({ kind, period, onKind, onPeriod, onPreview, previewDisab
     <div className="clients-heading-content"><span className="eyebrow"><Icon icon="mdi:chart-box-outline" width={19} height={19} /><span>ANÁLISES E INDICADORES</span></span><h1>Relatórios</h1><p>Acompanhe os resultados e as movimentações da sua organização.</p></div>
     <div className={reportStyles.headingTools}>
       <ReportFilters kind={kind} period={period} onKind={onKind} onPeriod={onPeriod} />
-      <Button type="button" className={`${reportStyles.printButton} report-print-button`} onClick={onPreview} disabled={previewDisabled} startIcon={<Icon icon="mdi:file-eye-outline" width={20} height={20} />} sx={{ textTransform: 'none', boxShadow: 'none' }}>Pré-visualizar PDF</Button>
+      <Button type="button" variant="contained" className={`${reportStyles.printButton} report-print-button`} onClick={onPreview} disabled={previewDisabled} startIcon={<Icon icon="mdi:file-eye-outline" width={20} height={20} />} sx={{ minHeight: 46, px: 2, borderRadius: '10px', bgcolor: '#005ce4', color: '#fff', fontWeight: 750, textTransform: 'none', '&:hover': { bgcolor: '#0048b8' } }}>Pré-visualizar PDF</Button>
     </div>
   </header>;
 }
@@ -141,7 +141,7 @@ function ReportChart({ report, loading, period, kind, chartType, onChartType }: 
   }).join(', ');
   const title = kind === 'vendas' ? 'Vendas no período' : kind === 'produtos' ? 'Produtos por categoria' : kind === 'clientes' ? 'Novos clientes no período' : kind === 'orcamentos' ? 'Orçamentos no período' : 'Movimentação no período';
   return <section className="data-panel chart-panel report-chart-panel">
-    <div className="panel-heading"><div><span className="eyebrow">SÉRIE HISTÓRICA</span><h2>{title}</h2><p>{report?.nota ?? 'Valores agrupados conforme o período selecionado.'}</p></div><div className="report-chart-tools"><span className="panel-tag">{periodName.toUpperCase()}</span><ToggleButtonGroup exclusive value={chartType} onChange={(_, value: ChartType | null) => { if (value) onChartType(value); }} aria-label="Modelo do gráfico" className="report-chart-switcher">
+    <div className="panel-heading"><div><span className="eyebrow">SÉRIE HISTÓRICA</span><div className="report-chart-heading-row"><h2>{title}</h2><div className="report-chart-info" role="note"><Icon icon="mdi:information-outline" width={17} height={17} /><span>{report?.nota ?? 'Valores agrupados conforme o período selecionado.'}</span></div></div></div><div className="report-chart-tools"><span className="panel-tag">{periodName.toUpperCase()}</span><ToggleButtonGroup exclusive value={chartType} onChange={(_, value: ChartType | null) => { if (value) onChartType(value); }} aria-label="Modelo do gráfico" className="report-chart-switcher">
       {chartTypes.map((option) => <ToggleButton key={option.value} value={option.value} aria-label={option.label} title={option.label}><Icon icon={option.icon} width={18} height={18} /><span>{option.label}</span></ToggleButton>)}
       </ToggleButtonGroup></div></div>
     {loading ? <div className="table-loading"><span className="spinner" />Atualizando relatório…</div> : values.length ? chartType === 'rosca' ? <div className="report-donut-layout">
@@ -212,7 +212,7 @@ export function ReportsPage() {
       <section className={reportStyles.previewDialog} role="dialog" aria-modal="true" aria-labelledby="report-preview-title">
         <header className={reportStyles.previewHeader}><div><span className="eyebrow">DOCUMENTO</span><h2 id="report-preview-title">Pré-visualização do relatório</h2></div><div className={reportStyles.previewActions}>
           <Button type="button" variant="outlined" className={reportStyles.closeButton} onClick={() => setPreviewHtml('')} startIcon={<Icon icon="mdi:arrow-left" width={18} height={18} />} sx={{ textTransform: 'none' }}>Voltar</Button>
-          <Button type="button" className={reportStyles.printButton} onClick={printPreview} startIcon={<Icon icon="mdi:printer-outline" width={19} height={19} />} sx={{ textTransform: 'none', boxShadow: 'none' }}>Imprimir / salvar PDF</Button>
+          <Button type="button" variant="contained" className={reportStyles.printButton} onClick={printPreview} startIcon={<Icon icon="mdi:printer-outline" width={20} height={20} />} sx={{ minHeight: 46, px: 2, borderRadius: '10px', bgcolor: '#005ce4', color: '#fff', fontWeight: 750, textTransform: 'none', '&:hover': { bgcolor: '#0048b8' } }}>Imprimir / salvar PDF</Button>
         </div></header>
         <iframe ref={previewFrame} title="Pré-visualização do relatório em PDF" srcDoc={previewHtml} className={reportStyles.previewFrame} />
       </section>

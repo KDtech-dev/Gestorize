@@ -88,7 +88,7 @@ export function Dashboard() {
             href="/vendas/nova"
             variant="contained"
             startIcon={<Icon icon="mdi:cart-outline" width={23} height={23} />}
-            sx={{ minHeight: 54, px: 3, mb: 0.75, borderRadius: '12px', bgcolor: '#005CE4', color: '#fff', fontSize: 'clamp(16px,1.15vw,18px)', fontWeight: 700, textTransform: 'none', boxShadow: '0 5px 14px #005CE433', '&:hover': { bgcolor: '#0048b8', boxShadow: '0 7px 18px #005CE440' } }}
+            sx={{ minHeight: { xs: 47, sm: 50 }, px: { xs: 2.25, sm: 2.5 }, mb: 0.75, ml: 'auto', alignSelf: 'flex-end', border: '1px solid #005ce4', borderRadius: '10px', bgcolor: '#005ce4', color: '#fff', fontSize: { xs: 16, sm: 17 }, fontWeight: 700, textTransform: 'none', boxShadow: '0 5px 14px #005ce433', transition: 'background .16s,box-shadow .16s,transform .16s', '&:hover': { transform: 'translateY(-1px)', bgcolor: '#0048b8', boxShadow: '0 7px 18px #005ce440' } }}
           >
             Vender +
           </Button>

@@ -301,6 +301,10 @@ html:has(.theme-root[data-theme=dark]),html:has(.theme-root[data-theme=dark]) bo
 .reports-page .panel-heading .eyebrow{color:var(--primary);font-size:12px}
 .reports-page .panel-heading h2,.reports-page .category-report h2{margin:5px 0 0;color:var(--ink);font:800 24px Manrope,sans-serif;letter-spacing:-.4px}
 .reports-page .panel-heading p{margin:7px 0 0;color:var(--muted);font-size:16px;line-height:1.5}
+.report-chart-heading-row{display:flex;align-items:center;flex-wrap:wrap;gap:10px}
+.report-chart-info{max-width:520px;display:flex;align-items:flex-start;gap:7px;padding:7px 10px;border:1px solid #bfdbfe;border-radius:9px;background:#eff6ff;color:#1552a0;font-size:12px;line-height:1.4}
+.report-chart-info svg{flex:none;margin-top:1px}
+.theme-root[data-theme=dark] .report-chart-info{border-color:#31537f;background:#123563;color:#bfdbfe}
 .reports-page .panel-tag{border:1px solid #bfdbfe;border-radius:9px;background:#eff6ff;color:#1552a0;font-size:12px;letter-spacing:.5px}
 .theme-root[data-theme=dark] .reports-page .panel-tag{border-color:#31537f;background:#123563;color:#bfdbfe}
 .report-chart-tools{display:flex;align-items:center;justify-content:flex-end;gap:12px}
@@ -399,7 +403,7 @@ html:has(.theme-root[data-theme=dark]),html:has(.theme-root[data-theme=dark]) bo
   .sales-summary-card>.MuiStack-root>.MuiStack-root:last-child .MuiTypography-root:last-child{font-size:27px!important}
   .sales-payment-card .MuiToggleButton-root{min-height:44px!important;font-size:13px!important}
   .sales-checkout-actions{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px!important}
-  .sales-checkout-actions .MuiButton-root{min-height:44px;font-size:12px!important;padding-inline:8px}
+  .sales-checkout-actions .MuiButton-root{min-height:47px;font-size:16px!important;padding-inline:10px}
   .employee-role{padding:5px 7px;font-size:12px}
   .employee-card-details{grid-template-columns:1fr}
   .employee-permission-list>span{font-size:13px}
@@ -443,10 +447,11 @@ html:has(.theme-root[data-theme=dark]),html:has(.theme-root[data-theme=dark]) bo
   .reports-page .panel-heading p{font-size:14px}
   .reports-page .panel-tag{font-size:10px}
   .reports-page .panel-heading{align-items:stretch;flex-direction:column}
-  .report-chart-tools{align-items:stretch;justify-content:space-between;flex-wrap:wrap}
-  .report-chart-switcher{width:100%;display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
-  .report-chart-switcher .MuiToggleButton-root{min-width:0;min-height:36px;justify-content:center;padding:0 4px;font-size:11px}
-  .report-chart-switcher .MuiToggleButton-root span{display:none}
+  .report-chart-tools{width:100%;align-items:stretch;justify-content:flex-start;flex-direction:column;gap:8px}
+  .report-chart-tools .panel-tag{align-self:flex-start}
+  .report-chart-switcher{width:100%;display:grid;grid-template-columns:1fr;gap:7px}
+  .report-chart-switcher .MuiToggleButton-root{min-width:0;min-height:44px;justify-content:flex-start;padding:0 12px;border-radius:10px!important;background:var(--card);font-size:14px}
+  .report-chart-switcher .MuiToggleButton-root span{display:inline}
   .reports-page .bar-chart{min-height:240px;gap:5px;padding:20px 0 0}
   .reports-page .bar-track{height:155px;width:75%}
   .reports-page .bar-value{font-size:11px}
@@ -546,6 +551,47 @@ html:has(.theme-root[data-theme=dark]),html:has(.theme-root[data-theme=dark]) bo
 .quote-item-row>.MuiTextField-root input{height:auto;padding:16.5px 14px;border:0;border-radius:0;outline:0;background:transparent;color:inherit;font:inherit;box-shadow:none}
 
 .login-mobile-header,.login-mobile-theme{display:none}
+
+/* Keep the entity listings in the compact horizontal style used by mobile. */
+.client-card-grid{grid-template-columns:minmax(0,1fr);gap:10px}
+.client-card{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto auto;column-gap:16px;align-items:center;padding:14px 16px;border-radius:18px}
+.client-card-top{grid-column:1;grid-row:1;justify-content:flex-start;gap:12px}
+.client-card-avatar{width:56px;height:56px}
+.client-card-identity{flex:1}
+.client-card-identity-copy strong{font-size:17px}
+.client-card-identity-copy>span{font-size:13px}
+.client-card-contact{grid-column:1;grid-row:2;grid-template-columns:repeat(2,minmax(0,1fr));min-height:0;gap:6px 16px;padding:8px 0 0;border:0}
+.client-card-contact>span{font-size:13px}
+.client-card-footer{grid-column:2;grid-row:1/3;align-self:center;flex-direction:column;gap:0;padding:0 0 0 12px;border-left:1px solid var(--line)}
+.client-card-actions-label{display:none}
+.client-card-actions{flex-direction:column;gap:5px}
+.client-action{width:34px;height:34px}
+.client-card-details{grid-column:1/-1;grid-row:3;width:100%;margin-top:12px;padding:12px}
+
+.product-card{grid-template-rows:auto auto auto auto}
+.product-card-top{grid-column:1;grid-row:1}
+.product-card-highlights{grid-column:1;grid-row:2;width:min(100%,560px);margin:9px 0 0;padding:8px 10px}
+.product-card-highlights strong{font-size:16px}
+.product-expiry{grid-column:1;grid-row:3;width:fit-content;margin-top:8px}
+.product-card .product-card-relations{grid-column:1;grid-row:4;margin-top:8px;padding-top:7px}
+.product-card .client-card-footer{grid-column:2;grid-row:1/5}
+.product-card-details{grid-column:1/-1;grid-row:5}
+
+.quote-card{grid-template-rows:auto auto auto}
+.quote-card-heading{grid-column:1;grid-row:1;justify-content:flex-start}
+.quote-card-highlights{grid-column:1;grid-row:2;width:min(100%,560px);margin:9px 0 0;padding:8px 10px}
+.quote-card-highlights strong{font-size:17px}
+.quote-card-meta{grid-column:1;grid-row:3;margin:8px 0 0}
+.quote-card .client-card-footer{grid-column:2;grid-row:1/4}
+.quote-card-details{grid-column:1/-1;grid-row:4}
+
+@media(max-width:700px){
+  .client-card{padding:14px;border-radius:13px}
+  .client-card-avatar{width:49px;height:49px}
+  .client-card-top{align-items:flex-start;gap:9px}
+  .client-card-contact{gap:7px 10px}
+}
+
 @media(max-width:1100px){
   .sidebar{display:none!important}
   .main-area{margin-left:0!important;padding-bottom:0!important}

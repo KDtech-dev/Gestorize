@@ -95,7 +95,7 @@ export function TopNavigation({ items, name, email, imageUrl, darkMode, onToggle
     <IconButton className="top-nav-avatar-trigger" aria-label="Abrir navegação e opções da conta" onClick={() => setMenuOpen(true)} sx={{ display: 'none', p: 0.4, border: '2px solid #ffffff80', borderRadius: '50%' }}>
       <Avatar src={imageUrl ?? undefined} alt={name} sx={{ width: 38, height: 38, bgcolor: 'var(--primary)', color: 'var(--card)', fontSize: 15, fontWeight: 800 }}>{name.trim().charAt(0).toUpperCase()}</Avatar>
     </IconButton>
-    <Drawer anchor="left" open={menuOpen} onClose={() => setMenuOpen(false)} slotProps={{ paper: { sx: { width: 290, maxWidth: '85vw', bgcolor: 'var(--card)', color: 'var(--ink)' } } }}>
+    <Drawer anchor="right" open={menuOpen} onClose={() => setMenuOpen(false)} slotProps={{ paper: { sx: { width: 290, maxWidth: '85vw', bgcolor: 'var(--card)', color: 'var(--ink)' } } }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, p: 2 }}>
         <Avatar src={imageUrl ?? undefined} alt={name} sx={{ width: 44, height: 44, bgcolor: 'var(--primary)', color: 'var(--card)', fontWeight: 800 }}>{name.trim().charAt(0).toUpperCase()}</Avatar>
         <Box sx={{ minWidth: 0 }}><Typography noWrap sx={{ fontWeight: 800, fontSize: 14 }}>{name}</Typography><Typography noWrap sx={{ color: 'var(--muted)', fontSize: 12 }}>{email}</Typography></Box>
