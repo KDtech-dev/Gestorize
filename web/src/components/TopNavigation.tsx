@@ -1,9 +1,10 @@
 'use client';
 
 import Link from 'next/link';
+import { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { Icon } from '@iconify/react';
-import { Tab, Tabs } from '@mui/material';
+import { Avatar, Box, Divider, Drawer, IconButton, List, ListItemButton, ListItemIcon, ListItemText, Tab, Tabs, Typography } from '@mui/material';
 
 export type NavigationItem = {
   href: string;
@@ -12,11 +13,23 @@ export type NavigationItem = {
   permission?: string;
 };
 
-export function TopNavigation({ items }: { items: NavigationItem[] }) {
+type TopNavigationProps = {
+  items: NavigationItem[];
+  name: string;
+  email: string;
+  imageUrl?: string | null;
+  darkMode: boolean;
+  onToggleTheme: () => void;
+  onSignOut: () => void;
+};
+
+export function TopNavigation({ items, name, email, imageUrl, darkMode, onToggleTheme, onSignOut }: TopNavigationProps) {
   const pathname = usePathname();
+  const [menuOpen, setMenuOpen] = useState(false);
   const selected = items.find((item) => pathname === item.href || (item.href === '/clientes' && pathname.startsWith('/clientes/')))?.href ?? false;
 
   return (
+    <>
     <Tabs
       className="top-nav"
       value={selected}
@@ -79,5 +92,37 @@ export function TopNavigation({ items }: { items: NavigationItem[] }) {
         />
       ))}
     </Tabs>
+    <IconButton className="top-nav-avatar-trigger" aria-label="Abrir navegação e opções da conta" onClick={() => setMenuOpen(true)} sx={{ display: 'none', p: 0.4, border: '2px solid #ffffff80', borderRadius: '50%' }}>
+      <Avatar src={imageUrl ?? undefined} alt={name} sx={{ width: 38, height: 38, bgcolor: 'var(--primary)', color: 'var(--card)', fontSize: 15, fontWeight: 800 }}>{name.trim().charAt(0).toUpperCase()}</Avatar>
+    </IconButton>
+    <Drawer anchor="left" open={menuOpen} onClose={() => setMenuOpen(false)} slotProps={{ paper: { sx: { width: 290, maxWidth: '85vw', bgcolor: 'var(--card)', color: 'var(--ink)' } } }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, p: 2 }}>
+        <Avatar src={imageUrl ?? undefined} alt={name} sx={{ width: 44, height: 44, bgcolor: 'var(--primary)', color: 'var(--card)', fontWeight: 800 }}>{name.trim().charAt(0).toUpperCase()}</Avatar>
+        <Box sx={{ minWidth: 0 }}><Typography noWrap sx={{ fontWeight: 800, fontSize: 14 }}>{name}</Typography><Typography noWrap sx={{ color: 'var(--muted)', fontSize: 12 }}>{email}</Typography></Box>
+      </Box>
+      <Divider />
+      <List component="nav" aria-label="Navegação principal" sx={{ display: 'grid', gap: 0.5 }}>
+        {items.map((item) => {
+          const active = item.href === selected;
+          return <ListItemButton key={item.href} component={Link} href={item.href} selected={active} onClick={() => setMenuOpen(false)} sx={{ minHeight: 48, gap: 1.25, borderRadius: '11px', color: 'var(--muted)', '&.Mui-selected': { bgcolor: 'var(--surface-soft)', color: 'var(--primary)', fontWeight: 700 }, '&.Mui-selected:hover': { bgcolor: 'var(--surface-soft)' } }}>
+            <ListItemIcon sx={{ minWidth: 24, color: 'inherit' }}><Icon icon={item.icon} width={20} height={20} /></ListItemIcon>
+            <ListItemText primary={item.title} slotProps={{ primary: { sx: { fontSize: 14, fontWeight: active ? 700 : 600 } } }} />
+          </ListItemButton>;
+        })}
+      </List>
+      <Box sx={{ mt: 'auto' }}><Divider />
+        <List sx={{ display: 'grid', gap: 0.5 }}>
+          <ListItemButton onClick={() => { onToggleTheme(); setMenuOpen(false); }} sx={{ minHeight: 48, gap: 1.25, borderRadius: '11px', color: 'var(--muted)' }}>
+            <ListItemIcon sx={{ minWidth: 24, color: 'inherit' }}><Icon icon={darkMode ? 'mdi:white-balance-sunny' : 'mdi:moon-waning-crescent'} width={20} height={20} /></ListItemIcon>
+            <ListItemText primary={darkMode ? 'Tema claro' : 'Tema escuro'} slotProps={{ primary: { sx: { fontSize: 14, fontWeight: 600 } } }} />
+          </ListItemButton>
+          <ListItemButton onClick={() => { setMenuOpen(false); onSignOut(); }} sx={{ minHeight: 48, gap: 1.25, borderRadius: '11px', color: 'var(--muted)', '&:hover': { color: '#dc2626' } }}>
+            <ListItemIcon sx={{ minWidth: 24, color: 'inherit' }}><Icon icon="mdi:logout" width={20} height={20} /></ListItemIcon>
+            <ListItemText primary="Sair da conta" slotProps={{ primary: { sx: { fontSize: 14, fontWeight: 600 } } }} />
+          </ListItemButton>
+        </List>
+      </Box>
+    </Drawer>
+    </>
   );
 }

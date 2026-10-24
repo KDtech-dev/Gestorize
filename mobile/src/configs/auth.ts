@@ -6,4 +6,5 @@ export default {
   userDataKeyName: 'userData',
   expiresAtKeyName: 'authExpiresAt',
   rememberKeyName: 'authRememberMe',
+  lastLoginEmailKeyName: 'authLastLoginEmail',
 };

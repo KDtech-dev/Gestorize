@@ -94,6 +94,7 @@ html:has(.theme-root[data-theme=dark]),html:has(.theme-root[data-theme=dark]) bo
 .theme-root[data-theme=dark] .top-account strong{color:var(--ink)}
 .theme-root[data-theme=dark] .header-utility[data-tooltip]::after,.theme-root[data-theme=dark] .theme-toggle[data-tooltip]::after,.theme-root[data-theme=dark] .nav-icon[data-tooltip]::after{background:#0b274f;border-color:#31537f;color:#fff}
 @media(max-width:1100px){.topbar{height:96px}}
+@media(min-width:701px) and (max-width:1100px){.sidebar{display:none}.main-area{margin-left:0}.top-nav{display:none!important}.top-nav-menu-button{display:grid!important}}
 @media(max-width:700px){.topbar{height:78px;padding:0 12px}.topbar-right{gap:7px}.topbar-kicker{display:none}.topbar p{margin:0;font-size:11px}.top-account{max-width:66px;gap:2px}.top-account strong{max-width:66px;font-size:8px}.top-avatar{width:39px;height:39px;font-size:15px}.header-utility{width:26px;height:26px;font-size:12px}.theme-toggle{width:27px;height:27px;font-size:14px}.nav-icon[data-tooltip]::after{display:none}}
 
 /* Primary destinations in the top navbar */
@@ -514,6 +515,8 @@ html:has(.theme-root[data-theme=dark]),html:has(.theme-root[data-theme=dark]) bo
   .clients-page-heading p{font-size:16px;line-height:1.5}
   .clients-heading-actions{width:100%;align-items:center;flex-direction:row;justify-content:flex-end;gap:8px}
   .clients-heading-actions .primary-button{min-height:48px;padding:0 15px;font-size:14px}
+  .sales-overview-page .clients-heading-actions{width:100%;justify-content:flex-end}
+  .sales-overview-page .clients-heading-actions .MuiButton-root{min-height:48px;background:#005ce4;color:#fff}
 }
 
 /* Login layout and inputs follow the mobile login controls */
@@ -541,3 +544,36 @@ html:has(.theme-root[data-theme=dark]),html:has(.theme-root[data-theme=dark]) bo
 
 .mui-editor-field input,.mui-quote-item-row input{height:auto;padding:16.5px 14px;border:0;border-radius:0;outline:0;background:transparent;color:inherit;font:inherit;box-shadow:none}
 .quote-item-row>.MuiTextField-root input{height:auto;padding:16.5px 14px;border:0;border-radius:0;outline:0;background:transparent;color:inherit;font:inherit;box-shadow:none}
+
+.login-mobile-header,.login-mobile-theme{display:none}
+@media(max-width:1100px){
+  .sidebar{display:none!important}
+  .main-area{margin-left:0!important;padding-bottom:0!important}
+  .top-nav{display:none!important}
+  .top-nav-menu-button{display:none!important}
+  .top-nav-avatar-trigger{display:grid!important;justify-self:end}
+  .topbar{height:78px;min-height:78px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;padding:0 14px;justify-content:initial}
+  .topbar-brand{display:flex!important;gap:5px}
+  .topbar-brand img{width:40px;height:40px}
+  .topbar-right{display:none!important}
+}
+.theme-root[data-theme=dark] .top-nav-avatar-trigger{border-color:#06204680!important}
+@media(max-width:700px){
+  .side-nav{display:none!important}
+  .login-page{position:relative;min-height:100svh;display:flex;flex-direction:column;overflow:hidden;background:#0d2b52}
+  .login-mobile-header{display:flex;flex:1 0 42vh;min-height:280px;align-items:center;justify-content:center;flex-direction:column;padding:54px 20px 50px;color:#fff;text-align:center}
+  .login-mobile-header img{width:145px;height:125px;object-fit:contain;margin-bottom:7px}
+  .login-mobile-header h1{margin:0;font:700 30px/1.2 'DM Sans',Arial,sans-serif}
+  .login-mobile-header p{margin:7px 0 0;color:#ffffffcc;font-size:14px}
+  .login-mobile-theme{position:absolute;z-index:2;top:18px;right:16px;min-height:38px;display:flex;align-items:center;gap:7px;padding:0 12px;border:1px solid #ffffff55;border-radius:22px;background:#ffffff18;color:#fff;font-size:13px;font-weight:700}
+  .login-form-wrap{flex:1 0 auto;min-height:56vh;align-items:flex-start;justify-content:center;margin-top:-30px;padding:28px 22px max(28px,env(safe-area-inset-bottom));border-radius:30px 30px 0 0;background:var(--card)}
+  .login-card{width:min(100%,430px);margin:0 auto;gap:14px}
+  .login-card .mobile-brand{display:none}
+  .login-card h2{font-size:25px}
+  .login-card>.muted{font-size:14px}
+  .login-card .login-field>label{font-size:14px}
+  .theme-root[data-theme=dark] .login-page{background:#fff}
+  .theme-root[data-theme=dark] .login-mobile-header{color:#0f172a}
+  .theme-root[data-theme=dark] .login-mobile-header p{color:#475569}
+  .theme-root[data-theme=dark] .login-mobile-theme{border-color:#0f172a33;background:#0f172a0d;color:#0f172a}
+}

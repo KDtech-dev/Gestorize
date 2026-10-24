@@ -10,13 +10,20 @@ import { LoginInput } from '@/components/LoginInput';
 
 export default function LoginPage() {
   const { signIn, user, loading } = useAuth();
-  const { mode } = useTheme();
+  const { mode, toggle } = useTheme();
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [remember, setRemember] = useState(false);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  useEffect(() => {
+    const lastEmail = window.localStorage.getItem('gestorize-last-login-email');
+    if (lastEmail) {
+      setEmail(lastEmail);
+      setRemember(true);
+    }
+  }, []);
   useEffect(() => { if (!loading && user) router.replace('/'); }, [loading, router, user]);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -29,6 +36,14 @@ export default function LoginPage() {
   }
 
   return <main className="login-page">
+    <button type="button" className="login-mobile-theme" onClick={toggle} aria-label={mode === 'dark' ? 'Ativar tema claro' : 'Ativar tema escuro'}>
+      <span aria-hidden>{mode === 'dark' ? '☀' : '☾'}</span>{mode === 'dark' ? 'Claro' : 'Escuro'}
+    </button>
+    <header className="login-mobile-header">
+      <Image src={mode === 'dark' ? '/images/Logo.png' : '/images/LogoLight.png'} alt="Gestorize" width={170} height={145} priority />
+      <h1>Gestorize</h1>
+      <p>O seu sistema de gestão empresarial</p>
+    </header>
     <section className="login-aside">
       <div className="brand brand-light"><Image src="/images/LogoLight.png" alt="Gestorize" width={64} height={56} priority /><span>Gestorize</span></div>
       <div className="login-pitch"><span className="eyebrow">GESTÃO DO SEU NEGÓCIO</span><h1>Mais clareza para cuidar de cada parte da sua operação.</h1><p>Clientes, produtos, orçamentos e vendas em um só lugar.</p></div>

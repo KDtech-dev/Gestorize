@@ -1,10 +1,12 @@
 import Button from '@components/botoes/Button';
 import InputLogin from '@components/inputs/input-login';
 import { useAuth } from '@context/AuthContext';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@context/ThemeContext';
+import { secureStore } from '@utils/secureStore';
+import authConfig from '@configs/auth';
 
 type props = {
   onLoginSuccess: () => void;
@@ -18,6 +20,15 @@ export default function LoginCard({ onLoginSuccess }: props) {
   const [erro, setErro] = useState<string | null>(null);
 
   const { colors, isDark } = useTheme();
+
+  useEffect(() => {
+    void secureStore.get(authConfig.lastLoginEmailKeyName).then((lastEmail) => {
+      if (lastEmail) {
+        setEmail(lastEmail);
+        setRemember(true);
+      }
+    });
+  }, []);
 
   const titleColor = isDark ? '#ffffff' : '#000';
   const subtitleColor = isDark ? '#cdd9f1' : '#444';

@@ -12,6 +12,9 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
     cache: 'no-store',
   });
   const payload = await response.json().catch(() => null);
+  if (response.status === 401 && path !== '/login' && path !== 'login' && path !== '/logout' && path !== 'logout' && typeof window !== 'undefined') {
+    window.dispatchEvent(new Event('gestorize:unauthorized'));
+  }
   if (!response.ok) {
     const validationMessage = payload?.errors && typeof payload.errors === 'object'
       ? Object.values(payload.errors as Record<string, unknown[]>).flat().find((value) => typeof value === 'string')

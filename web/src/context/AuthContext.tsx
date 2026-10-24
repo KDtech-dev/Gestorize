@@ -53,6 +53,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => { void loadUser(); }, [loadUser]);
 
   useEffect(() => {
+    const forceLogout = () => {
+      setUser(null);
+      if (window.location.pathname !== '/login') router.replace('/login');
+    };
+    window.addEventListener('gestorize:unauthorized', forceLogout);
+    return () => window.removeEventListener('gestorize:unauthorized', forceLogout);
+  }, [router]);
+
+  useEffect(() => {
     if (loading) return;
     if (!user && pathname !== '/login') router.replace('/login');
     if (user?.must_change_password && pathname !== '/primeiro-acesso') router.replace('/primeiro-acesso');
@@ -61,6 +70,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = async (email: string, password: string, remember: boolean) => {
     await apiFetch('/login', { method: 'POST', body: JSON.stringify({ email, password, remember }) });
+    if (remember) window.localStorage.setItem('gestorize-last-login-email', email.trim());
+    else window.localStorage.removeItem('gestorize-last-login-email');
     await loadUser();
     router.replace('/');
   };

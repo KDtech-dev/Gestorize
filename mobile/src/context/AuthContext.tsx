@@ -141,6 +141,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       await secureStore.set(authConfig.userDataKeyName, JSON.stringify(user));
       await secureStore.set(authConfig.expiresAtKeyName, new Date(expiryTimestamp).toISOString());
       await secureStore.set(authConfig.rememberKeyName, remember ? 'true' : 'false');
+      if (remember) await secureStore.set(authConfig.lastLoginEmailKeyName, email.trim());
+      else await secureStore.remove(authConfig.lastLoginEmailKeyName);
     } catch (error) {
       Toast.show({
         type: 'error',
