@@ -2,9 +2,9 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Icon } from '@iconify/react';
-import { Alert, Button, Chip, CircularProgress, IconButton, InputAdornment, Paper, Tab, Tabs, TextField } from '@mui/material';
+import { Alert, Button, Chip, CircularProgress, IconButton, InputAdornment, MenuItem, Paper, Tab, Tabs, TextField } from '@mui/material';
 import { useToast } from '@/context/ToastContext';
-import { cancelLabelOperation, completeLabelOperation, createLabelOperation, getLabelHistory, getLabelProducts, labelsPrintHtml, type LabelOperation, type LabelOperationType, type LabelProduct } from '@/lib/labels';
+import { cancelLabelOperation, completeLabelOperation, createLabelOperation, getLabelHistory, getLabelProducts, isLabelPrintFormat, LABEL_PRINT_FORMATS, labelsPrintHtml, type LabelOperation, type LabelOperationType, type LabelProduct, type LabelPrintFormat } from '@/lib/labels';
 import styles from './LabelsCenter.module.css';
 
 type StatusFilter = 'todos' | 'pendente' | 'impresso';
@@ -19,6 +19,7 @@ export function LabelsCenter() {
   const [history, setHistory] = useState<LabelOperation[]>([]);
   const [tab, setTab] = useState(0);
   const [filter, setFilter] = useState<StatusFilter>('todos');
+  const [printFormat, setPrintFormat] = useState<LabelPrintFormat>('avery-l7159');
   const [search, setSearch] = useState('');
   const [selection, setSelection] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
@@ -41,6 +42,11 @@ export function LabelsCenter() {
   }
 
   useEffect(() => { void reload(); }, []);
+
+  useEffect(() => {
+    const savedFormat = window.localStorage.getItem('gestorize-label-print-format');
+    if (savedFormat && isLabelPrintFormat(savedFormat)) setPrintFormat(savedFormat);
+  }, []);
 
   const pending = useMemo(() => products.filter((product) => product.etiqueta_status !== 'impresso'), [products]);
   const printed = useMemo(() => products.filter((product) => product.etiqueta_status === 'impresso'), [products]);
@@ -117,7 +123,7 @@ export function LabelsCenter() {
       const items = Object.entries(quantities).map(([produto_id, quantidade]) => ({ produto_id, quantidade }));
       operation = await createLabelOperation(type, items);
       printWindow.document.open();
-      printWindow.document.write(labelsPrintHtml(operation.itens));
+      printWindow.document.write(labelsPrintHtml(operation.itens, printFormat));
       printWindow.document.close();
       setTab(1);
       await reload();
@@ -186,6 +192,15 @@ export function LabelsCenter() {
       {tab === 0 ? <>
         <div className={styles.toolbar}>
           <TextField fullWidth size="small" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Produto, código de barras ou ID" aria-label="Buscar produtos para etiquetas" slotProps={{ input: { startAdornment: <InputAdornment position="start"><Icon className={styles.searchIcon} icon="mdi:magnify" width={20} height={20} /></InputAdornment> } }} />
+          <TextField select size="small" label="Modelo da folha / rolo" value={printFormat} disabled={busy} onChange={(event) => {
+            const nextFormat = event.target.value;
+            if (isLabelPrintFormat(nextFormat)) {
+              setPrintFormat(nextFormat);
+              window.localStorage.setItem('gestorize-label-print-format', nextFormat);
+            }
+          }} helperText={printFormat === 'avery-l7159' ? 'Folha A4 em escala de 100%.' : 'Na impressora, selecione o rolo DK escolhido.'} aria-label="Modelo da folha ou rolo de impressão">
+            {LABEL_PRINT_FORMATS.map((format) => <MenuItem key={format.id} value={format.id}>{format.label}</MenuItem>)}
+          </TextField>
           <div className={styles.filters} role="group" aria-label="Filtrar situação das etiquetas">
             {([{ id: 'todos', label: `Todos (${products.length})` }, { id: 'pendente', label: `Pendentes (${pending.length})` }, { id: 'impresso', label: `Impressos (${printed.length})` }] as const).map((item) => <Button key={item.id} variant={filter === item.id ? 'contained' : 'outlined'} onClick={() => setFilter(item.id)} sx={{ minHeight: 40, px: 1.5, borderRadius: '9px', fontSize: 14, fontWeight: 700, textTransform: 'none' }}>{item.label}</Button>)}
           </div>

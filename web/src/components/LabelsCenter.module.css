@@ -18,9 +18,10 @@
 .panel :global(.MuiTabs-root){padding:0 18px;border-bottom:1px solid var(--line)}
 .panel :global(.MuiTab-root){min-height:58px;color:var(--muted);font-size:15px;font-weight:700;text-transform:none}
 .panel :global(.Mui-selected){color:var(--primary)!important}
-.toolbar{display:grid;grid-template-columns:minmax(220px,1fr) auto;align-items:center;gap:14px;padding:17px 19px 9px}
+.toolbar{display:grid;grid-template-columns:minmax(220px,1fr) minmax(250px,auto) auto;align-items:center;gap:14px;padding:17px 19px 9px}
 .toolbar :global(.MuiOutlinedInput-root){min-height:46px;border-radius:10px;background:var(--surface);color:var(--ink);font-size:15px}
 .toolbar :global(.MuiOutlinedInput-notchedOutline){border-color:var(--line)}
+.toolbar :global(.MuiInputLabel-root){color:var(--muted)}
 .toolbar input::placeholder{color:var(--muted);opacity:.85}
 .searchIcon{color:var(--muted)}
 .filters{display:flex;align-items:center;flex-wrap:wrap;gap:7px}
