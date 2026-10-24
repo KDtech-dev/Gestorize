@@ -56,6 +56,11 @@ const paymentMethods: Array<{ value: PaymentMethod; label: string; icon: string 
 
 export function SalesCheckout(props: Props) {
   return <Stack className="sales-checkout" sx={{ minWidth: 0, minHeight: { lg: 'calc(100vh - 114px)' }, gap: 1.5 }}>
+    <Box className="sales-checkout-actions" sx={{ display: 'grid', gridTemplateColumns: 'repeat(2,minmax(0,1fr))', gap: 1 }}>
+      <Button variant="outlined" disabled={props.busy} onClick={props.onCancel} sx={{ minHeight: 46, borderColor: 'var(--line)', borderRadius: '9px', color: 'var(--ink)', fontSize: 12, textTransform: 'none' }}>Cancelar venda</Button>
+      <Button variant="contained" disabled={!props.cartCount || props.busy || !props.canCreateSale || !props.quoteItemsComplete || !props.quoteStockAvailable} onClick={props.onFinish} startIcon={<Icon icon="mdi:check" width={19} height={19} />} sx={{ minHeight: 46, borderRadius: '10px', bgcolor: '#1d4ed8', fontWeight: 800, textTransform: 'none', boxShadow: '0 6px 15px #1d4ed833', '&:hover': { bgcolor: '#1e40af' } }}>{props.busy ? 'Registrando venda…' : 'Finalizar venda'}</Button>
+    </Box>
+
     {props.canSelectCustomer && <Paper className="sales-checkout-card sales-context-card" sx={{ ...panelSx, p: 2, flexShrink: 0 }}>
       <Typography sx={{ mb: 1, fontSize: 14, fontWeight: 800 }}>Cliente</Typography>
       <Autocomplete
@@ -135,9 +140,5 @@ export function SalesCheckout(props: Props) {
       </ToggleButtonGroup>
     </Paper>
 
-    <Box sx={{ mt: 'auto', display: 'grid', gap: 1 }}>
-      <Button variant="contained" disabled={!props.cartCount || props.busy || !props.canCreateSale || !props.quoteItemsComplete || !props.quoteStockAvailable} onClick={props.onFinish} startIcon={<Icon icon="mdi:check" width={19} height={19} />} sx={{ minHeight: 50, borderRadius: '10px', bgcolor: '#1d4ed8', fontWeight: 800, textTransform: 'none', boxShadow: '0 6px 15px #1d4ed833', '&:hover': { bgcolor: '#1e40af' } }}>{props.busy ? 'Registrando venda…' : 'Finalizar venda'}</Button>
-      <Button variant="outlined" disabled={props.busy} onClick={props.onCancel} sx={{ minHeight: 40, borderColor: 'var(--line)', borderRadius: '9px', color: 'var(--ink)', fontSize: 12, textTransform: 'none' }}>Cancelar venda</Button>
-    </Box>
   </Stack>;
 }
