@@ -1,10 +1,11 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ActivityIndicator, Alert, FlatList, Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as Print from 'expo-print';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import Toast from 'react-native-toast-message';
 import Nav from '@components/utilities/Nav';
 import SearchBar from '@components/ui/SearchBar';
@@ -13,11 +14,12 @@ import Button from '@components/botoes/Button';
 import { useTheme } from '@context/ThemeContext';
 import { ProdutoType, RootStackParamList } from '@context/types';
 import { cancelarOperacaoEtiquetas, concluirOperacaoEtiquetas, criarOperacaoEtiquetas, EtiquetaOperation, EtiquetaOperationType, getHistoricoEtiquetas, getProdutosEtiquetas } from '@api/apiProdutos';
-import { ALTURA_ETIQUETA_PONTOS, etiquetasProdutosHtml, LARGURA_ETIQUETA_PONTOS } from '@utils/codigoBarras';
+import { dimensoesImpressaoPontos, etiquetasProdutosHtml, FORMATOS_ETIQUETA, isFormatoEtiquetaId, type FormatoEtiquetaId } from '@utils/codigoBarras';
 import { formatErrorMessage } from '@core/utils/format';
 
 type Navigation = NativeStackNavigationProp<RootStackParamList>;
 type Filtro = 'todos' | 'pendente' | 'impresso';
+const FORMATO_IMPRESSAO_KEY = 'gestorize-label-print-format';
 
 export default function CentralEtiquetas() {
   const navigation = useNavigation<Navigation>();
@@ -26,12 +28,20 @@ export default function CentralEtiquetas() {
   const [produtos, setProdutos] = useState<ProdutoType[]>([]);
   const [historico, setHistorico] = useState<EtiquetaOperation[]>([]);
   const [filtro, setFiltro] = useState<Filtro>('todos');
+  const [formatoEtiqueta, setFormatoEtiqueta] = useState<FormatoEtiquetaId>('avery-l7159');
+  const [seletorFormatoVisivel, setSeletorFormatoVisivel] = useState(false);
   const [aba, setAba] = useState<'produtos' | 'historico'>('produtos');
   const [pesquisa, setPesquisa] = useState('');
   const [selecionados, setSelecionados] = useState<Record<string, number>>({});
   const [carregando, setCarregando] = useState(true);
   const [operando, setOperando] = useState(false);
   const operacaoEmAndamento = useRef(false);
+
+  useEffect(() => {
+    AsyncStorage.getItem(FORMATO_IMPRESSAO_KEY).then((savedFormat) => {
+      if (savedFormat && isFormatoEtiquetaId(savedFormat)) setFormatoEtiqueta(savedFormat);
+    }).catch(() => {});
+  }, []);
 
   const carregarDados = useCallback(async () => {
     try {
@@ -137,6 +147,7 @@ export default function CentralEtiquetas() {
       operation = response.data;
       const etiquetas = operation.itens.map((item) => ({
         produto: {
+          produto_id: item.produto_id,
           nome: item.produto_nome,
           codigo_barras: item.codigo_barras,
           categoria_titulo: item.categoria_nome,
@@ -146,10 +157,10 @@ export default function CentralEtiquetas() {
         },
         quantidade: Number(item.quantidade),
       }));
+      const pageSize = dimensoesImpressaoPontos(formatoEtiqueta);
       await Print.printAsync({
-        html: etiquetasProdutosHtml(etiquetas),
-        width: LARGURA_ETIQUETA_PONTOS,
-        height: ALTURA_ETIQUETA_PONTOS,
+        html: etiquetasProdutosHtml(etiquetas, formatoEtiqueta),
+        ...pageSize,
       });
       setAba('historico');
       await carregarDados();
@@ -175,6 +186,14 @@ export default function CentralEtiquetas() {
     await registrarResultado(operacao, concluir);
   };
 
+  const selecionarFormato = (formato: FormatoEtiquetaId) => {
+    setFormatoEtiqueta(formato);
+    setSeletorFormatoVisivel(false);
+    AsyncStorage.setItem(FORMATO_IMPRESSAO_KEY, formato).catch(() => {});
+  };
+
+  const formatoSelecionado = FORMATOS_ETIQUETA.find((formato) => formato.id === formatoEtiqueta)!;
+
   const renderProduto = ({ item }: { item: ProdutoType }) => {
     const selecionado = Boolean(selecionados[item.id]);
     const impresso = item.etiqueta_status === 'impresso';
@@ -185,7 +204,7 @@ export default function CentralEtiquetas() {
       <View style={styles.productInfo}>
         {item.categoria_titulo ? <View style={styles.categoryLine}><Ionicons name="pricetag-outline" size={12} color={colors.primary} /><Text numberOfLines={1} style={[styles.categoryText, { color: colors.primary }]}>{item.categoria_titulo}</Text></View> : null}
         <Text numberOfLines={2} style={[styles.productName, { color: colors.text }]}>{item.nome}</Text>
-        <View style={styles.codeLine}><MaterialCommunityIcons name="barcode" size={15} color={colors.muted} /><Text numberOfLines={1} style={[styles.productCode, { color: colors.muted }]}>{item.codigo_barras || `ID ${item.id.slice(0, 8)}`}</Text></View>
+        <View style={styles.codeLine}><MaterialCommunityIcons name="barcode" size={15} color={colors.muted} /><Text numberOfLines={1} style={[styles.productCode, { color: colors.muted }]}>Leitura: ID {item.id.replace(/-/g, '').slice(0, 12).toUpperCase()}</Text></View>
         <View style={[styles.statusPill, { backgroundColor: impresso ? `${colors.success}20` : `${pendingColor}20` }]}>
           <Text style={{ color: impresso ? colors.success : pendingColor, fontSize: 11, fontWeight: '700' }}>{impresso ? 'Impresso' : 'Pendente'}</Text>
         </View>
@@ -233,6 +252,11 @@ export default function CentralEtiquetas() {
       <View style={styles.summaryRow}>
         {[{ label: 'Pendentes', value: pendentes.length, color: pendingColor }, { label: 'Impressos', value: impressos.length, color: colors.success }, { label: 'Selecionados', value: totalEtiquetasSelecionadas, color: colors.primary }].map((item) => <View key={item.label} style={[styles.summaryCard, { backgroundColor: colors.surface, borderColor: colors.border }]}><Text style={[styles.summaryValue, { color: item.color }]}>{item.value}</Text><Text numberOfLines={1} style={[styles.summaryLabel, { color: colors.muted }]}>{item.label}</Text></View>)}
       </View>
+      <TouchableOpacity disabled={operando} accessibilityRole="button" accessibilityLabel={`Modelo de impressão: ${formatoSelecionado.label}`} onPress={() => setSeletorFormatoVisivel(true)} style={[styles.formatCard, { backgroundColor: colors.surface, borderColor: colors.border, opacity: operando ? 0.6 : 1 }]}>
+        <View style={[styles.formatIcon, { backgroundColor: `${colors.primary}16` }]}><MaterialCommunityIcons name="printer-settings" size={21} color={colors.primary} /></View>
+        <View style={styles.formatCopy}><Text style={[styles.formatEyebrow, { color: colors.muted }]}>MODELO DE IMPRESSÃO</Text><Text numberOfLines={2} style={[styles.formatName, { color: colors.text }]}>{formatoSelecionado.label}</Text><Text numberOfLines={1} style={[styles.formatDetail, { color: colors.muted }]}>{formatoSelecionado.detail}</Text></View>
+        <MaterialCommunityIcons name="chevron-down" size={24} color={colors.muted} />
+      </TouchableOpacity>
       <SearchBar
         value={pesquisa}
         onChangeText={setPesquisa}
@@ -265,12 +289,32 @@ export default function CentralEtiquetas() {
         />
       </View>
     </> : carregando ? <ActivityIndicator style={{ marginTop: 40 }} color={colors.primary} /> : historico.length === 0 ? <View style={styles.empty}><MaterialCommunityIcons name="history" size={36} color={colors.muted} /><Text style={[styles.emptyText, { color: colors.muted }]}>Ainda não há operações de impressão.</Text></View> : <FlatList data={historico} keyExtractor={(item) => item.id} renderItem={renderHistorico} contentContainerStyle={[styles.list, { paddingBottom: 30 }]} showsVerticalScrollIndicator={false} onRefresh={() => { setCarregando(true); void carregarDados(); }} refreshing={carregando} />}
+    <Modal visible={seletorFormatoVisivel} transparent animationType="slide" onRequestClose={() => setSeletorFormatoVisivel(false)}>
+      <Pressable style={styles.formatOverlay} onPress={() => setSeletorFormatoVisivel(false)}>
+        <Pressable style={[styles.formatSheet, { backgroundColor: colors.background }]} onPress={(event) => event.stopPropagation()}>
+          <View style={styles.formatSheetHeader}><View style={[styles.formatHandle, { backgroundColor: colors.border }]} /><Text style={[styles.formatSheetTitle, { color: colors.text }]}>Modelo da folha ou rolo</Text><Text style={[styles.formatSheetSubtitle, { color: colors.muted }]}>Escolha o formato compatível com sua impressora.</Text></View>
+          <ScrollView contentContainerStyle={styles.formatOptions} showsVerticalScrollIndicator={false}>
+            {FORMATOS_ETIQUETA.map((formato) => {
+              const selected = formato.id === formatoEtiqueta;
+              return <TouchableOpacity key={formato.id} accessibilityRole="radio" accessibilityState={{ checked: selected }} onPress={() => selecionarFormato(formato.id)} style={[styles.formatOption, { backgroundColor: colors.surface, borderColor: selected ? colors.primary : colors.border }]}>
+                <View style={[styles.formatOptionIcon, { backgroundColor: selected ? `${colors.primary}18` : colors.elevated }]}><MaterialCommunityIcons name={formato.a4 ? 'file-document-outline' : 'label-outline'} size={21} color={selected ? colors.primary : colors.muted} /></View>
+                <View style={styles.formatOptionCopy}><Text style={[styles.formatOptionName, { color: colors.text }]}>{formato.label}</Text><Text style={[styles.formatOptionDetail, { color: colors.muted }]}>{formato.detail}</Text></View>
+                <Ionicons name={selected ? 'radio-button-on' : 'radio-button-off'} size={21} color={selected ? colors.primary : colors.muted} />
+              </TouchableOpacity>;
+            })}
+          </ScrollView>
+          <View style={styles.formatSheetFooter}><Text style={[styles.formatFooterNote, { color: colors.muted }]}>Na Brother, confira se o mesmo rolo DK está carregado.</Text></View>
+        </Pressable>
+      </Pressable>
+    </Modal>
   </SafeAreaView>;
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 }, topActions: { flexDirection: 'row', gap: 9, paddingHorizontal: 14, paddingVertical: 10 },
   summaryRow: { flexDirection: 'row', gap: 8, paddingHorizontal: 12, paddingBottom: 8 }, summaryCard: { flex: 1, minHeight: 62, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderRadius: 12, paddingHorizontal: 4 }, summaryValue: { fontSize: 20, fontWeight: '900' }, summaryLabel: { marginTop: 2, fontSize: 10, fontWeight: '600' },
+  formatCard: { minHeight: 70, marginHorizontal: 12, marginBottom: 7, paddingHorizontal: 12, paddingVertical: 9, flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 1, borderRadius: 13 }, formatIcon: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderRadius: 12 }, formatCopy: { flex: 1, minWidth: 0, gap: 2 }, formatEyebrow: { fontSize: 9, fontWeight: '800', letterSpacing: 0.8 }, formatName: { fontSize: 12, fontWeight: '800' }, formatDetail: { fontSize: 10 },
+  formatOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.48)' }, formatSheet: { maxHeight: '82%', borderTopLeftRadius: 25, borderTopRightRadius: 25, paddingTop: 10, paddingBottom: 12, overflow: 'hidden' }, formatSheetHeader: { alignItems: 'center', paddingHorizontal: 18, paddingBottom: 14 }, formatHandle: { width: 38, height: 4, borderRadius: 2, marginBottom: 16 }, formatSheetTitle: { fontSize: 20, fontWeight: '900' }, formatSheetSubtitle: { marginTop: 4, textAlign: 'center', fontSize: 12 }, formatOptions: { paddingHorizontal: 13, paddingBottom: 8, gap: 8 }, formatOption: { minHeight: 68, flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 11, paddingVertical: 9, borderWidth: 1.5, borderRadius: 13 }, formatOptionIcon: { width: 39, height: 39, alignItems: 'center', justifyContent: 'center', borderRadius: 11 }, formatOptionCopy: { flex: 1, minWidth: 0, gap: 4 }, formatOptionName: { fontSize: 12, fontWeight: '800' }, formatOptionDetail: { fontSize: 11 }, formatSheetFooter: { paddingHorizontal: 18, paddingTop: 8 }, formatFooterNote: { textAlign: 'center', fontSize: 11 },
   filterRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 12, paddingVertical: 4 },
   selectRow: { minHeight: 54, flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12 }, selectAll: { flex: 1, minHeight: 46, flexDirection: 'row', alignItems: 'center', gap: 9, paddingHorizontal: 11, borderWidth: 1, borderRadius: 12 }, selectText: { flex: 1, fontSize: 12, fontWeight: '700' }, clearText: { fontSize: 11, fontWeight: '600' }, clearAll: { minHeight: 42, justifyContent: 'center', paddingHorizontal: 8 }, clearAllText: { fontSize: 12, fontWeight: '700' }, list: { paddingHorizontal: 11, paddingBottom: 10, gap: 8 },
   productCard: { minHeight: 94, flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderRadius: 16, elevation: 1, shadowOpacity: 0.08, shadowRadius: 4, shadowOffset: { width: 0, height: 2 } }, productIcon: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center', borderRadius: 15 }, checkbox: { width: 34, height: 36, alignItems: 'center', justifyContent: 'center' }, productControls: { alignItems: 'center', justifyContent: 'center', gap: 5 }, productInfo: { flex: 1, minWidth: 0, gap: 3 }, categoryLine: { flexDirection: 'row', alignItems: 'center', gap: 4 }, categoryText: { fontSize: 11, fontWeight: '700', flexShrink: 1 }, codeLine: { flexDirection: 'row', alignItems: 'center', gap: 4 }, productName: { fontSize: 14, fontWeight: '800' }, productCode: { fontSize: 11, flexShrink: 1 }, statusPill: { alignSelf: 'flex-start', marginTop: 3, borderRadius: 10, paddingHorizontal: 8, paddingVertical: 3 }, stepper: { flexDirection: 'row', alignItems: 'center', gap: 4 }, stepButton: { width: 30, height: 30, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderRadius: 10 }, stepValue: { minWidth: 18, textAlign: 'center', fontSize: 14, fontWeight: '800' },
