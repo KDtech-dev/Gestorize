@@ -1,9 +1,10 @@
 'use client';
 
-import type { ChangeEvent } from 'react';
 import { useRef } from 'react';
 import { Icon } from '@iconify/react';
+import { MenuItem, TextField } from '@mui/material';
 import { UserAvatar } from '@/components/UserAvatar';
+import { entityFieldSx, entityMenuProps } from '../formFieldStyles';
 import styles from './ClientEditorFields.module.css';
 
 type ClientForm = Record<string, any>;
@@ -23,12 +24,10 @@ function ClientField({ label, name, value, onChange, type = 'text', required = f
   label: string; name: string; value: unknown; onChange: (name: string, value: string) => void;
   type?: string; required?: boolean; wide?: boolean; error?: string; onBlur?: (name: string) => void; placeholder?: string; inputMode?: 'text' | 'numeric' | 'email' | 'tel'; hint?: string; hintStatus?: 'loading' | 'success' | 'error';
 }) {
-  return <label className={`${styles.field} ${wide ? styles.wide : ''}`}>
-    <span>{label}{required && <i aria-hidden="true"> *</i>}</span>
-    <input name={name} type={type} value={String(value ?? '')} onChange={(event: ChangeEvent<HTMLInputElement>) => onChange(name, event.target.value)} onBlur={() => onBlur?.(name)} required={required} placeholder={placeholder} inputMode={inputMode} aria-invalid={!!error} aria-describedby={error ? `${name.replace(/\./g, '-')}-error` : hint ? `${name.replace(/\./g, '-')}-hint` : undefined} />
-    {error && <small id={`${name.replace(/\./g, '-')}-error`} className={styles.fieldError}>{error}</small>}
-    {!error && hint && <small id={`${name.replace(/\./g, '-')}-hint`} className={`${styles.fieldHint} ${hintStatus ? styles[`fieldHint_${hintStatus}`] : ''}`}>{hintStatus === 'loading' && <span className={styles.hintSpinner} aria-hidden="true" />}{hint}</small>}
-  </label>;
+  const helperText = error ?? hint;
+  return <div className={`${styles.field} ${wide ? styles.wide : ''}`}>
+    <TextField fullWidth variant="outlined" label={label} name={name} type={type} value={String(value ?? '')} onChange={(event) => onChange(name, event.target.value)} onBlur={() => onBlur?.(name)} required={required} placeholder={placeholder} error={!!error} helperText={!error && hintStatus === 'loading' ? <><span className={styles.hintSpinner} aria-hidden="true" />{helperText}</> : helperText} sx={entityFieldSx} slotProps={{ htmlInput: { inputMode, 'aria-describedby': helperText ? `${name.replace(/\./g, '-')}-helper` : undefined }, inputLabel: { shrink: !!placeholder || type === 'date' }, formHelperText: { id: `${name.replace(/\./g, '-')}-helper`, className: !error && hintStatus ? styles[`fieldHint_${hintStatus}`] : undefined } }} />
+  </div>;
 }
 
 export function ClientEditorFields({ form, onChange, errors = {}, onBlur, cepStatus = 'idle', avatarUrl, onAvatarChange, onRemoveAvatar, canRemoveAvatar = false }: Props) {
@@ -46,7 +45,7 @@ export function ClientEditorFields({ form, onChange, errors = {}, onBlur, cepSta
       <header className={styles.sectionHeading}><span>01</span><div><h3 id="client-identification-title">Identificação e contato</h3><p>Informe como o cliente será identificado e contatado.</p></div></header>
       <div className={styles.fieldGrid}>
         <ClientField wide label="Nome completo ou nome de exibição" name="nome" value={form.nome} onChange={onChange} required error={errors.nome} onBlur={onBlur} placeholder="Ex.: Maria da Silva" />
-        <label className={styles.field}><span>Tipo de cliente</span><select value={form.tipo ?? 'pf'} onChange={(event) => onChange('tipo', event.target.value)}><option value="pf">Pessoa física</option><option value="pj">Pessoa jurídica</option></select></label>
+        <div className={styles.field}><TextField fullWidth select label="Tipo de cliente" value={form.tipo ?? 'pf'} onChange={(event) => onChange('tipo', String(event.target.value))} sx={entityFieldSx} slotProps={{ select: { MenuProps: entityMenuProps } }}><MenuItem value="pf">Pessoa física</MenuItem><MenuItem value="pj">Pessoa jurídica</MenuItem></TextField></div>
         <ClientField label="E-mail" name="email" value={form.email} onChange={onChange} type="email" error={errors.email} onBlur={onBlur} placeholder="nome@exemplo.com" inputMode="email" />
         <ClientField label="Telefone" name="telefone" value={form.telefone} onChange={onChange} error={errors.telefone} onBlur={onBlur} placeholder="(11) 99999-9999" inputMode="tel" />
       </div>
@@ -63,9 +62,9 @@ export function ClientEditorFields({ form, onChange, errors = {}, onBlur, cepSta
       <header className={styles.sectionHeading}><span>02</span><div><h3 id="client-business-title">Dados da pessoa jurídica</h3><p>Informe os dados da empresa e de seu responsável.</p></div></header>
       <div className={styles.fieldGrid}>
         <ClientField label="CNPJ" name="pj.cnpj" value={form.pj?.cnpj} onChange={onChange} required error={errors['pj.cnpj']} onBlur={onBlur} placeholder="00.000.000/0000-00" inputMode="numeric" />
-        <ClientField label="Razão social" name="pj.razao_social" value={form.pj?.razao_social} onChange={onChange} required error={errors['pj.razao_social']} onBlur={onBlur} />
-        <ClientField label="Nome fantasia" name="pj.nome_fantasia" value={form.pj?.nome_fantasia} onChange={onChange} error={errors['pj.nome_fantasia']} onBlur={onBlur} />
-        <ClientField label="Responsável" name="pj.nome_responsavel" value={form.pj?.nome_responsavel} onChange={onChange} required error={errors['pj.nome_responsavel']} onBlur={onBlur} />
+        <ClientField label="Razão social" name="pj.razao_social" value={form.pj?.razao_social} onChange={onChange} required error={errors['pj.razao_social']} onBlur={onBlur} placeholder="Ex.: Comércio e Serviços Ltda." />
+        <ClientField label="Nome fantasia" name="pj.nome_fantasia" value={form.pj?.nome_fantasia} onChange={onChange} error={errors['pj.nome_fantasia']} onBlur={onBlur} placeholder="Ex.: Loja Central" />
+        <ClientField label="Responsável" name="pj.nome_responsavel" value={form.pj?.nome_responsavel} onChange={onChange} required error={errors['pj.nome_responsavel']} onBlur={onBlur} placeholder="Nome do responsável" />
         <ClientField label="CPF do responsável" name="pj.cpf_responsavel" value={form.pj?.cpf_responsavel} onChange={onChange} required error={errors['pj.cpf_responsavel']} onBlur={onBlur} placeholder="000.000.000-00" inputMode="numeric" />
       </div>
     </section>}
@@ -74,11 +73,11 @@ export function ClientEditorFields({ form, onChange, errors = {}, onBlur, cepSta
       <header className={styles.sectionHeading}><span>03</span><div><h3 id="client-address-title">Endereço</h3><p>Localização do cliente para consulta e documentos.</p></div></header>
       <div className={styles.fieldGrid}>
         <ClientField label="CEP" name="endereco.cep" value={form.endereco?.cep} onChange={onChange} error={errors['endereco.cep']} onBlur={onBlur} placeholder="00000-000" inputMode="numeric" hint={cepStatus === 'loading' ? 'Consultando CEP…' : cepStatus === 'found' ? 'Endereço preenchido pelo CEP.' : cepStatus === 'not-found' ? 'CEP não localizado. Confira o número.' : cepStatus === 'error' ? 'Consulta indisponível; preencha o endereço manualmente.' : undefined} hintStatus={cepStatus === 'loading' ? 'loading' : cepStatus === 'found' ? 'success' : cepStatus === 'error' || cepStatus === 'not-found' ? 'error' : undefined} />
-        <ClientField label="Logradouro" name="endereco.logradouro" value={form.endereco?.logradouro} onChange={onChange} error={errors['endereco.logradouro']} onBlur={onBlur} />
-        <ClientField label="Número" name="endereco.numero" value={form.endereco?.numero} onChange={onChange} error={errors['endereco.numero']} onBlur={onBlur} />
-        <ClientField label="Complemento" name="endereco.complemento" value={form.endereco?.complemento} onChange={onChange} error={errors['endereco.complemento']} onBlur={onBlur} />
-        <ClientField label="Bairro" name="endereco.bairro" value={form.endereco?.bairro} onChange={onChange} error={errors['endereco.bairro']} onBlur={onBlur} />
-        <ClientField label="Cidade" name="endereco.cidade" value={form.endereco?.cidade} onChange={onChange} error={errors['endereco.cidade']} onBlur={onBlur} />
+        <ClientField label="Logradouro" name="endereco.logradouro" value={form.endereco?.logradouro} onChange={onChange} error={errors['endereco.logradouro']} onBlur={onBlur} placeholder="Rua, avenida ou estrada" />
+        <ClientField label="Número" name="endereco.numero" value={form.endereco?.numero} onChange={onChange} error={errors['endereco.numero']} onBlur={onBlur} placeholder="Nº" />
+        <ClientField label="Complemento" name="endereco.complemento" value={form.endereco?.complemento} onChange={onChange} error={errors['endereco.complemento']} onBlur={onBlur} placeholder="Apto., sala, bloco..." />
+        <ClientField label="Bairro" name="endereco.bairro" value={form.endereco?.bairro} onChange={onChange} error={errors['endereco.bairro']} onBlur={onBlur} placeholder="Nome do bairro" />
+        <ClientField label="Cidade" name="endereco.cidade" value={form.endereco?.cidade} onChange={onChange} error={errors['endereco.cidade']} onBlur={onBlur} placeholder="Nome da cidade" />
         <ClientField label="UF" name="endereco.estado" value={form.endereco?.estado} onChange={onChange} error={errors['endereco.estado']} onBlur={onBlur} placeholder="SP" />
       </div>
     </section>

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { Icon } from '@iconify/react';
-import { FormControl, InputLabel, MenuItem, Select, ToggleButton, ToggleButtonGroup } from '@mui/material';
+import { Button, FormControl, InputLabel, MenuItem, Paper, Select, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
 import { apiFetch, unwrap } from '@/lib/api';
 import reportStyles from './ReportsPage.module.css';
 
@@ -99,21 +99,19 @@ function ReportHeading({ kind, period, onKind, onPeriod, onPreview, previewDisab
     <div className="clients-heading-content"><span className="eyebrow"><Icon icon="mdi:chart-box-outline" width={19} height={19} /><span>ANÁLISES E INDICADORES</span></span><h1>Relatórios</h1><p>Acompanhe os resultados e as movimentações da sua organização.</p></div>
     <div className={reportStyles.headingTools}>
       <ReportFilters kind={kind} period={period} onKind={onKind} onPeriod={onPeriod} />
-      <button type="button" className={`${reportStyles.printButton} report-print-button`} onClick={onPreview} disabled={previewDisabled}>
-        <Icon icon="mdi:file-eye-outline" width={20} height={20} />Pré-visualizar PDF
-      </button>
+      <Button type="button" className={`${reportStyles.printButton} report-print-button`} onClick={onPreview} disabled={previewDisabled} startIcon={<Icon icon="mdi:file-eye-outline" width={20} height={20} />} sx={{ textTransform: 'none', boxShadow: 'none' }}>Pré-visualizar PDF</Button>
     </div>
   </header>;
 }
 
 function ReportSummary({ totals, loading }: { totals: Record<string, unknown>; loading: boolean }) {
   const entries = numericTotals(totals);
-  if (!entries.length && loading) return <section className="report-summary" aria-label="Indicadores do relatório">{Array.from({ length: 3 }, (_, index) => <article className="report-total-card report-total-skeleton" key={index}><span>Carregando indicador</span><strong>—</strong></article>)}</section>;
-  return <section className="report-summary" aria-label="Indicadores do relatório">{entries.map(([key, value], index) => <article className="report-total-card" key={key} style={{ '--report-color': colors[index % colors.length] } as CSSProperties}>
+  if (!entries.length && loading) return <div className="report-summary" aria-label="Indicadores do relatório">{Array.from({ length: 3 }, (_, index) => <Paper component="article" elevation={0} className="report-total-card report-total-skeleton" key={index} sx={{ bgcolor: 'var(--card)', color: 'var(--ink)' }}><Typography component="span">Carregando indicador</Typography><Typography component="strong">—</Typography></Paper>)}</div>;
+  return <div className="report-summary" aria-label="Indicadores do relatório">{entries.map(([key, value], index) => <Paper component="article" elevation={0} className="report-total-card" key={key} style={{ '--report-color': colors[index % colors.length] } as CSSProperties} sx={{ bgcolor: 'var(--card)', color: 'var(--ink)' }}>
     <span className="report-total-icon"><Icon icon={summaryIcons[key] ?? 'mdi:chart-box-outline'} width={22} height={22} /></span>
-    <span className="report-total-label">{labels[key] ?? key.replaceAll('_', ' ')}</span>
-    <strong>{key.includes('valor') || key.includes('faturamento') || key.includes('descontos') ? money(value) : Number(value).toLocaleString('pt-BR')}</strong>
-  </article>)}</section>;
+    <Typography component="span" className="report-total-label">{labels[key] ?? key.replaceAll('_', ' ')}</Typography>
+    <Typography component="strong">{key.includes('valor') || key.includes('faturamento') || key.includes('descontos') ? money(value) : Number(value).toLocaleString('pt-BR')}</Typography>
+  </Paper>)}</div>;
 }
 
 function ReportChart({ report, loading, period, kind, chartType, onChartType }: { report: Report | null; loading: boolean; period: string; kind: string; chartType: ChartType; onChartType: (value: ChartType) => void }) {
@@ -213,8 +211,8 @@ export function ReportsPage() {
     {previewHtml && <div className={reportStyles.previewBackdrop} role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setPreviewHtml(''); }}>
       <section className={reportStyles.previewDialog} role="dialog" aria-modal="true" aria-labelledby="report-preview-title">
         <header className={reportStyles.previewHeader}><div><span className="eyebrow">DOCUMENTO</span><h2 id="report-preview-title">Pré-visualização do relatório</h2></div><div className={reportStyles.previewActions}>
-          <button type="button" className={reportStyles.closeButton} onClick={() => setPreviewHtml('')}><Icon icon="mdi:arrow-left" width={18} height={18} />Voltar</button>
-          <button type="button" className={reportStyles.printButton} onClick={printPreview}><Icon icon="mdi:printer-outline" width={19} height={19} />Imprimir / salvar PDF</button>
+          <Button type="button" variant="outlined" className={reportStyles.closeButton} onClick={() => setPreviewHtml('')} startIcon={<Icon icon="mdi:arrow-left" width={18} height={18} />} sx={{ textTransform: 'none' }}>Voltar</Button>
+          <Button type="button" className={reportStyles.printButton} onClick={printPreview} startIcon={<Icon icon="mdi:printer-outline" width={19} height={19} />} sx={{ textTransform: 'none', boxShadow: 'none' }}>Imprimir / salvar PDF</Button>
         </div></header>
         <iframe ref={previewFrame} title="Pré-visualização do relatório em PDF" srcDoc={previewHtml} className={reportStyles.previewFrame} />
       </section>

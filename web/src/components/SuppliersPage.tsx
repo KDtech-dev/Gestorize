@@ -2,10 +2,10 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { Icon } from '@iconify/react';
+import { useRouter } from 'next/navigation';
 import { FormControl, InputLabel, MenuItem, Select } from '@mui/material';
 import { apiFetch } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
-import { RecordEditor } from '@/components/RecordEditor';
 import { UserAvatar } from '@/components/UserAvatar';
 import { EntityActionButton, EntityDirectoryHeading, EntityPageHeading, EntityPagination, EntitySummaryCard } from '@/components/entities/EntityPageParts';
 
@@ -75,13 +75,13 @@ function SupplierFilters({ search, category, categories, count, onSearch, onCate
 }
 
 export function SuppliersPage() {
+  const router = useRouter();
   const { can } = useAuth();
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
   const [page, setPage] = useState(1);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [editing, setEditing] = useState<Supplier | null | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -92,15 +92,6 @@ export function SuppliersPage() {
       .catch((reason) => setError(reason instanceof Error ? reason.message : 'Não foi possível carregar os fornecedores.'))
       .finally(() => setLoading(false));
   }, []);
-
-  useEffect(() => {
-    if (!can('fornecedores.criar')) return;
-    const url = new URL(window.location.href);
-    if (url.searchParams.get('novo') !== '1') return;
-    setEditing(null);
-    url.searchParams.delete('novo');
-    window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
-  }, [can]);
 
   const categories = useMemo(() => [...new Set(suppliers.flatMap((supplier) => Array.isArray(supplier.categorias) ? supplier.categorias.map((item: Supplier) => String(item.nome ?? '')).filter(Boolean) : []))].sort((a, b) => a.localeCompare(b, 'pt-BR')), [suppliers]);
   const filtered = useMemo(() => {
@@ -117,11 +108,6 @@ export function SuppliersPage() {
   const pageItems = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
   const withCategories = suppliers.filter((supplier) => Array.isArray(supplier.categorias) && supplier.categorias.length > 0).length;
   const withEmail = suppliers.filter((supplier) => !!supplier.email).length;
-
-  async function saveSupplier(payload: Supplier, id?: string) {
-    await apiFetch(id ? `/fornecedores/${id}` : '/fornecedores', { method: id ? 'PUT' : 'POST', body: JSON.stringify(payload) });
-    await reload();
-  }
 
   async function deleteSupplier(supplier: Supplier) {
     if (!window.confirm(`Excluir ${String(supplier.nome ?? 'este fornecedor')}? Essa ação não pode ser desfeita.`)) return;
@@ -140,7 +126,7 @@ export function SuppliersPage() {
   }
 
   return <div className="clients-page suppliers-page">
-    <EntityPageHeading eyebrow="COMPRAS E PARCERIAS" icon="mdi:truck-outline" title="Fornecedores" description="Consulte contatos, ramos de atividade e dados dos seus parceiros." createLabel="Novo fornecedor" canCreate={can('fornecedores.criar')} onCreate={() => setEditing(null)} />
+    <EntityPageHeading eyebrow="COMPRAS E PARCERIAS" icon="mdi:truck-outline" title="Fornecedores" description="Consulte contatos, ramos de atividade e dados dos seus parceiros." createLabel="Novo fornecedor" canCreate={can('fornecedores.criar')} onCreate={() => router.push('/fornecedores/nova')} />
     <section className="client-summary-grid" aria-label="Resumo de fornecedores">
       <EntitySummaryCard label="Total de fornecedores" value={loading ? '—' : suppliers.length} icon="mdi:truck-outline" color="#005CE4" />
       <EntitySummaryCard label="Com ramo cadastrado" value={loading ? '—' : withCategories} icon="mdi:shape-outline" color="#0f9f73" />
@@ -149,9 +135,8 @@ export function SuppliersPage() {
     <section className="client-directory">
       <SupplierFilters search={search} category={category} categories={categories} count={filtered.length} onSearch={(value) => changeFilter(value, setSearch)} onCategory={(value) => changeFilter(value, setCategory)} />
       {error && <div className="inline-error">{error}</div>}
-      {loading ? <div className="table-loading"><span className="spinner" />Carregando fornecedores…</div> : pageItems.length ? <div className="client-card-grid">{pageItems.map((supplier) => <SupplierCard key={String(supplier.id)} supplier={supplier} selected={selectedId === supplier.id} onSelect={() => setSelectedId(selectedId === supplier.id ? null : String(supplier.id))} onEdit={() => setEditing(supplier)} onDelete={() => void deleteSupplier(supplier)} />)}</div> : <div className="empty-state compact"><span className="empty-icon"><Icon icon="mdi:truck-outline" /></span><h2>{search || category ? 'Nenhum fornecedor encontrado' : 'Ainda não há fornecedores'}</h2><p>{search || category ? 'Ajuste os filtros para ver outros fornecedores.' : 'Cadastre o primeiro fornecedor para começar.'}</p></div>}
+      {loading ? <div className="table-loading"><span className="spinner" />Carregando fornecedores…</div> : pageItems.length ? <div className="client-card-grid">{pageItems.map((supplier) => <SupplierCard key={String(supplier.id)} supplier={supplier} selected={selectedId === supplier.id} onSelect={() => setSelectedId(selectedId === supplier.id ? null : String(supplier.id))} onEdit={() => router.push(`/fornecedores/nova?id=${encodeURIComponent(String(supplier.id))}`)} onDelete={() => void deleteSupplier(supplier)} />)}</div> : <div className="empty-state compact"><span className="empty-icon"><Icon icon="mdi:truck-outline" /></span><h2>{search || category ? 'Nenhum fornecedor encontrado' : 'Ainda não há fornecedores'}</h2><p>{search || category ? 'Ajuste os filtros para ver outros fornecedores.' : 'Cadastre o primeiro fornecedor para começar.'}</p></div>}
       {!loading && <EntityPagination noun="fornecedores" page={currentPage} totalPages={totalPages} total={filtered.length} from={(currentPage - 1) * PAGE_SIZE + 1} to={Math.min(currentPage * PAGE_SIZE, filtered.length)} onChange={setPage} />}
     </section>
-    {editing !== undefined && <RecordEditor module="fornecedores" row={editing} onClose={() => setEditing(undefined)} onSave={saveSupplier} />}
   </div>;
 }

@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { Icon } from '@iconify/react';
-import { Alert, Box, Button, ButtonBase, Collapse, IconButton, Paper, Stack, Typography } from '@mui/material';
+import { Alert, Box, Button, ButtonBase, Collapse, IconButton, InputAdornment, Paper, Stack, TextField, Typography } from '@mui/material';
 import { canSell, useAuth } from '@/context/AuthContext';
 import { apiFetch } from '@/lib/api';
 import { SalesCheckout, type DiscountMode, type SaleCustomer, type SaleQuote } from '@/components/sales/SalesCheckout';
@@ -175,8 +175,7 @@ export function SalesDesk() {
         <Paper component="section" className="sales-product-panel" sx={{ ...panelSx, p: { xs: 1.5, md: 2.25 }, minWidth: 0, minHeight: { lg: 'calc(100vh - 114px)' }, display: 'flex', flexDirection: 'column' }}>
           <Box sx={{ position: 'relative', display: 'flex', gap: 1, mb: 1.75 }}>
             <Box sx={{ minWidth: 0, flex: 1, height: 56, px: 1.5, display: 'flex', alignItems: 'center', gap: 1.1, border: '1px solid #1d4ed8', borderRadius: '10px', bgcolor: 'var(--card)' }}>
-              <Icon icon="mdi:magnify" width={20} height={20} color="#1d4ed8" />
-              <Box component="input" disabled={Boolean(quoteId)} value={search} onChange={(event: React.ChangeEvent<HTMLInputElement>) => { setSearch(event.target.value); setShowResults(Boolean(event.target.value)); }} onKeyDown={(event: React.KeyboardEvent<HTMLInputElement>) => { if (event.key === 'Enter') { event.preventDefault(); setShowResults(Boolean(search.trim())); } }} placeholder={quoteId ? 'Itens carregados do orçamento selecionado' : 'Buscar produto por nome ou código...'} sx={{ width: '100%', minWidth: 0, border: 0, outline: 0, bgcolor: 'transparent', color: 'var(--ink)', fontSize: 17, '&::placeholder': { color: 'var(--muted)', opacity: 0.8 }, '&:disabled': { opacity: 0.7 } }} />
+              <TextField fullWidth variant="standard" disabled={Boolean(quoteId)} value={search} onChange={(event) => { setSearch(event.target.value); setShowResults(Boolean(event.target.value)); }} onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); setShowResults(Boolean(search.trim())); } }} placeholder={quoteId ? 'Itens carregados do orçamento selecionado' : 'Buscar produto por nome ou código...'} slotProps={{ htmlInput: { 'aria-label': 'Buscar produto por nome ou código' }, input: { startAdornment: <InputAdornment position="start"><Icon icon="mdi:magnify" width={20} height={20} color="#1d4ed8" /></InputAdornment> } }} sx={{ minWidth: 0, flex: 1, '& .MuiInputBase-root': { color: 'var(--ink)', fontSize: 17 }, '& .MuiInputBase-input': { height: 54, boxSizing: 'border-box', py: 0 }, '& .MuiInput-root:before, & .MuiInput-root:after': { display: 'none' }, '& .MuiInputBase-input::placeholder': { color: 'var(--muted)', opacity: 0.8 }, '& .MuiInputBase-input.Mui-disabled': { opacity: 0.7, WebkitTextFillColor: 'var(--muted)' } }} />
             </Box>
             <Button variant="contained" disabled={Boolean(quoteId)} onClick={() => setShowResults(Boolean(search.trim()))} sx={{ minWidth: 96, minHeight: 56, borderRadius: '10px', bgcolor: '#1d4ed8', textTransform: 'none', fontSize: 15, fontWeight: 800, '&:hover': { bgcolor: '#1e40af' } }}>Buscar</Button>
             {showResults && search.trim() && <Paper sx={{ ...panelSx, position: 'absolute', zIndex: 5, top: 52, left: 0, right: 90, maxHeight: 300, overflowY: 'auto', p: 0.75 }}>

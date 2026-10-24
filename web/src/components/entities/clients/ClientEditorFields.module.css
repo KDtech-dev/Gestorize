@@ -17,9 +17,12 @@
 .avatarSection {
   grid-column: span 3;
   display: flex;
+  flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 17px;
   padding: 22px;
+  text-align: center;
 }
 
 .avatar { border: 3px solid #38bdf8; }
@@ -28,6 +31,7 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 7px;
 }
 
@@ -72,8 +76,7 @@
 }
 
 .identificationSection { grid-column: span 9; }
-.detailSection { grid-column: span 5; }
-.addressSection { grid-column: span 7; }
+.detailSection,.addressSection { grid-column: 1 / -1; }
 
 .sectionHeading {
   display: flex;
@@ -124,32 +127,6 @@
   color: var(--ink);
 }
 
-.field>span {
-  color: var(--ink);
-  font-size: 17px;
-  font-weight: 750;
-}
-
-.field i { color: #dc2626; font-style: normal; }
-
-.field input,
-.field select {
-  width: 100%;
-  height: 56px;
-  padding: 0 15px;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  outline: 0;
-  background: var(--card);
-  color: var(--ink);
-  font: inherit;
-  font-size: 18px;
-  transition: border-color .15s, box-shadow .15s;
-}
-
-.field input::placeholder { color: var(--muted); opacity: .75; }
-.field input:focus,.field select:focus { border-color: #4384e7; box-shadow: 0 0 0 3px #005ce41c; }
-.field input[aria-invalid="true"] { border-color: #dc2626; }
 .fieldError { color: #b42318; font-size: 15px; font-weight: 650; line-height: 1.4; }
 .fieldHint { display: inline-flex; align-items: center; gap: 7px; font-size: 14px; font-weight: 650; line-height: 1.4; }
 .fieldHint_loading { color: var(--muted); }
@@ -170,7 +147,6 @@
 @media (max-width: 1400px) {
   .avatarSection { grid-column: span 4; }
   .identificationSection { grid-column: span 8; }
-  .detailSection,.addressSection { grid-column: span 6; }
   .fieldGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
@@ -185,7 +161,7 @@
 @media (max-width: 600px) {
   .sections { gap: 12px; }
   .section { padding: 17px; border-radius: 13px; }
-  .avatarSection { align-items: flex-start; padding: 16px; }
+  .avatarSection { align-items: center; padding: 16px; }
   .avatarCopy>strong { font-size: 18px; }
   .avatarCopy>span { font-size: 14px; }
   .avatarButton,.removeAvatarButton { min-height: 40px; font-size: 14px; }
@@ -195,8 +171,6 @@
   .sectionHeading p { margin-top: 4px; font-size: 15px; }
   .fieldGrid { grid-template-columns: minmax(0, 1fr); gap: 15px; }
   .wide { grid-column: 1; }
-  .field>span { font-size: 16px; }
-  .field input,.field select { height: 50px; font-size: 16px; }
   .fieldError { font-size: 14px; }
   .fieldHint { font-size: 13px; }
 }

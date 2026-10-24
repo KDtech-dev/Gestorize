@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Box, Stack } from '@mui/material';
+import { Box, Button, Stack } from '@mui/material';
 import Link from 'next/link';
 import { Icon } from '@iconify/react';
 import { apiFetch, unwrap } from '@/lib/api';
@@ -71,7 +71,7 @@ export function SalesOverview() {
   return <div className="clients-page sales-overview-page">
     <header className="clients-page-heading">
       <div className="clients-heading-content"><span className="eyebrow"><Icon icon="mdi:cash-register" width={19} height={19} /><span>COMERCIAL</span></span><h1>Vendas</h1><p>Acompanhe o desempenho diário, consulte o histórico e os detalhes das vendas.</p></div>
-      <div className="clients-heading-actions">{can('vendas.criar') && <Link className="primary-button" href="/vendas/nova"><Icon icon="mdi:plus" width={20} height={20} />Nova venda</Link>}</div>
+      <div className="clients-heading-actions">{can('vendas.criar') && <Button component={Link} href="/vendas/nova" variant="contained" startIcon={<Icon icon="mdi:plus" width={20} height={20} />} sx={{ minHeight: 46, px: 2, borderRadius: '10px', bgcolor: '#005ce4', fontWeight: 750, textTransform: 'none', '&:hover': { bgcolor: '#0048b8' } }}>Nova venda</Button>}</div>
     </header>
 
     <SalesMetrics count={todaysSales.length} revenue={revenue} average={average} operators={operators.length} ready={Boolean(today)} />

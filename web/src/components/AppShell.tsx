@@ -25,6 +25,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { user, signOut, can } = useAuth();
   const { mode, toggle } = useTheme();
   const isGlobalAdmin = user?.role === 'admin' && !user.organization_id;
+  const isEditorPage = pathname.endsWith('/nova');
   const guardedSignOut = () => requestGuardedAction(() => { void signOut(); });
   const visibleNavigation = navigation.filter((item) => {
     if (isGlobalAdmin) return item.href === '/';
@@ -49,7 +50,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <TopNavigation items={visibleNavigation} />
         <div className="topbar-right"><button className="theme-toggle" onClick={toggle} aria-label={mode === 'dark' ? 'Ativar tema claro' : 'Ativar tema escuro'} data-tooltip={mode === 'dark' ? 'Tema claro' : 'Tema escuro'}>{mode === 'dark' ? '☀' : '☾'}</button><UserMenu name={user?.name ?? 'Usuário'} email={user?.email ?? ''} role={user?.role ?? 'Usuário'} imageUrl={user?.avatar_url ?? user?.avatar} signOut={async () => { guardedSignOut(); }} /></div>
       </header>
-      <div className={`page-content ${pathname === '/' ? 'dashboard-content' : ''} ${['/clientes', '/clientes/nova', '/produtos', '/produtos/nova', '/fornecedores', '/orcamentos', '/funcionarios', '/vendas', '/relatorios'].includes(pathname) ? 'clients-content' : ''}`}>{children}</div>
+      <div className={`page-content ${pathname === '/' ? 'dashboard-content' : ''} ${isEditorPage ? 'editor-content' : ''} ${['/clientes', '/clientes/nova', '/produtos', '/produtos/nova', '/fornecedores', '/orcamentos', '/funcionarios', '/vendas', '/relatorios'].includes(pathname) ? 'clients-content' : ''}`}>{children}</div>
     </main>
   </div>;
 }

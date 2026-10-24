@@ -1,0 +1,39 @@
+.backdrop{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;padding:20px;background:rgba(3,14,32,.58);backdrop-filter:blur(3px)}
+.dialog,.dialog *{box-sizing:border-box}
+.dialog{width:min(760px,100%);max-height:min(860px,88dvh);min-height:0;display:grid;grid-template-rows:auto auto minmax(0,1fr) auto;overflow:hidden;border:1px solid var(--line);border-radius:18px;background:var(--surface);box-shadow:0 24px 80px #0004;color:var(--ink)}
+.header{min-width:0;display:flex;align-items:flex-start;justify-content:space-between;gap:18px;padding:22px 24px 17px;border-bottom:1px solid var(--line);background:var(--card)}
+.header>div{min-width:0}
+.eyebrow{display:flex;align-items:center;gap:7px;color:var(--primary);font-size:11px;font-weight:850;letter-spacing:.8px}
+.header h2{margin:5px 0 4px;font:800 28px/1.25 Manrope,sans-serif;letter-spacing:-.4px}
+.header p{margin:0;color:var(--muted);font-size:16px;line-height:1.5}
+.closeButton{width:36px;height:36px;flex:none;display:grid;place-items:center;border:1px solid var(--line);border-radius:9px;background:var(--surface);color:var(--ink);cursor:pointer}
+.summary{padding:13px 24px;border-bottom:1px solid var(--line);color:var(--muted);font-size:16px}
+.summary strong{color:var(--ink)}
+.groups{min-width:0;min-height:0;display:flex;flex-direction:column;gap:12px;overflow:auto;padding:16px 20px}
+.group{width:100%;min-width:0;flex:0 0 auto;overflow:hidden;border:1px solid var(--line);border-radius:12px;background:var(--card)}
+.groupHeader{min-width:0;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;padding:11px 13px;background:color-mix(in srgb,#005ce4 6%,var(--surface))}
+.groupTitle{min-width:0;display:grid;gap:3px;text-align:left}
+.groupTitle strong{color:var(--ink);font-size:18px;font-weight:800;line-height:1.35;overflow-wrap:anywhere}
+.groupTitle small{color:var(--muted);font-size:14px;font-weight:500}
+.accordionToggle{min-width:0;display:flex;align-items:center;gap:12px;padding:3px 0;border:0;background:transparent;color:inherit;text-align:left;cursor:pointer}
+.accordionToggle:focus-visible{outline:2px solid #005ce4;outline-offset:4px;border-radius:4px}
+.accordionIcon{flex:none;color:var(--muted);transition:transform .16s ease}
+.accordionToggle[aria-expanded=true] .accordionIcon{transform:rotate(180deg)}
+.groupHeader>button:not(.accordionToggle){max-width:180px;min-width:0;padding:7px 10px;border:1px solid var(--line);border-radius:7px;background:var(--card);color:var(--primary);font:700 14px/1.35 'DM Sans',Arial,sans-serif;white-space:normal;overflow-wrap:anywhere;cursor:pointer}
+.groupHeader>button:disabled{color:var(--muted);cursor:default}
+.options{display:flex;flex-direction:column;padding:0 13px}
+.option{width:100%;min-width:0;display:grid;grid-template-columns:16px minmax(0,1fr);align-items:start;gap:5px 10px;padding:10px 2px;border-bottom:1px solid var(--line);cursor:pointer}
+.option:last-child{border-bottom:0}
+.optionCopy{width:100%;min-width:0;grid-column:2;grid-row:1;display:grid;gap:2px;overflow-wrap:anywhere}
+.optionCopy strong{color:var(--ink);font-size:16px;font-weight:700;line-height:1.4;overflow-wrap:anywhere}
+.optionCopy small{color:var(--muted);font-size:14px;line-height:1.4;overflow-wrap:anywhere}
+.selectedOption .optionCopy strong{color:var(--primary)}
+.inheritedBadge{max-width:100%;min-width:0;grid-column:2;grid-row:2;display:inline-flex;align-items:center;justify-self:start;gap:5px;color:var(--muted);font-size:13px;font-weight:700;line-height:1.3;white-space:normal;overflow-wrap:anywhere}
+.inheritedBadge svg{flex:none}
+.empty{grid-column:1/-1;margin:0;padding:30px;text-align:center;color:var(--muted)}
+.footer{display:flex;align-items:center;justify-content:space-between;gap:15px;padding:14px 20px;border-top:1px solid var(--line);background:var(--card);color:var(--muted);font-size:13px}
+.footer button{min-height:40px;padding:0 17px;border:0;border-radius:9px;background:#005ce4;color:#fff;font:700 14px 'DM Sans',Arial,sans-serif;cursor:pointer}
+.footer button:hover{background:#0048b8}
+:global(.theme-root[data-theme=dark]) .eyebrow{color:#93c5fd}
+:global(.theme-root[data-theme=dark]) .groupHeader{background:#0d2c56}
+@media(max-width:520px){.backdrop{padding:9px}.dialog{max-height:92dvh;border-radius:14px}.header{padding:16px}.header h2{font-size:23px}.header p{font-size:14px}.summary{padding:10px 16px;font-size:14px}.groupTitle strong{font-size:16px}.groupTitle small{font-size:13px}.groupHeader>button:not(.accordionToggle){font-size:13px}.optionCopy strong{font-size:15px}.optionCopy small{font-size:13px}.inheritedBadge{font-size:12px}.groups{gap:10px;padding:11px}.groupHeader{grid-template-columns:minmax(0,1fr);gap:9px;padding:11px 12px}.groupHeader>button:not(.accordionToggle){justify-self:start}.accordionToggle{width:100%;justify-content:space-between}.options{padding:0 10px}.option{gap:5px 8px;padding:9px 1px}.footer{padding:11px 13px;font-size:12px}}

@@ -2,10 +2,10 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { Icon } from '@iconify/react';
+import { useRouter } from 'next/navigation';
 import { FormControl, InputLabel, MenuItem, Select } from '@mui/material';
 import { apiFetch } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
-import { RecordEditor } from '@/components/RecordEditor';
 import { UserAvatar } from '@/components/UserAvatar';
 import { EntityActionButton, EntityDirectoryHeading, EntityPageHeading, EntityPagination, EntitySummaryCard } from '@/components/entities/EntityPageParts';
 
@@ -105,13 +105,13 @@ function EmployeeFilters({ search, role, count, onSearch, onRole }: { search: st
 }
 
 export function EmployeesPage() {
+  const router = useRouter();
   const { can, user } = useAuth();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [search, setSearch] = useState('');
   const [role, setRole] = useState('');
   const [page, setPage] = useState(1);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [editing, setEditing] = useState<Employee | null | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const canCreate = can('users.criar');
@@ -125,15 +125,6 @@ export function EmployeesPage() {
       .catch((reason) => setError(reason instanceof Error ? reason.message : 'Não foi possível carregar os funcionários.'))
       .finally(() => setLoading(false));
   }, []);
-  useEffect(() => {
-    if (!canCreate) return;
-    const url = new URL(window.location.href);
-    if (url.searchParams.get('novo') !== '1') return;
-    setEditing(null);
-    url.searchParams.delete('novo');
-    window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
-  }, [canCreate]);
-
   const filtered = useMemo(() => {
     const term = search.trim().toLocaleLowerCase();
     return employees.filter((employee) => {
@@ -146,10 +137,6 @@ export function EmployeesPage() {
   const currentPage = Math.min(page, totalPages);
   const pageItems = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
-  async function saveEmployee(payload: Employee, id?: string) {
-    await apiFetch(id ? `/funcionarios/${id}` : '/funcionarios', { method: id ? 'PUT' : 'POST', body: JSON.stringify(payload) });
-    await reload();
-  }
   async function deleteEmployee(employee: Employee) {
     if (!window.confirm(`Excluir ${String(employee.nome ?? 'este funcionário')}? Essa ação não pode ser desfeita.`)) return;
     try {
@@ -163,7 +150,7 @@ export function EmployeesPage() {
   const managers = employees.filter((employee) => roleOf(employee) === 'gestor').length;
   const withIndividualPermissions = employees.filter((employee) => Array.isArray(employee.permissions) && employee.permissions.length > 0).length;
   return <div className="clients-page employees-page">
-    <EntityPageHeading eyebrow="EQUIPE E ACESSOS" icon="mdi:account-cog-outline" title="Funcionários" description="Gerencie os membros da organização, seus perfis e permissões individuais." createLabel="Novo funcionário" canCreate={canCreate} onCreate={() => setEditing(null)} />
+    <EntityPageHeading eyebrow="EQUIPE E ACESSOS" icon="mdi:account-cog-outline" title="Funcionários" description="Gerencie os membros da organização, seus perfis e permissões individuais." createLabel="Novo funcionário" canCreate={canCreate} onCreate={() => router.push('/funcionarios/nova')} />
     <section className="client-summary-grid employee-summary-grid" aria-label="Resumo da equipe">
       <EntitySummaryCard label="Total de funcionários" value={loading ? '—' : employees.length} icon="mdi:account-group-outline" color="#005CE4" />
       <EntitySummaryCard label="Gestores" value={loading ? '—' : managers} icon="mdi:account-tie-outline" color="#8b5cf6" />
@@ -172,9 +159,8 @@ export function EmployeesPage() {
     <section className="client-directory">
       <EmployeeFilters search={search} role={role} count={filtered.length} onSearch={(value) => changeFilter(value, setSearch)} onRole={(value) => changeFilter(value, setRole)} />
       {error && <div className="inline-error">{error}</div>}
-      {loading ? <div className="table-loading"><span className="spinner" />Carregando funcionários…</div> : pageItems.length ? <div className="client-card-grid">{pageItems.map((employee) => <EmployeeCard key={String(employee.id)} employee={employee} selected={selectedId === String(employee.id)} isSelf={String(employee.id) === String(user?.id)} canEdit={canEdit} canDelete={canDelete} onSelect={() => setSelectedId(selectedId === String(employee.id) ? null : String(employee.id))} onEdit={() => setEditing(employee)} onDelete={() => void deleteEmployee(employee)} />)}</div> : <div className="empty-state compact"><span className="empty-icon"><Icon icon="mdi:account-search-outline" /></span><h2>{search || role ? 'Nenhum funcionário encontrado' : 'Ainda não há funcionários'}</h2><p>{search || role ? 'Ajuste a busca ou o perfil para ver outros cadastros.' : 'Cadastre o primeiro funcionário para começar.'}</p></div>}
+      {loading ? <div className="table-loading"><span className="spinner" />Carregando funcionários…</div> : pageItems.length ? <div className="client-card-grid">{pageItems.map((employee) => <EmployeeCard key={String(employee.id)} employee={employee} selected={selectedId === String(employee.id)} isSelf={String(employee.id) === String(user?.id)} canEdit={canEdit} canDelete={canDelete} onSelect={() => setSelectedId(selectedId === String(employee.id) ? null : String(employee.id))} onEdit={() => router.push(`/funcionarios/nova?id=${encodeURIComponent(String(employee.id))}`)} onDelete={() => void deleteEmployee(employee)} />)}</div> : <div className="empty-state compact"><span className="empty-icon"><Icon icon="mdi:account-search-outline" /></span><h2>{search || role ? 'Nenhum funcionário encontrado' : 'Ainda não há funcionários'}</h2><p>{search || role ? 'Ajuste a busca ou o perfil para ver outros cadastros.' : 'Cadastre o primeiro funcionário para começar.'}</p></div>}
       {!loading && <EntityPagination noun="funcionários" page={currentPage} totalPages={totalPages} total={filtered.length} from={(currentPage - 1) * PAGE_SIZE + 1} to={Math.min(currentPage * PAGE_SIZE, filtered.length)} onChange={setPage} />}
     </section>
-    {editing !== undefined && <RecordEditor module="funcionarios" row={editing} onClose={() => setEditing(undefined)} onSave={saveEmployee} />}
   </div>;
 }
