@@ -11,16 +11,48 @@ Sistema de gestão para micro e pequenas empresas, com uma API Laravel compartil
 
 Cada aplicação tem seu próprio guia de configuração: [API/backend](backend/README.md), [web](web/README.md) e [mobile](mobile/README.md).
 
-## Funcionalidades
+## Funcionalidades do sistema
 
-- Cadastro e consulta de clientes, produtos, fornecedores e funcionários.
-- Cadastro de produtos com categoria, fornecedor, código de barras, estoque e imagens, incluindo imagem principal.
-- Orçamentos associados a clientes e produtos, com estados **Pendente**, **Aprovado** e **Vendido**. Um orçamento convertido em venda recebe o estado Vendido e deixa de estar disponível para uma nova venda.
-- Caixa de vendas para pesquisar produtos, selecionar cliente ou orçamento, aplicar desconto em porcentagem ou valor, escolher forma de pagamento e concluir a venda. A conclusão atualiza o estoque.
-- Histórico de vendas, indicadores, movimentações e relatórios na versão web.
-- Leitura de código de barras pela câmera ou por leitor conectado no aplicativo mobile.
-- Geração e impressão de etiquetas de produtos com código de barras.
-- Controle de acesso por papel e permissão.
+As aplicações web e mobile trabalham sobre a mesma API. As áreas e ações que cada usuário consegue acessar dependem das permissões da sua organização.
+
+### Cadastros e catálogo
+
+- **Clientes:** cadastro de pessoas físicas e jurídicas, com dados de contato, documentos, endereço e foto/avatar; busca, filtros, consulta de detalhes, edição e exclusão conforme as permissões.
+- **Produtos:** cadastro de nome, código de barras, categoria, fornecedor, unidade de medida, preços, margem, estoque, datas e imagens. É possível definir a imagem principal e consultar os dados comerciais e de estoque nas listagens.
+- **Fornecedores:** cadastro de dados da empresa, responsável, contatos, endereço, chave PIX, imagem e vários ramos de atividade.
+- **Funcionários:** cadastro de usuário com foto, contatos e perfil de acesso. Gestores podem conceder permissões individuais adicionais e consultar as permissões efetivas.
+- **Orçamentos:** propostas associadas a um cliente e a itens do catálogo, com quantidades e valores. Os estados são **Pendente**, **Aprovado** e **Vendido**; aprovar e converter em venda são ações controladas por permissão. Um orçamento vendido não pode ser usado novamente para criar uma venda.
+- **Categorias e unidades de medida:** catálogos compartilhados pelas organizações para classificar e descrever produtos.
+
+### Vendas e acompanhamento
+
+- **Registro de venda:** pesquisa e inclusão de produtos, leitura de código de barras, seleção de cliente ou orçamento, ajuste de quantidades, desconto percentual ou em valor e escolha da forma de pagamento.
+- **Conclusão:** registra a venda e atualiza o estoque pela API. As validações do backend protegem os dados e valores enviados pelas aplicações.
+- **Visão geral web:** indicadores do dia, total e valor médio das vendas, operadores, histórico pesquisável e filtrável por forma de pagamento, além dos detalhes de cada venda.
+- **Relatórios web:** consulta por período e categoria de dados, com indicadores, séries históricas e visualizações em colunas, área ou rosca; também permite pré-visualizar e imprimir/salvar em PDF.
+- **Dashboard:** resumo da operação da organização e atalhos para áreas disponíveis ao usuário.
+
+### Central de etiquetas
+
+A central está disponível na web e no aplicativo mobile. Ela reúne produtos, seleção de quantidades, formatos de impressão, operações e histórico. A impressão é preparada pela aplicação e aberta no diálogo de impressão do navegador ou do sistema; a impressora deve estar configurada no dispositivo.
+
+- **Seleção e busca:** localizar por nome, código de barras ou ID; filtrar todos, pendentes ou impressos; selecionar produtos visíveis ou individualmente e escolher de 1 a 50 cópias de cada produto.
+- **Impressão em lote:** gerar etiquetas dos produtos selecionados, apenas dos pendentes ou de todos. Cada operação aceita até 5.000 etiquetas; operações maiores devem ser divididas.
+- **Formatos disponíveis:**
+  - **A4 Avery L7159:** 24 etiquetas por folha, em 3 colunas × 8 linhas; cada etiqueta mede 63,5 × 33,9 mm.
+  - **Brother QL-800 com rolos DK:** DK-11209 (29 × 62 mm), DK-11201 (29 × 90 mm), DK-11208 (38 × 90 mm), DK-11202 (62 × 100 mm) e DK-22205 contínuo (62 mm de largura, corte em segmentos de 50 mm).
+- **Conteúdo:** nome e preço do produto, categoria e unidade quando disponíveis, além de código de barras Code 39. Nas etiquetas da central, o código impresso é formado pelos 12 primeiros caracteres do ID do produto (sem hífens); o leitor envia esse valor à API, que resolve o prefixo para localizar o produto. O código de barras cadastrado continua disponível para busca quando usado na venda.
+- **Pendente ou impresso:** o sistema compara uma assinatura dos dados impressos (nome, código, categoria, fornecedor, unidade e preço). Se esses dados mudarem depois da confirmação, a etiqueta volta a aparecer como pendente.
+- **Histórico auditável:** a operação fica inicialmente **Aguardando confirmação**. Depois de verificar o resultado no diálogo de impressão, o usuário pode confirmar ou cancelar no histórico. Só a confirmação marca a versão atual da etiqueta como impressa; cancelar mantém os produtos pendentes quando aplicável. O histórico exibe usuário, data, produtos e quantidades.
+- **Preferência de formato:** a escolha do formato fica salva no navegador ou no dispositivo mobile. Na impressão, confira se o tamanho de papel/rolo selecionado no diálogo e na impressora corresponde ao formato escolhido no Gestorize, sobretudo para rolos Brother.
+
+### Acesso e organização
+
+- Login, encerramento de sessão e alteração de senha no primeiro acesso.
+- Tema claro/escuro na web, navegação adaptada a diferentes tamanhos de tela e interface mobile.
+- Papéis e permissões controlam menus e operações; a API também valida cada ação. Permissões individuais são adicionais às herdadas do papel.
+- O administrador global gerencia organizações e permissões padrão. Usuários da organização acessam apenas os registros operacionais da própria empresa.
+- Perfil do usuário e configurações disponíveis de acordo com o papel. A área de ajuda permite enviar uma mensagem para suporte.
 
 ## Organizações, papéis e acesso
 
