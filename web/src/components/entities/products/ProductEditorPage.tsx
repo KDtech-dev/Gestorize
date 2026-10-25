@@ -15,7 +15,7 @@ import styles from '../clients/ClientEditorPage.module.css';
 import pageStyles from './ProductEditorPage.module.css';
 
 type ProductData = Record<string, any>;
-const emptyProduct = (): ProductForm => ({ nome: '', descricao: '', preco_custo: '', porcentagem_lucro: '', preco_venda: '', estoque: '', data_entrada: '', validade: '', categoria_id: '', fornecedor_id: '', unidade_medida_id: '' });
+const emptyProduct = (): ProductForm => ({ nome: '', descricao: '', preco_custo: '', porcentagem_lucro: '', preco_venda: '', estoque: '', data_entrada: '', validade: '', categoria_id: '', fornecedor_id: '', unidade_medida_id: '', codigos_barras: '' });
 const todayLocal = () => { const date = new Date(); return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`; };
 
 function unwrapData(payload: unknown): any {
@@ -43,6 +43,7 @@ function normalizeProduct(product: ProductData): ProductForm {
     categoria_id: product.categoria_id ? String(product.categoria_id) : '',
     fornecedor_id: product.fornecedor_id ? String(product.fornecedor_id) : '',
     unidade_medida_id: product.unidade_medida_id ? String(product.unidade_medida_id) : '',
+    codigos_barras: Array.isArray(product.codigos_barras) ? product.codigos_barras.join('\n') : '',
   };
 }
 
@@ -271,6 +272,7 @@ export function ProductEditorPage({ productId }: { productId?: string }) {
         categoria_id: form.categoria_id || null,
         fornecedor_id: form.fornecedor_id || null,
         unidade_medida_id: form.unidade_medida_id,
+        codigos_barras: form.codigos_barras.split(/[\n,]/).map((codigo) => codigo.trim()).filter(Boolean),
       };
       if (isEdit) {
         await apiFetch(`/produtos/${productId}`, { method: 'PUT', body: JSON.stringify(payload) });

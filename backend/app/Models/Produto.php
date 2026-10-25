@@ -67,6 +67,11 @@ class Produto extends Model
         return $this->hasMany(ProdutoImagem::class);
     }
 
+    public function codigosBarras()
+    {
+        return $this->hasMany(ProdutoCodigoBarras::class);
+    }
+
     public function imagemPrincipal()
     {
         return $this->hasOne(ProdutoImagem::class)

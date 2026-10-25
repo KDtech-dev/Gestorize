@@ -17,6 +17,7 @@ class ProdutoService
             'fornecedor',
             'unidadeMedida',
             'imagens',
+            'codigosBarras',
         ])
             ->latest()
             ->get();
@@ -29,19 +30,24 @@ class ProdutoService
             'fornecedor',
             'unidadeMedida',
             'imagens',
+            'codigosBarras',
         ])->findOrFail($id);
     }
 
     public function criar(array $dados): Produto
     {
         return DB::transaction(function () use ($dados) {
+            $codigosBarras = $dados['codigos_barras'] ?? null;
+            unset($dados['codigos_barras']);
             $produto = Produto::create($dados);
+            if ($codigosBarras !== null) $this->sincronizarCodigosBarras($produto, $codigosBarras);
 
             return $produto->load([
                 'categoria',
                 'fornecedor',
                 'unidadeMedida',
                 'imagens',
+                'codigosBarras',
             ]);
         });
     }
@@ -51,15 +57,36 @@ class ProdutoService
         array $dados
     ): Produto {
         return DB::transaction(function () use ($produto, $dados) {
+            $codigosBarras = $dados['codigos_barras'] ?? null;
+            unset($dados['codigos_barras']);
             $produto->update($dados);
+            if ($codigosBarras !== null) $this->sincronizarCodigosBarras($produto, $codigosBarras);
 
             return $produto->fresh([
                 'categoria',
                 'fornecedor',
                 'unidadeMedida',
                 'imagens',
+                'codigosBarras',
             ]);
         });
+    }
+
+    private function sincronizarCodigosBarras(Produto $produto, array $codigos): void
+    {
+        $codigos = collect($codigos)
+            ->map(fn ($codigo) => trim((string) $codigo))
+            ->filter(fn ($codigo) => $codigo !== '' && $codigo !== $produto->codigo_barras)
+            ->unique()
+            ->values();
+
+        $produto->codigosBarras()->whereNotIn('codigo', $codigos->all())->delete();
+        foreach ($codigos as $codigo) {
+            $produto->codigosBarras()->firstOrCreate(
+                ['codigo' => $codigo],
+                ['tipo' => 'fabricante']
+            );
+        }
     }
 
     public function excluir(Produto $produto): void

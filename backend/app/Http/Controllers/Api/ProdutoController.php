@@ -42,11 +42,18 @@ class ProdutoController extends Controller
 
     public function buscarPorCodigo(string $codigo): JsonResponse
     {
-        $codigo = strtoupper(trim($codigo));
-        $produtoQuery = Produto::with(['categoria', 'fornecedor', 'unidadeMedida', 'imagens']);
+        $codigo = trim($codigo);
+        $produtoQuery = Produto::with(['categoria', 'fornecedor', 'unidadeMedida', 'imagens', 'codigosBarras']);
         $produto = (clone $produtoQuery)
             ->where('codigo_barras', $codigo)
             ->first();
+
+        if (!$produto) {
+            $codigoComercial = \App\Models\ProdutoCodigoBarras::query()
+                ->where('codigo', $codigo)
+                ->first();
+            $produto = $codigoComercial?->produto?->load(['categoria', 'fornecedor', 'unidadeMedida', 'imagens', 'codigosBarras']);
+        }
 
         if (!$produto) {
             $idPrefix = strtolower(str_replace('-', '', $codigo));

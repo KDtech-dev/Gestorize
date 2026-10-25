@@ -14,6 +14,7 @@ class ProdutoResource extends JsonResource
             'id' => $this->id,
             'nome' => $this->nome,
             'codigo_barras' => $this->codigo_barras,
+            'codigos_barras' => $this->whenLoaded('codigosBarras', fn () => $this->codigosBarras->pluck('codigo')->values()),
             'etiqueta_status' => $this->etiqueta_status,
             'etiqueta_impressa_em' => $this->etiqueta_impressa_em,
             'descricao' => $this->descricao,

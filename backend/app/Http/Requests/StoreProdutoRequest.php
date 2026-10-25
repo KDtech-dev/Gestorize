@@ -7,6 +7,7 @@ use App\Rules\BelongsToCurrentOrganization;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Validator;
 use App\Models\Categoria;
+use App\Rules\UniqueProductBarcode;
 
 class StoreProdutoRequest extends FormRequest
 {
@@ -29,6 +30,8 @@ class StoreProdutoRequest extends FormRequest
             'unidade_medida_id' => ['required', 'uuid', new BelongsToCurrentOrganization('unidades_medida')],
             'estoque' => ['required', 'numeric', 'min:0',],
             'validade' => ['nullable', 'date', 'after_or_equal:data_entrada', 'after_or_equal:today'],
+            'codigos_barras' => ['sometimes', 'array', 'max:20'],
+            'codigos_barras.*' => ['required', 'string', 'max:64', 'distinct', new UniqueProductBarcode()],
             'imagens' => ['sometimes', 'array', 'max:10'],
             'imagens.*' => ['image', 'mimes:jpeg,jpg,png,webp', 'max:10240'],
             'imagem_principal' => ['sometimes', 'integer', 'min:0'],

@@ -19,6 +19,7 @@ export type ProductForm = {
   categoria_id: string;
   fornecedor_id: string;
   unidade_medida_id: string;
+  codigos_barras: string;
 };
 export type ProductOption = { id: string; nome?: string; titulo?: string; sigla?: string };
 
@@ -82,7 +83,11 @@ export function ProductEditorFields({ form, images, categories, suppliers, units
       </div>
     </Section>
 
-    <Section number="03" title="Valores e estoque" description="Defina custos, margem, preço de venda e quantidade disponível." icon="mdi:cash-multiple" className={styles.commercialSection}>
+    <Section number="03" title="Códigos de barras comerciais" description="Adicione os códigos da embalagem do fabricante. Informe um por linha; o código interno e as etiquetas atuais são mantidos automaticamente." icon="mdi:barcode">
+      <div className={styles.fieldGrid}><div className={`${styles.field} ${styles.wide}`}><TextField fullWidth multiline minRows={2} label="Códigos do fabricante" name="codigos_barras" value={form.codigos_barras} onChange={(event) => onChange('codigos_barras', event.target.value)} placeholder="Ex.: 07891234567890" helperText="Os zeros à esquerda são preservados. Não repita códigos de outro produto." sx={entityFieldSx} slotProps={{ htmlInput: { maxLength: 1600 }, inputLabel: { shrink: true } }} /></div></div>
+    </Section>
+
+    <Section number="04" title="Valores e estoque" description="Defina custos, margem, preço de venda e quantidade disponível." icon="mdi:cash-multiple" className={styles.commercialSection}>
       <div className={`${styles.fieldGrid} ${styles.commercialGrid}`}>
         <Field label="Preço de custo (R$)" name="preco_custo" value={form.preco_custo} onChange={onChange} onBlur={onBlur} type="number" min="0" step="0.01" required error={errors.preco_custo} placeholder="Ex.: 125,00" />
         <Field label="Margem de lucro (%)" name="porcentagem_lucro" value={form.porcentagem_lucro} onChange={onChange} onBlur={onBlur} type="number" min="0" step="0.01" required error={errors.porcentagem_lucro} placeholder="Ex.: 30" />
@@ -91,7 +96,7 @@ export function ProductEditorFields({ form, images, categories, suppliers, units
       </div>
     </Section>
 
-    <Section number="04" title="Classificação" description="Organize a unidade, a categoria e o fornecedor." icon="mdi:clipboard-list-outline" className={styles.classificationSection}>
+    <Section number="05" title="Classificação" description="Organize a unidade, a categoria e o fornecedor." icon="mdi:clipboard-list-outline" className={styles.classificationSection}>
       <div className={styles.fieldGrid}>
         <SelectField label="Unidade de medida" name="unidade_medida_id" value={form.unidade_medida_id} onChange={onChange} onBlur={onBlur} options={units} emptyLabel="Selecione a unidade" required withSigla error={errors.unidade_medida_id} />
         <SelectField label="Fornecedor" name="fornecedor_id" value={form.fornecedor_id} onChange={onChange} onBlur={onBlur} options={suppliers} emptyLabel="Sem fornecedor" error={errors.fornecedor_id} />
@@ -105,7 +110,7 @@ export function ProductEditorFields({ form, images, categories, suppliers, units
       </div>
     </Section>
 
-    <Section number="05" title="Datas" description="Registre a entrada no estoque e, quando houver, a validade." icon="mdi:calendar-range" className={styles.datesSection}>
+    <Section number="06" title="Datas" description="Registre a entrada no estoque e, quando houver, a validade." icon="mdi:calendar-range" className={styles.datesSection}>
       <div className={styles.fieldGrid}>
         <Field label="Data de entrada" name="data_entrada" value={form.data_entrada} onChange={onChange} onBlur={onBlur} type="date" required error={errors.data_entrada} />
         <Field label={validadeObrigatoria ? 'Validade' : 'Validade (opcional)'} name="validade" value={form.validade} onChange={onChange} onBlur={onBlur} type="date" required={validadeObrigatoria} error={errors.validade} />

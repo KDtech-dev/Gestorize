@@ -8,6 +8,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Validator;
 use App\Models\Categoria;
 use App\Models\Produto;
+use App\Rules\UniqueProductBarcode;
 
 class UpdateProdutoRequest extends FormRequest
 {
@@ -30,6 +31,8 @@ class UpdateProdutoRequest extends FormRequest
             'unidade_medida_id' => ['sometimes', 'required', 'uuid', new BelongsToCurrentOrganization('unidades_medida')],
             'estoque' => ['sometimes', 'required', 'numeric', 'min:0',],
             'validade' => ['sometimes', 'nullable', 'date', 'after_or_equal:data_entrada', 'after_or_equal:today'],
+            'codigos_barras' => ['sometimes', 'array', 'max:20'],
+            'codigos_barras.*' => ['required', 'string', 'max:64', 'distinct', new UniqueProductBarcode((string) ($this->route('produto')?->id ?? $this->route('produto')))],
         ];
     }
 
