@@ -12,6 +12,8 @@ const produtoSchema = z.object({
     .min(1, "O nome do produto é obrigatório.")
     .max(255, "O nome do produto deve ter no máximo 255 caracteres."),
 
+  codigos_barras: z.string().max(1600).optional().default(''),
+
   descricao: z
     .string()
     .nullable()

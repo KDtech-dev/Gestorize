@@ -48,6 +48,10 @@ class ProdutoController extends Controller
             ->where('codigo_barras', $codigo)
             ->first();
 
+        if (!$produto && $codigo !== strtoupper($codigo)) {
+            $produto = (clone $produtoQuery)->where('codigo_barras', strtoupper($codigo))->first();
+        }
+
         if (!$produto) {
             $codigoComercial = \App\Models\ProdutoCodigoBarras::query()
                 ->where('codigo', $codigo)

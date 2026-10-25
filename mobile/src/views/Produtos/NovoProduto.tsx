@@ -163,6 +163,7 @@ export default function NovoProduto() {
 
         defaultValues: {
             nome: "",
+            codigos_barras: "",
             descricao: "",
             preco_custo: 0,
             porcentagem_lucro: 0,
@@ -295,6 +296,7 @@ export default function NovoProduto() {
 
                 const dados: FormData = {
                     nome: produto.nome ?? "",
+                    codigos_barras: Array.isArray(produto.codigos_barras) ? produto.codigos_barras.join('\n') : "",
                     descricao: produto.descricao ?? "",
                     preco_custo: Number(produto.preco_custo ?? 0),
                     porcentagem_lucro: Number(produto.porcentagem_lucro ?? 0),
@@ -545,6 +547,7 @@ export default function NovoProduto() {
 
             const payload = {
                 nome: data.nome,
+                codigos_barras: (data.codigos_barras ?? '').split(/[\n,]/).map((codigo) => codigo.trim()).filter(Boolean),
                 descricao: data.descricao || null,
                 preco_custo: data.preco_custo,
                 porcentagem_lucro: data.porcentagem_lucro,
@@ -747,6 +750,26 @@ export default function NovoProduto() {
                                 />
                                 <InputError message={error?.message} />
                             </>
+                        )}
+                    />
+                    <Controller
+                        control={control}
+                        name="codigos_barras"
+                        render={({ field: { value, onChange } }) => (
+                            <View style={{ marginTop: 12 }}>
+                                <Text style={{ color: colors.muted, marginBottom: 6 }}>Códigos de barras do fabricante · um por linha</Text>
+                                <TextInput
+                                    value={value ?? ''}
+                                    onChangeText={(text) => onChange(text.slice(0, 1600))}
+                                    multiline
+                                    textAlignVertical="top"
+                                    editable={formCanEdit}
+                                    placeholder="Ex.: 07891234567890"
+                                    placeholderTextColor={colors.muted}
+                                    style={{ minHeight: 76, borderWidth: 1, borderColor: colors.border, borderRadius: 10, padding: 12, color: colors.text }}
+                                />
+                                <Text style={{ color: colors.muted, fontSize: 12, marginTop: 4 }}>Zeros à esquerda são preservados. As etiquetas próprias continuam usando o código atual.</Text>
+                            </View>
                         )}
                     />
                 </View>

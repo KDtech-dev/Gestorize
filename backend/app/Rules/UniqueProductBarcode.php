@@ -20,7 +20,7 @@ class UniqueProductBarcode implements ValidationRule
         $usedByLegacy = Produto::withoutGlobalScopes()
             ->where('organization_id', $organizationId)
             ->where('codigo_barras', $value)
-            ->when($this->produtoId, fn ($query) => $query->whereKeyNot($this->produtoId))
+            ->when($this->produtoId, fn ($query) => $query->where('id', '!=', $this->produtoId))
             ->exists();
         $usedByAdditional = ProdutoCodigoBarras::withoutGlobalScopes()
             ->where('organization_id', $organizationId)
