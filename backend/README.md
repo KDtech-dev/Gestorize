@@ -31,6 +31,16 @@ php artisan serve --host=0.0.0.0
 
 A API ficará em `http://localhost:8000/api`. A documentação das rotas fica em `http://localhost:8000/api/docs/` e é servida do diretório público do Laravel. Use o IP da máquina no lugar de `localhost` quando um dispositivo da rede, como um celular, precisar acessar a API.
 
+## Códigos de barras de produtos
+
+`produtos.codigo_barras` mantém o código interno `PRD...` para compatibilidade com produtos já cadastrados e integrações existentes. Códigos comerciais opcionais ficam em `produto_codigos_barras.codigo`, como texto, vinculados ao produto e à organização. A restrição única por organização impede que um código comercial identifique produtos diferentes dentro da mesma empresa.
+
+Use `GET /api/produtos/codigo/{codigo}` para localizar um produto por seu código interno, por um código comercial associado ou pelo prefixo UUID impresso nas etiquetas próprias. A rota mantém a autenticação, o acesso por permissão já configurado e o isolamento da organização. Leituras desconhecidas retornam 404.
+
+Na criação e edição, `codigos_barras` é uma lista opcional de textos, por exemplo `{"codigos_barras":["00789123456789"]}`. Zeros à esquerda são preservados. Em `PUT`, omitir o campo mantém os códigos atuais; enviar a lista sincroniza os códigos comerciais associados. O código `PRD...` continua separado e as etiquetas próprias continuam imprimindo os 12 primeiros caracteres do UUID em Code 39.
+
+Em uma instalação existente, aplique a migração com `php artisan migrate` a partir de `backend/`. Ela cria a tabela complementar sem modificar UUIDs, estoque ou os códigos internos já armazenados.
+
 ## Seeders
 
 `DatabaseSeeder` executa os seeders na ordem definida em `database/seeders/DatabaseSeeder.php`:
