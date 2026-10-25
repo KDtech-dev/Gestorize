@@ -67,7 +67,7 @@ const getProduto = async (
 };
 
 const createProduto = async (
-    data: z.infer<typeof produtoSchema>
+    data: Omit<z.infer<typeof produtoSchema>, 'codigos_barras'> & { codigos_barras?: string[] }
 ): Promise<ResponseType<ProdutoType>> => {
     const response = await getAxios().post(
         "/produtos",
@@ -79,7 +79,7 @@ const createProduto = async (
 
 const updateProduto = async (
     id: string,
-    data: Partial<z.infer<typeof produtoSchema>>
+    data: Partial<Omit<z.infer<typeof produtoSchema>, 'codigos_barras'>> & { codigos_barras?: string[] }
 ): Promise<ResponseType<ProdutoType>> => {
     const response = await getAxios().put(
         `/produtos/${id}`,

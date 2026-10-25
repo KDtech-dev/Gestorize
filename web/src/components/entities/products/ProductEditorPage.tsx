@@ -65,7 +65,8 @@ function parseNumber(value: string) {
 function productMultipart(payload: ProductData, images: ProductImage[]) {
   const data = new FormData();
   Object.entries(payload).forEach(([key, value]) => {
-    if (value !== undefined && value !== null) data.append(key, String(value));
+    if (Array.isArray(value)) value.forEach((item) => data.append(`${key}[]`, String(item)));
+    else if (value !== undefined && value !== null) data.append(key, String(value));
   });
   images.forEach((image) => { if (image.file) data.append('imagens[]', image.file); });
   const principalIndex = images.findIndex((image) => image.principal);

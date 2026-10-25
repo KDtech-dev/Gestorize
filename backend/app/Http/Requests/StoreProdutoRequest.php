@@ -11,6 +11,13 @@ use App\Rules\UniqueProductBarcode;
 
 class StoreProdutoRequest extends FormRequest
 {
+    protected function prepareForValidation(): void
+    {
+        if (is_array($this->input('codigos_barras'))) {
+            $this->merge(['codigos_barras' => array_map(fn ($codigo) => is_string($codigo) ? trim($codigo) : $codigo, $this->input('codigos_barras'))]);
+        }
+    }
+
     public function authorize(): bool
     {
         return true;

@@ -56,7 +56,8 @@ class ProdutoCodigoBarrasTest extends TestCase
 
         $this->postJson('/api/produtos', [
             'nome' => 'Produto novo', 'preco_custo' => 10, 'porcentagem_lucro' => 20,
-            'preco_venda' => 12, 'data_entrada' => now()->toDateString(), 'unidade_medida_id' => $this->unit()->id,
+            'preco_venda' => 12, 'data_entrada' => now()->toDateString(), 'categoria_id' => $this->category()->id,
+            'unidade_medida_id' => $this->unit()->id,
             'estoque' => 50, 'codigos_barras' => ['0009876543210'],
         ])->assertCreated()->assertJsonPath('data.codigos_barras.0', '0009876543210');
     }

@@ -171,6 +171,7 @@ export type ProdutoType = {
   id: string;
   nome: string;
   codigo_barras?: string | null;
+  codigos_barras?: string[];
   etiqueta_status?: 'pendente' | 'impresso';
   etiqueta_impressa_em?: StringfiedDate | null;
   descricao: string | null;
