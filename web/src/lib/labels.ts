@@ -104,7 +104,6 @@ function barcodeSvg(code: string) {
 
 export function labelsPrintHtml(items: LabelOperationItem[], format: LabelPrintFormat = 'avery-l7159') {
   const labels = items.flatMap((item) => Array.from({ length: Number(item.quantidade) }, () => {
-    // UUID completo fica denso demais para Code 39 em etiquetas de 76 mm.
     // O prefixo de 12 caracteres identifica o produto e é resolvido pela API.
     const code = item.produto_id?.replace(/-/g, '').slice(0, 12).toUpperCase() || item.codigo_barras || '';
     const price = Number(item.preco_venda ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
