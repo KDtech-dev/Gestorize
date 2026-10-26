@@ -25,9 +25,11 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
+import { CameraView, useCameraPermissions } from "expo-camera";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { z } from "zod";
 
 import { Opcao, RootStackParamList } from "@context/types";
@@ -100,6 +102,9 @@ export default function NovoProduto() {
     const { colors } = useTheme();
     const { user } = useAuth();
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+    const [cameraVisivel, setCameraVisivel] = useState(false);
+    const [cameraPermission, requestCameraPermission] = useCameraPermissions();
+    const processandoScan = useRef(false);
     const [imagens, setImagens] = useState<ImagemGaleria[]>([]);
     const [imagensOriginais, setImagensOriginais] = useState<ImagemGaleria[]>([]);
     const [fornecedores, setFornecedores] = useState<FornecedorType[]>([]);
@@ -178,6 +183,25 @@ export default function NovoProduto() {
         },
     });
     const categoriaIdSelecionada = watch("categoria_id");
+    const abrirLeitorCodigoBarras = async () => {
+        if (!cameraPermission?.granted) {
+            const result = await requestCameraPermission();
+            if (!result.granted) {
+                Toast.show({ type: "info", text1: "Permissão da câmera necessária para ler o código." });
+                return;
+            }
+        }
+        processandoScan.current = false;
+        setCameraVisivel(true);
+    };
+    const lerCodigoBarras = (codigo: string, codigosAtuais: string, onChange: (value: string) => void) => {
+        if (processandoScan.current) return;
+        processandoScan.current = true;
+        const codigos = codigosAtuais.split(/[\n,]/).map((item) => item.trim()).filter(Boolean);
+        if (!codigos.includes(codigo)) onChange([...codigos, codigo].join("\n"));
+        setCameraVisivel(false);
+        setTimeout(() => { processandoScan.current = false; }, 700);
+    };
     const validadeObrigatoria = categorias.some((categoria) => String(categoria.id) === String(categoriaIdSelecionada) && ["insumos", "produtos médicos/hospitalares"].includes((categoria.nome ?? "").toLocaleLowerCase("pt-BR")));
     const unsavedGuard = useUnsavedChangesGuard({
         hasUnsavedChanges: isDirty || imagensAlteradas,
@@ -758,16 +782,28 @@ export default function NovoProduto() {
                         render={({ field: { value, onChange } }) => (
                             <View style={{ marginTop: 12 }}>
                                 <Text style={{ color: colors.muted, marginBottom: 6 }}>Códigos de barras do fabricante · um por linha</Text>
-                                <TextInput
-                                    value={value ?? ''}
-                                    onChangeText={(text) => onChange(text.slice(0, 1600))}
-                                    multiline
-                                    textAlignVertical="top"
-                                    editable={formCanEdit}
-                                    placeholder="Ex.: 07891234567890"
-                                    placeholderTextColor={colors.muted}
-                                    style={{ minHeight: 76, borderWidth: 1, borderColor: colors.border, borderRadius: 10, padding: 12, color: colors.text }}
-                                />
+                                <View style={{ flexDirection: "row", alignItems: "stretch", gap: 8 }}>
+                                    <TextInput
+                                        value={value ?? ''}
+                                        onChangeText={(text) => onChange(text.slice(0, 1600))}
+                                        multiline
+                                        textAlignVertical="top"
+                                        editable={formCanEdit}
+                                        placeholder="Ex.: 07891234567890"
+                                        placeholderTextColor={colors.muted}
+                                        style={{ flex: 1, minHeight: 76, borderWidth: 1, borderColor: colors.border, borderRadius: 10, padding: 12, color: colors.text, backgroundColor: colors.background }}
+                                    />
+                                    <TouchableOpacity
+                                        disabled={!formCanEdit}
+                                        onPress={abrirLeitorCodigoBarras}
+                                        style={{ width: 48, minHeight: 76, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: colors.border, borderRadius: 10, backgroundColor: colors.elevated, opacity: formCanEdit ? 1 : 0.55 }}
+                                        accessibilityRole="button"
+                                        accessibilityLabel="Abrir câmera para ler código de barras"
+                                    >
+                                        <MaterialCommunityIcons name="camera-outline" size={22} color={colors.muted} />
+                                        <MaterialCommunityIcons name="barcode-scan" size={20} color={colors.muted} />
+                                    </TouchableOpacity>
+                                </View>
                                 <Text style={{ color: colors.muted, fontSize: 12, marginTop: 4 }}>Zeros à esquerda são preservados. As etiquetas próprias continuam usando o código atual.</Text>
                             </View>
                         )}
@@ -1050,6 +1086,23 @@ export default function NovoProduto() {
                     )}
                 </View>
             </KeyboardAwareScrollView>
+            <Modal visible={cameraVisivel} animationType="slide" onRequestClose={() => setCameraVisivel(false)}>
+                <View style={{ flex: 1, backgroundColor: "#000", justifyContent: "center", alignItems: "center" }}>
+                    <CameraView
+                        style={StyleSheet.absoluteFill}
+                        facing="back"
+                        barcodeScannerSettings={{ barcodeTypes: ["ean13", "ean8", "code128", "code39", "upc_a", "upc_e"] }}
+                        onBarcodeScanned={({ data }) => lerCodigoBarras(data, watch("codigos_barras") ?? "", (value) => setValue("codigos_barras", value, { shouldDirty: true, shouldValidate: true }))}
+                    />
+                    <View style={{ position: "absolute", alignItems: "center", gap: 24 }}>
+                        <Text style={{ color: "#fff", fontSize: 18, fontWeight: "700" }}>Aponte para o código do produto</Text>
+                        <View style={{ width: "85%", height: 180, borderWidth: 3, borderColor: "#FACC15", borderRadius: 20 }} />
+                        <TouchableOpacity onPress={() => setCameraVisivel(false)} style={{ paddingHorizontal: 20, paddingVertical: 12, borderRadius: 10, backgroundColor: "#fff" }}>
+                            <Text style={{ color: "#111", fontWeight: "700" }}>Fechar câmera</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
 
             <DialogConfirmarAcao
                 show={showDeleteDialog}
