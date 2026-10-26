@@ -1126,18 +1126,18 @@ export default function NovoProduto() {
                 </View>
             </KeyboardAwareScrollView>
             <Modal visible={cameraVisivel} animationType="slide" onRequestClose={() => setCameraVisivel(false)}>
-                <View style={{ flex: 1, backgroundColor: "#000" }}>
+                <View style={styles.cameraScreen}>
                     <CameraView
                         style={StyleSheet.absoluteFill}
                         facing="back"
                         barcodeScannerSettings={{ barcodeTypes: ["ean13", "ean8", "code128", "code39", "upc_a", "upc_e"] }}
                         onBarcodeScanned={({ data }) => lerCodigoBarras(data, watch("codigos_barras") ?? "", (value) => setValue("codigos_barras", value, { shouldDirty: true, shouldValidate: true }))}
                     />
-                    <View style={{ ...StyleSheet.absoluteFillObject, alignItems: "center", justifyContent: "space-around", padding: 28 }}>
-                        <Text style={{ color: "#fff", fontWeight: "800", fontSize: 18, textAlign: "center", backgroundColor: "#0009", padding: 12, borderRadius: 12 }}>Aponte para o código do produto</Text>
-                        <View style={{ width: "88%", height: 180, borderWidth: 3, borderColor: "#FACC15", borderRadius: 20 }} />
-                        <Pressable onPress={() => setCameraVisivel(false)} style={{ backgroundColor: "#fff", paddingHorizontal: 24, paddingVertical: 14, borderRadius: 24 }}>
-                            <Text style={{ color: "#111827", fontWeight: "800" }}>Fechar câmera</Text>
+                    <View style={styles.cameraOverlay}>
+                        <Text style={styles.cameraTitle}>Aponte para o código do produto</Text>
+                        <View style={styles.scanFrame} />
+                        <Pressable onPress={() => setCameraVisivel(false)} style={styles.closeCamera}>
+                            <Text style={styles.closeCameraText}>Fechar câmera</Text>
                         </Pressable>
                     </View>
                 </View>
@@ -1374,4 +1374,10 @@ const styles = StyleSheet.create({
     disabledButton: {
         opacity: 0.6,
     },
+    cameraScreen: { flex: 1, backgroundColor: "#000" },
+    cameraOverlay: { ...StyleSheet.absoluteFill, alignItems: "center", justifyContent: "space-around", padding: 28 },
+    cameraTitle: { color: "#fff", fontWeight: "800", fontSize: 18, textAlign: "center", backgroundColor: "#0009", padding: 12, borderRadius: 12 },
+    scanFrame: { width: "88%", height: 180, borderWidth: 3, borderColor: "#FACC15", borderRadius: 20 },
+    closeCamera: { backgroundColor: "#fff", paddingHorizontal: 24, paddingVertical: 14, borderRadius: 24 },
+    closeCameraText: { color: "#111827", fontWeight: "800" },
 });
