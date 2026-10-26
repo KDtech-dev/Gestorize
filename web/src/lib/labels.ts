@@ -86,7 +86,6 @@ const escapeHtml = (value: string) => value.replace(/[&<>"']/g, (char) => ({ '&'
 function barcodeSvg(code: string) {
   const value = `*${code.toUpperCase().replace(/[^A-Z0-9 .$/+%-]/g, '')}*`;
   const narrow = 2;
-  // Code 39 readers need a clear quiet zone on both sides of the bars.
   let x = narrow * 10;
   const bars: string[] = [];
   [...value].forEach((char, index) => {
