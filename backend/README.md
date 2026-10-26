@@ -31,15 +31,47 @@ php artisan serve --host=0.0.0.0
 
 A API ficará em `http://localhost:8000/api`. A documentação das rotas fica em `http://localhost:8000/api/docs/` e é servida do diretório público do Laravel. Use o IP da máquina no lugar de `localhost` quando um dispositivo da rede, como um celular, precisar acessar a API.
 
-## Códigos de barras de produtos
+## Leitor de códigos e API de produtos
 
-`produtos.codigo_barras` mantém o código interno `PRD...` para compatibilidade com produtos já cadastrados e integrações existentes. Códigos comerciais opcionais ficam em `produto_codigos_barras.codigo`, como texto, vinculados ao produto e à organização. A restrição única por organização impede que um código comercial identifique produtos diferentes dentro da mesma empresa.
+A câmera é controlada pelo aplicativo web ou mobile. O cliente decodifica a leitura e envia somente o texto para a API; nenhum endpoint recebe imagem ou vídeo da câmera. A API oferece dois fluxos: localizar um produto pela leitura e gravar códigos comerciais no cadastro.
 
-Use `GET /api/produtos/codigo/{codigo}` para localizar um produto por seu código interno, por um código comercial associado ou pelo prefixo UUID impresso nas etiquetas próprias. A rota mantém a autenticação, o acesso por permissão já configurado e o isolamento da organização. Leituras desconhecidas retornam 404.
+### Localizar um produto pela leitura
 
-Na criação e edição, `codigos_barras` é uma lista opcional de textos, por exemplo `{"codigos_barras":["00789123456789"]}`. Zeros à esquerda são preservados. Em `PUT`, omitir o campo mantém os códigos atuais; enviar a lista sincroniza os códigos comerciais associados. O código `PRD...` continua separado e as etiquetas próprias continuam imprimindo os 12 primeiros caracteres do UUID em Code 39.
+```http
+GET /api/produtos/codigo/{codigo}
+Authorization: Bearer SEU_TOKEN
+Accept: application/json
+```
 
-Em uma instalação existente, aplique a migração com `php artisan migrate` a partir de `backend/`. Ela cria a tabela complementar sem modificar UUIDs, estoque ou os códigos internos já armazenados.
+O cliente deve codificar caracteres reservados da URL ao enviar `{codigo}`. A rota exige Sanctum e o mesmo acesso da listagem de produtos: usuário vinculado a uma organização ativa e com papel `admin`, `gestor` ou `funcionario`, ou permissão `produtos.ver`, `vendas.ver` ou `vendas.criar`. A conta global sem organização não acessa esta rota.
+
+A rota reconhece:
+
+- O código interno legado `PRD...`, armazenado em `produtos.codigo_barras`.
+- Um código comercial salvo em `produto_codigos_barras.codigo`.
+- O prefixo hexadecimal de 8 a 32 caracteres do UUID impresso nas etiquetas próprias. Hífens são ignorados, e o prefixo precisa identificar um único produto.
+
+Uma leitura encontrada retorna HTTP `200` no envelope padrão, com o produto em `data`, incluindo os campos `codigo_barras` e `codigos_barras`. Uma leitura sem correspondência retorna HTTP `404`. A rota não interpreta QR genérico ou imagem: o conteúdo decodificado precisa corresponder a um código salvo ou ao identificador de etiqueta reconhecido.
+
+### Cadastrar códigos comerciais lidos
+
+Na criação (`POST /api/produtos`) ou edição (`PUT /api/produtos/{produto}`), envie os códigos comerciais em `codigos_barras` como uma lista de textos:
+
+```json
+{
+  "codigos_barras": ["00789123456789", "7891234567890"]
+}
+```
+
+O campo é opcional e aceita até 20 códigos, cada um com até 64 caracteres. Zeros à esquerda são preservados. Os valores precisam ser distintos e não podem estar associados a outro produto da mesma organização; violações retornam HTTP `422`. O código interno `PRD...` permanece separado e não precisa ser enviado nessa lista.
+
+Em `PUT`, omitir `codigos_barras` preserva a lista atual; enviar uma lista sincroniza os códigos comerciais; enviar `[]` remove todos os códigos comerciais associados. A tabela `produto_codigos_barras` armazena os valores como texto e aplica unicidade por organização.
+
+As etiquetas próprias imprimem os 12 primeiros caracteres do UUID sem hífens em Code 39; esse prefixo é resolvido pela rota de busca acima.
+
+### Migração existente
+
+Em uma instalação existente, aplique a migração com `php artisan migrate` a partir de `backend/`. Ela cria a tabela complementar sem modificar UUIDs, estoque ou códigos internos já armazenados.
 
 ## Seeders
 

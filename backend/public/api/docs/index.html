@@ -27,7 +27,7 @@
   <header class="topbar">
     <div class="brand-row"><img class="brand-logo" src="/api/docs/gestorize-logo.png" alt="Logo da Gestorize" onerror="this.hidden=true"><div class="brand">Gestorize<small>API reference</small></div></div>
     <nav aria-label="Navegação da documentação">
-      <a href="#inicio">Visão geral</a><a href="#autenticacao">Autenticação</a><a href="#respostas">Respostas e erros</a><a href="#rotas">Rotas</a><a href="#organizacoes">Organizações</a>
+      <a href="#inicio">Visão geral</a><a href="#autenticacao">Autenticação</a><a href="#codigos-barras">Leitor de códigos</a><a href="#respostas">Respostas e erros</a><a href="#rotas">Rotas</a><a href="#organizacoes">Organizações</a>
     </nav>
   </header>
   <main>
@@ -52,6 +52,32 @@ Content-Type: application/json</pre><p class="muted">O token expira em três hor
 }</pre></article>
         <article class="card"><h3>Permissões e organização</h3><p>Além de autenticação, a rota pode exigir uma permissão específica. A conta deve estar vinculada a uma organização ativa para acessar dados operacionais; os registros retornados pertencem à organização do usuário.</p><p>As permissões individuais ampliam o papel do usuário. Elas não removem permissões herdadas do papel.</p></article>
       </div>
+    </section>
+
+    <section id="codigos-barras">
+      <h2>Leitor de códigos e busca de produtos</h2>
+      <p>A câmera é aberta e decodificada pelo aplicativo cliente. A API recebe o texto lido; ela não recebe imagem nem interpreta o vídeo da câmera. Há dois fluxos: localizar um produto durante a venda e salvar códigos comerciais no cadastro do produto.</p>
+      <div class="grid">
+        <article class="card">
+          <h3>Localizar produto pela leitura</h3>
+          <p>Depois de ler o código, consulte <code>GET /produtos/codigo/{codigo}</code>. Envie o token Bearer e o valor lido como segmento da URL, codificado para URL quando necessário.</p>
+          <p class="muted">Acesso: usuário vinculado a uma organização ativa e com papel <code>admin</code>, <code>gestor</code> ou <code>funcionario</code>, ou permissão <code>produtos.ver</code>, <code>vendas.ver</code> ou <code>vendas.criar</code>. A conta global sem organização não acessa esta rota.</p>
+          <pre>GET /api/produtos/codigo/00789123456789
+Authorization: Bearer SEU_TOKEN
+Accept: application/json</pre>
+          <p>A resposta <code>200</code> usa o envelope padrão e retorna o produto em <code>data</code>, incluindo <code>codigo_barras</code> interno e <code>codigos_barras</code> comerciais. Código sem correspondência retorna <code>404</code>:</p>
+          <pre>{"success":false,"message":"Produto não encontrado pelo código de barras.","code":404}</pre>
+        </article>
+        <article class="card">
+          <h3>Salvar códigos lidos no produto</h3>
+          <p>Na criação (<code>POST /produtos</code>) ou edição (<code>PUT /produtos/{produto}</code>), envie os códigos comerciais como uma lista de textos. Os zeros à esquerda são preservados.</p>
+          <pre>{
+  "codigos_barras": ["00789123456789", "7891234567890"]
+}</pre>
+          <p class="muted">A lista aceita até 20 códigos, cada um com até 64 caracteres. Os códigos devem ser distintos e exclusivos entre os produtos da mesma organização. Em <code>PUT</code>, omitir o campo mantém a lista; enviar <code>[]</code> remove todos os códigos comerciais associados.</p>
+        </article>
+      </div>
+      <div class="callout"><strong>Valores reconhecidos:</strong> a busca localiza o código interno <code>PRD...</code>, um código comercial cadastrado ou um prefixo hexadecimal do UUID impresso nas etiquetas próprias. O prefixo de etiqueta pode ter de 8 a 32 caracteres hexadecimais, com ou sem hífens, e só é aceito quando identifica um único produto. O endpoint não interpreta QR ou imagem de forma genérica: o conteúdo lido precisa corresponder a um desses valores cadastrados ou formatos de identificação.</div>
     </section>
 
     <section id="respostas">
@@ -131,7 +157,7 @@ const groups = [
   ['DELETE','/clientes/{id}','clientes.excluir','Remove cliente.'],['POST','/clientes/{id}/imagem','clientes.editar','Upload multipart: avatar (imagem até 2 MB).'],['DELETE','/clientes/{id}/imagem','clientes.editar','Remove avatar do cliente.']
  ]},
  {name:'Produtos e catálogos',routes:[
-  ['GET','/produtos','Papel admin/gestor/funcionario ou produtos.ver/vendas.ver/vendas.criar','Lista produtos e códigos associados.'],['GET','/produtos/codigo/{codigo}','Mesmo acesso de listagem','Busca por código interno PRD..., código comercial associado ou prefixo UUID das etiquetas próprias; 404 se não encontrar.'],
+  ['GET','/produtos','Papel admin/gestor/funcionario ou produtos.ver/vendas.ver/vendas.criar','Lista produtos e códigos associados.'],['GET','/produtos/codigo/{codigo}','Mesmo acesso de listagem','Recebe o texto lido pelo cliente e busca código interno PRD..., código comercial associado ou prefixo UUID das etiquetas próprias; retorna 404 se não encontrar.'],
   ['POST','/produtos','produtos.criar','Cria produto. Ver parâmetros de Produtos.'],['GET','/produtos/{id}','produtos.ver','Detalha produto.'],['PUT','/produtos/{produto}','produtos.editar','Atualiza produto.'],['DELETE','/produtos/{produto}','produtos.excluir','Remove produto.'],
   ['POST','/produtos/{produto}/imagem','produtos.editar','Upload multipart: imagem; principal opcional.'],['DELETE','/produtos/{id}/imagem','produtos.editar','Remove imagem; corpo: imagem_id.'],['PUT','/produtos/{id}/imagem/principal','produtos.editar','Define imagem principal; corpo: imagem_id.'],['POST','/produtos/{produto}/imagem/principal','produtos.editar','Substitui a imagem principal; upload multipart com imagem.'],
   ['GET','/categorias','produtos.ver','Lista categorias globais.'],['POST','/categorias','produtos.criar','Cria categoria global. Corpo: nome.'],['GET','/unidades-medida','produtos.ver','Lista unidades globais de medida.']
@@ -169,8 +195,9 @@ const requestDetails = {
  'POST /clientes':{fields:'Body JSON: nome e tipo (pf|pj). PF exige pf.cpf, pf.rg e pf.data_nascimento. PJ exige pj.cnpj, pj.razao_social, pj.nome_responsavel e pj.cpf_responsavel. endereco e contato são opcionais.',example:{nome:'Maria Silva',tipo:'pf',email:'maria@example.com',telefone:'11999990000',pf:{cpf:'12345678901',rg:'123456789',data_nascimento:'1990-05-10'}}},
  'PUT /clientes/{id}':{fields:'Path: id (UUID). Body parcial com os campos permitidos no cadastro; os campos pf/pj atualizam os dados correspondentes.',example:{nome:'Maria Silva Atualizada',telefone:'11988887777'}},
  'POST /clientes/{id}/imagem':{fields:'Path: id (UUID). multipart/form-data: avatar obrigatório, JPG/PNG/WebP até 2 MB.',bodyText:'multipart/form-data\navatar=<arquivo de imagem>'},
- 'POST /produtos':{fields:'Body JSON: nome, preco_custo, porcentagem_lucro, preco_venda, data_entrada, unidade_medida_id e estoque obrigatórios. categoria_id, fornecedor_id, descricao e validade opcionais. codigos_barras é uma lista opcional de códigos comerciais em texto; zeros à esquerda são preservados.',example:{nome:'Lâmpada LED Kian 28 W',descricao:'Lâmpada LED bivolt',preco_custo:10,porcentagem_lucro:50,preco_venda:15,data_entrada:'2026-10-23',categoria_id:'UUID_DA_CATEGORIA',fornecedor_id:'UUID_DO_FORNECEDOR',unidade_medida_id:'UUID_DA_UNIDADE',estoque:50,codigos_barras:['07891234567890']}},
- 'PUT /produtos/{produto}':{fields:'Path: produto (UUID). Body parcial com campos de produto. codigos_barras opcional: omitir mantém a lista atual; enviar uma lista sincroniza os códigos comerciais. Códigos já associados a outro produto da organização são rejeitados.',example:{preco_venda:16,estoque:18,codigos_barras:['07891234567890','07891234567891']}},
+ 'GET /produtos/codigo/{codigo}':{fields:'Path: codigo (texto lido pelo aplicativo; sem corpo JSON). A busca compara código interno PRD..., código comercial e prefixo UUID de etiqueta. O cliente deve codificar caracteres reservados da URL. Retorna 404 quando não há correspondência única.'},
+ 'POST /produtos':{fields:'Body JSON: nome, preco_custo, porcentagem_lucro, preco_venda, data_entrada, unidade_medida_id e estoque obrigatórios. categoria_id, fornecedor_id, descricao e validade opcionais. codigos_barras é uma lista opcional de até 20 códigos comerciais em texto (até 64 caracteres cada); zeros à esquerda são preservados.',example:{nome:'Lâmpada LED Kian 28 W',descricao:'Lâmpada LED bivolt',preco_custo:10,porcentagem_lucro:50,preco_venda:15,data_entrada:'2026-10-23',categoria_id:'UUID_DA_CATEGORIA',fornecedor_id:'UUID_DO_FORNECEDOR',unidade_medida_id:'UUID_DA_UNIDADE',estoque:50,codigos_barras:['07891234567890']}},
+ 'PUT /produtos/{produto}':{fields:'Path: produto (UUID). Body parcial com campos de produto. codigos_barras opcional: omitir mantém a lista atual; enviar uma lista sincroniza os códigos comerciais; enviar [] remove todos. Até 20 códigos de até 64 caracteres cada. Valores duplicados ou já associados a outro produto da organização são rejeitados.',example:{preco_venda:16,estoque:18,codigos_barras:['07891234567890','07891234567891']}},
  'POST /produtos/{produto}/imagem':{fields:'Path: produto (UUID). multipart/form-data: imagem obrigatória (JPG/PNG/WebP até 10 MB); principal booleano opcional.',bodyText:'multipart/form-data\nimagem=<arquivo de imagem>\nprincipal=true'},
  'DELETE /produtos/{id}/imagem':{fields:'Path: id do produto (UUID). Body JSON: imagem_id obrigatório (UUID).',example:{imagem_id:'UUID_DA_IMAGEM'}},
  'PUT /produtos/{id}/imagem/principal':{fields:'Path: id do produto (UUID). Body JSON: imagem_id obrigatório (UUID).',example:{imagem_id:'UUID_DA_IMAGEM'}},
