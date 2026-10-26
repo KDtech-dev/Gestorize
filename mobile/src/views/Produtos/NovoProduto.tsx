@@ -104,6 +104,7 @@ export default function NovoProduto() {
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [cameraVisivel, setCameraVisivel] = useState(false);
     const [codigoBarrasDigitado, setCodigoBarrasDigitado] = useState("");
+    const [codigoBarrasFocused, setCodigoBarrasFocused] = useState(false);
     const [cameraPermission, requestCameraPermission] = useCameraPermissions();
     const processandoScan = useRef(false);
     const [imagens, setImagens] = useState<ImagemGaleria[]>([]);
@@ -794,27 +795,33 @@ export default function NovoProduto() {
                         name="codigos_barras"
                         render={({ field: { value, onChange } }) => (
                             <View style={{ marginTop: 12 }}>
-                                <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "bold", marginBottom: 5 }}>Códigos de barras do fabricante · um por linha</Text>
                                 <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                                    <TextInput
-                                        value={codigoBarrasDigitado}
-                                        onChangeText={setCodigoBarrasDigitado}
-                                        onSubmitEditing={() => adicionarCodigoBarras(codigoBarrasDigitado, value ?? "", onChange)}
-                                        editable={formCanEdit}
-                                        placeholder="Leia ou digite o código de barras"
-                                        placeholderTextColor={colors.muted}
-                                        returnKeyType="search"
-                                        style={{ flex: 1, minHeight: 48, borderWidth: 1, borderRadius: 12, paddingHorizontal: 12, fontSize: 16, color: colors.text, borderColor: colors.border, backgroundColor: colors.background }}
-                                    />
-                                    <TouchableOpacity
-                                        disabled={!formCanEdit}
-                                        onPress={() => adicionarCodigoBarras(codigoBarrasDigitado, value ?? "", onChange)}
-                                        style={{ height: 48, width: 48, borderRadius: 12, alignItems: "center", justifyContent: "center", backgroundColor: colors.elevated, borderColor: colors.border, borderWidth: 1, opacity: formCanEdit ? 1 : 0.55 }}
-                                        accessibilityRole="button"
-                                        accessibilityLabel="Adicionar código de barras digitado"
-                                    >
-                                        <MaterialCommunityIcons name="barcode-scan" size={22} color={colors.muted} />
-                                    </TouchableOpacity>
+                                    <View style={{ flex: 1, minWidth: 0, borderWidth: 1, borderColor: codigoBarrasFocused ? colors.primary : (colors.background === "#ffffff" ? "#D5DCE5" : "#8794A7"), borderRadius: 15, paddingVertical: 10, paddingHorizontal: 20, backgroundColor: formCanEdit ? colors.surface : colors.background }}>
+                                        <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "bold", marginBottom: 5 }}>Códigos de barras do fabricante · um por linha</Text>
+                                        <View style={{ flexDirection: "row", alignItems: "center", minHeight: 34, gap: 6 }}>
+                                            <TextInput
+                                                value={codigoBarrasDigitado}
+                                                onChangeText={setCodigoBarrasDigitado}
+                                                onFocus={() => setCodigoBarrasFocused(true)}
+                                                onBlur={() => setCodigoBarrasFocused(false)}
+                                                onSubmitEditing={() => adicionarCodigoBarras(codigoBarrasDigitado, value ?? "", onChange)}
+                                                editable={formCanEdit}
+                                                placeholder="Código de barras"
+                                                placeholderTextColor={colors.muted}
+                                                returnKeyType="search"
+                                                style={{ flex: 1, minWidth: 0, minHeight: 30, padding: 0, margin: 0, fontSize: 18, fontWeight: "bold", color: colors.text }}
+                                            />
+                                            <TouchableOpacity
+                                                disabled={!formCanEdit}
+                                                onPress={() => adicionarCodigoBarras(codigoBarrasDigitado, value ?? "", onChange)}
+                                                style={{ height: 36, width: 36, alignItems: "center", justifyContent: "center", opacity: formCanEdit ? 1 : 0.55 }}
+                                                accessibilityRole="button"
+                                                accessibilityLabel="Adicionar código de barras digitado"
+                                            >
+                                                <MaterialCommunityIcons name="barcode-scan" size={22} color={colors.muted} />
+                                            </TouchableOpacity>
+                                        </View>
+                                    </View>
                                     <TouchableOpacity
                                         disabled={!formCanEdit}
                                         onPress={abrirLeitorCodigoBarras}
@@ -1119,19 +1126,19 @@ export default function NovoProduto() {
                 </View>
             </KeyboardAwareScrollView>
             <Modal visible={cameraVisivel} animationType="slide" onRequestClose={() => setCameraVisivel(false)}>
-                <View style={{ flex: 1, backgroundColor: "#000", justifyContent: "center", alignItems: "center" }}>
+                <View style={{ flex: 1, backgroundColor: "#000" }}>
                     <CameraView
                         style={StyleSheet.absoluteFill}
                         facing="back"
-                        barcodeScannerSettings={{ barcodeTypes: ["ean13", "ean8", "code128", "code39", "upc_a", "upc_e", "itf14", "pdf417", "datamatrix"] }}
+                        barcodeScannerSettings={{ barcodeTypes: ["ean13", "ean8", "code128", "code39", "upc_a", "upc_e"] }}
                         onBarcodeScanned={({ data }) => lerCodigoBarras(data, watch("codigos_barras") ?? "", (value) => setValue("codigos_barras", value, { shouldDirty: true, shouldValidate: true }))}
                     />
-                    <View style={{ position: "absolute", alignItems: "center", gap: 24 }}>
-                        <Text style={{ color: "#fff", fontSize: 18, fontWeight: "700" }}>Aponte para o código do produto</Text>
-                        <View style={{ width: "85%", height: 180, borderWidth: 3, borderColor: "#FACC15", borderRadius: 20 }} />
-                        <TouchableOpacity onPress={() => setCameraVisivel(false)} style={{ paddingHorizontal: 20, paddingVertical: 12, borderRadius: 10, backgroundColor: "#fff" }}>
-                            <Text style={{ color: "#111", fontWeight: "700" }}>Fechar câmera</Text>
-                        </TouchableOpacity>
+                    <View style={{ ...StyleSheet.absoluteFillObject, alignItems: "center", justifyContent: "space-around", padding: 28 }}>
+                        <Text style={{ color: "#fff", fontWeight: "800", fontSize: 18, textAlign: "center", backgroundColor: "#0009", padding: 12, borderRadius: 12 }}>Aponte para o código do produto</Text>
+                        <View style={{ width: "88%", height: 180, borderWidth: 3, borderColor: "#FACC15", borderRadius: 20 }} />
+                        <Pressable onPress={() => setCameraVisivel(false)} style={{ backgroundColor: "#fff", paddingHorizontal: 24, paddingVertical: 14, borderRadius: 24 }}>
+                            <Text style={{ color: "#111827", fontWeight: "800" }}>Fechar câmera</Text>
+                        </Pressable>
                     </View>
                 </View>
             </Modal>
