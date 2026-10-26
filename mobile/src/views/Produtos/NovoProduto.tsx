@@ -99,10 +99,11 @@ export default function NovoProduto() {
 
     const navigation = useNavigation<Navigation>();
     const route = useRoute<Route>();
-    const { colors } = useTheme();
+    const { colors, isDark } = useTheme();
     const { user } = useAuth();
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [cameraVisivel, setCameraVisivel] = useState(false);
+    const [codigoBarrasDigitado, setCodigoBarrasDigitado] = useState("");
     const [cameraPermission, requestCameraPermission] = useCameraPermissions();
     const processandoScan = useRef(false);
     const [imagens, setImagens] = useState<ImagemGaleria[]>([]);
@@ -122,6 +123,7 @@ export default function NovoProduto() {
     const podeCriar = can(user, 'produtos.criar');
     const podeEditar = can(user, 'produtos.editar');
     const podeExcluir = can(user, 'produtos.excluir');
+    const corAcao = isDark ? "#2563EB" : colors.primary;
     const formCanEdit = isCriar ? podeCriar : podeEditar;
     const [showCategoriaModal, setShowCategoriaModal] = useState(false);
     const [nomeCategoria, setNomeCategoria] = useState("");
@@ -194,11 +196,22 @@ export default function NovoProduto() {
         processandoScan.current = false;
         setCameraVisivel(true);
     };
+    const adicionarCodigoBarras = (codigo: string, codigosAtuais: string, onChange: (value: string) => void) => {
+        const novoCodigo = codigo.trim();
+        if (!novoCodigo) return;
+        const codigos = codigosAtuais.split(/[\n,]/).map((item) => item.trim()).filter(Boolean);
+        if (codigos.includes(novoCodigo)) {
+            Toast.show({ type: "info", text1: "Esse código de barras já foi adicionado." });
+            setCodigoBarrasDigitado("");
+            return;
+        }
+        onChange([...codigos, novoCodigo].join("\n"));
+        setCodigoBarrasDigitado("");
+    };
     const lerCodigoBarras = (codigo: string, codigosAtuais: string, onChange: (value: string) => void) => {
         if (processandoScan.current) return;
         processandoScan.current = true;
-        const codigos = codigosAtuais.split(/[\n,]/).map((item) => item.trim()).filter(Boolean);
-        if (!codigos.includes(codigo)) onChange([...codigos, codigo].join("\n"));
+        adicionarCodigoBarras(codigo, codigosAtuais, onChange);
         setCameraVisivel(false);
         setTimeout(() => { processandoScan.current = false; }, 700);
     };
@@ -781,28 +794,47 @@ export default function NovoProduto() {
                         name="codigos_barras"
                         render={({ field: { value, onChange } }) => (
                             <View style={{ marginTop: 12 }}>
-                                <Text style={{ color: colors.muted, marginBottom: 6 }}>Códigos de barras do fabricante · um por linha</Text>
-                                <View style={{ flexDirection: "row", alignItems: "stretch", gap: 8 }}>
+                                <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "bold", marginBottom: 5 }}>Códigos de barras do fabricante · um por linha</Text>
+                                <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
                                     <TextInput
-                                        value={value ?? ''}
-                                        onChangeText={(text) => onChange(text.slice(0, 1600))}
-                                        multiline
-                                        textAlignVertical="top"
+                                        value={codigoBarrasDigitado}
+                                        onChangeText={setCodigoBarrasDigitado}
+                                        onSubmitEditing={() => adicionarCodigoBarras(codigoBarrasDigitado, value ?? "", onChange)}
                                         editable={formCanEdit}
-                                        placeholder="Ex.: 07891234567890"
+                                        placeholder="Leia ou digite o código de barras"
                                         placeholderTextColor={colors.muted}
-                                        style={{ flex: 1, minHeight: 76, borderWidth: 1, borderColor: colors.border, borderRadius: 10, padding: 12, color: colors.text, backgroundColor: colors.background }}
+                                        returnKeyType="search"
+                                        style={{ flex: 1, minHeight: 48, borderWidth: 1, borderRadius: 12, paddingHorizontal: 12, fontSize: 16, color: colors.text, borderColor: colors.border, backgroundColor: colors.background }}
                                     />
                                     <TouchableOpacity
                                         disabled={!formCanEdit}
-                                        onPress={abrirLeitorCodigoBarras}
-                                        style={{ width: 48, minHeight: 76, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: colors.border, borderRadius: 10, backgroundColor: colors.elevated, opacity: formCanEdit ? 1 : 0.55 }}
+                                        onPress={() => adicionarCodigoBarras(codigoBarrasDigitado, value ?? "", onChange)}
+                                        style={{ height: 48, width: 48, borderRadius: 12, alignItems: "center", justifyContent: "center", backgroundColor: colors.elevated, borderColor: colors.border, borderWidth: 1, opacity: formCanEdit ? 1 : 0.55 }}
                                         accessibilityRole="button"
-                                        accessibilityLabel="Abrir câmera para ler código de barras"
+                                        accessibilityLabel="Adicionar código de barras digitado"
                                     >
-                                        <MaterialCommunityIcons name="camera-outline" size={22} color={colors.muted} />
-                                        <MaterialCommunityIcons name="barcode-scan" size={20} color={colors.muted} />
+                                        <MaterialCommunityIcons name="barcode-scan" size={22} color={colors.muted} />
                                     </TouchableOpacity>
+                                    <TouchableOpacity
+                                        disabled={!formCanEdit}
+                                        onPress={abrirLeitorCodigoBarras}
+                                        style={{ minWidth: 76, minHeight: 54, borderWidth: 1.5, borderRadius: 12, alignItems: "center", justifyContent: "center", gap: 1, backgroundColor: corAcao, borderColor: corAcao, opacity: formCanEdit ? 1 : 0.55 }}
+                                        accessibilityRole="button"
+                                        accessibilityLabel="Abrir câmera para escanear código de barras"
+                                    >
+                                        <MaterialCommunityIcons name="camera-outline" size={21} color="#fff" />
+                                        <Text style={{ color: "#fff", fontSize: 12, fontWeight: "900" }}>Câmera</Text>
+                                    </TouchableOpacity>
+                                </View>
+                                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
+                                    {(value ?? "").split(/[\n,]/).map((codigo) => codigo.trim()).filter(Boolean).map((codigo, index) => (
+                                        <View key={`${codigo}-${index}`} style={{ flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: 6, paddingLeft: 10, paddingRight: 6, borderWidth: 1, borderColor: colors.border, borderRadius: 10, backgroundColor: colors.surface }}>
+                                            <Text style={{ color: colors.text, fontSize: 13 }}>{codigo}</Text>
+                                            {formCanEdit ? <TouchableOpacity onPress={() => onChange((value ?? "").split(/[\n,]/).map((item) => item.trim()).filter((item) => item !== codigo).join("\n"))} accessibilityRole="button" accessibilityLabel={`Remover código ${codigo}`}>
+                                                <MaterialCommunityIcons name="close-circle-outline" size={19} color={colors.muted} />
+                                            </TouchableOpacity> : null}
+                                        </View>
+                                    ))}
                                 </View>
                                 <Text style={{ color: colors.muted, fontSize: 12, marginTop: 4 }}>Zeros à esquerda são preservados. As etiquetas próprias continuam usando o código atual.</Text>
                             </View>
@@ -1091,7 +1123,7 @@ export default function NovoProduto() {
                     <CameraView
                         style={StyleSheet.absoluteFill}
                         facing="back"
-                        barcodeScannerSettings={{ barcodeTypes: ["ean13", "ean8", "code128", "code39", "upc_a", "upc_e"] }}
+                        barcodeScannerSettings={{ barcodeTypes: ["ean13", "ean8", "code128", "code39", "upc_a", "upc_e", "itf14", "pdf417", "datamatrix"] }}
                         onBarcodeScanned={({ data }) => lerCodigoBarras(data, watch("codigos_barras") ?? "", (value) => setValue("codigos_barras", value, { shouldDirty: true, shouldValidate: true }))}
                     />
                     <View style={{ position: "absolute", alignItems: "center", gap: 24 }}>
