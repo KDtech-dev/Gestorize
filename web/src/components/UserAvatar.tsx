@@ -24,7 +24,6 @@ export function UserAvatar({ name, imageUrl, fallbackIcon, size = 46, className 
         width: size,
         height: size,
         flexShrink: 0,
-        // Keep the fallback avatar distinct from the header in both themes.
         bgcolor: '#005CE4',
         color: '#fff',
         border: '2px solid #38bdf8',
