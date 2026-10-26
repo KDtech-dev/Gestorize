@@ -122,8 +122,7 @@ export function BusinessEditorPage({ module, recordId }: Props) {
       }
     });
     return () => { active = false; };
-  // Initial role is stable for this editor; loading options and record is intentional on module/id change.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [module, recordId, endpoint, canEditAccess]);
 
   const dirty = JSON.stringify(form) !== JSON.stringify(original) || !!image || removeImage;
