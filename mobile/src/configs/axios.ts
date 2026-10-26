@@ -50,7 +50,7 @@ export const getAxios = ({
   }
 
   const instance = axios.create({
-    baseURL: process.env.EXPO_PUBLIC_API_URL ?? 'http://192.168.15.7:8000/api',
+    baseURL: process.env.EXPO_PUBLIC_API_URL ?? 'http://192.168.15.4:8000/api',
     timeout: timeoutMs ?? 15000,
     headers,
   });
