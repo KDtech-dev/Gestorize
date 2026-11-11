@@ -82,9 +82,42 @@ export function ProductEditorFields({ form, images, categories, suppliers, units
         <div className={`${styles.field} ${styles.wide}`}><TextField fullWidth multiline minRows={3} label="Descrição" name="descricao" value={form.descricao} onChange={(event) => onChange('descricao', event.target.value)} onBlur={() => onBlur('descricao')} placeholder="Descreva as características do produto" helperText="Até 1.000 caracteres." sx={entityFieldSx} slotProps={{ htmlInput: { maxLength: 1000 }, inputLabel: { shrink: true } }} /></div>
       </div>
     </Section>
-
-    <Section number="03" title="Códigos de barras comerciais" description="Adicione os códigos da embalagem do fabricante. Informe um por linha; o código interno e as etiquetas atuais são mantidos automaticamente." icon="mdi:barcode">
-      <div className={styles.fieldGrid}><div className={`${styles.field} ${styles.wide}`}><TextField fullWidth multiline minRows={2} label="Códigos do fabricante" name="codigos_barras" value={form.codigos_barras} onChange={(event) => onChange('codigos_barras', event.target.value)} placeholder="Ex.: 07891234567890" helperText="Os zeros à esquerda são preservados. Não repita códigos de outro produto." sx={entityFieldSx} slotProps={{ htmlInput: { maxLength: 1600 }, inputLabel: { shrink: true } }} /></div></div>
+    <Section
+      number="03"
+      title="Códigos de barras comerciais"
+      description="Adicione os códigos da embalagem do fabricante. Informe um por linha; o código interno e as etiquetas atuais são mantidos automaticamente."
+      icon="mdi:barcode"
+      className={styles.barcodeSection}
+    >
+      <div className={styles.barcodeField}>
+        <TextField
+          fullWidth
+          multiline
+          minRows={3}
+          maxRows={6}
+          label="Códigos do fabricante"
+          name="codigos_barras"
+          value={form.codigos_barras}
+          onChange={(event) =>
+            onChange('codigos_barras', event.target.value)
+          }
+          placeholder="Ex.: 07891234567890"
+          helperText="Os zeros à esquerda são preservados. Não repita códigos de outro produto."
+          sx={entityFieldSx}
+          slotProps={{
+            htmlInput: {
+              maxLength: 1600,
+              style: {
+                resize: 'vertical',
+                overflowWrap: 'anywhere',
+              },
+            },
+            inputLabel: {
+              shrink: true,
+            },
+          }}
+        />
+      </div>
     </Section>
 
     <Section number="04" title="Valores e estoque" description="Defina custos, margem, preço de venda e quantidade disponível." icon="mdi:cash-multiple" className={styles.commercialSection}>
