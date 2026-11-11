@@ -1,3 +1,28 @@
+.barcodeField {
+  width: 100%;
+  min-width: 0;
+  grid-column: 1 / -1;
+}
+
+.barcodeField :global(.MuiFormControl-root) {
+  width: 100%;
+  min-width: 0;
+}
+
+.barcodeField :global(.MuiInputBase-root) {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.barcodeField :global(.MuiInputBase-inputMultiline) {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.barcodeSection {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
 .sections{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));align-items:stretch;gap:18px}
 .gallerySlot{grid-column:span 4;min-width:0;display:grid}
 .primarySection{grid-column:span 8}
