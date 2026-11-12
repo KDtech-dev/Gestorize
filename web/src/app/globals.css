@@ -117,6 +117,13 @@ html:has(.theme-root[data-theme=dark]),html:has(.theme-root[data-theme=dark]) bo
 .page-content.dashboard-content{width:100%;max-width:none;padding-left:clamp(22px,2vw,40px);padding-right:clamp(22px,2vw,40px)}
 @media(max-width:700px){.page-content.dashboard-content{padding:22px 15px 35px}}
 
+.login-aside-right {
+  order: 2;
+}
+
+.login-aside-right + .login-form-wrap {
+  order: 1;
+}
 /* Client listing uses the roomier dashboard hierarchy. */
 .page-content.clients-content{width:100%;max-width:none;padding:clamp(22px,2vw,40px)}
 .page-content.editor-content{width:100%;max-width:none;margin:0;padding:clamp(22px,2vw,40px)}

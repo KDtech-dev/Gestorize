@@ -6,7 +6,7 @@ import { useTheme } from '@/context/ThemeContext';
 
 type LoginInputProps = {
   id: string;
-  type: 'email' | 'password';
+  type: 'email' | 'password' | 'text';
   value: string;
   placeholder: string;
   autoComplete: string;
