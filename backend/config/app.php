@@ -65,7 +65,7 @@ return [
     |
     */
 
-    'timezone' => 'UTC',
+    'timezone' => 'America/Sao_Paulo',
 
     /*
     |--------------------------------------------------------------------------
@@ -77,6 +77,7 @@ return [
     | set to any locale for which you plan to have translation strings.
     |
     */
+    'demo_default_password' => env('DEMO_DEFAULT_PASSWORD'),
 
     'locale' => env('APP_LOCALE', 'en'),
 

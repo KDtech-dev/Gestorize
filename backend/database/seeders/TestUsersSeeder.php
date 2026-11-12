@@ -4,19 +4,31 @@ namespace Database\Seeders;
 
 use App\Enums\RoleEnum;
 use App\Models\Endereco;
-use App\Models\User;
 use App\Models\Funcionario;
+use App\Models\User;
 use Database\Seeders\Concerns\SeedsDefaultOrganization;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
+use RuntimeException;
 
 class TestUsersSeeder extends Seeder
 {
     use SeedsDefaultOrganization;
 
+    private string $senhaInicial;
+
     public function run(): void
     {
-        $admin = $this->criarUsuario(
+        $senhaInicial = config('app.demo_default_password');
+
+        if (! is_string($senhaInicial) || strlen($senhaInicial) < 12) {
+            throw new RuntimeException(
+                'Configure DEMO_DEFAULT_PASSWORD no .env com pelo menos 12 caracteres.'
+            );
+        }
+
+        $this->senhaInicial = $senhaInicial;
+
+        $this->criarUsuario(
             nome: 'Administrador Teste',
             email: 'teste@email.com',
             role: RoleEnum::ADMIN,
@@ -33,7 +45,7 @@ class TestUsersSeeder extends Seeder
             ],
         );
 
-        $gestor = $this->criarUsuario(
+        $this->criarUsuario(
             nome: 'Gestor Teste',
             email: 'gestor@example.com',
             role: RoleEnum::GESTOR,
@@ -50,7 +62,7 @@ class TestUsersSeeder extends Seeder
             ],
         );
 
-        $funcionario = $this->criarUsuario(
+        $this->criarUsuario(
             nome: 'Funcionário Teste',
             email: 'funcionario@example.com',
             role: RoleEnum::FUNCIONARIO,
@@ -97,34 +109,63 @@ class TestUsersSeeder extends Seeder
         array $endereco,
     ): User {
         $organizationId = $this->defaultOrganization()->id;
+
         $user = User::query()->firstOrNew(['email' => $email]);
+
+        $usuarioNovo = ! $user->exists;
+
         $user->fill([
             'name' => $nome,
-            'password' => Hash::make('123456'),
         ]);
-        $user->forceFill(['organization_id' => $role === RoleEnum::ADMIN ? null : $organizationId]);
+
+        if ($usuarioNovo) {
+            $user->password = $this->senhaInicial;
+            $user->must_change_password = true;
+        }
+
+        $user->forceFill([
+            'organization_id' => $role === RoleEnum::ADMIN
+                ? null
+                : $organizationId,
+        ]);
+
         $user->save();
 
         $user->syncRoles([$role->value]);
 
-        $registroFuncionario = Funcionario::query()->whereKey($user->id)->first();
+        $registroFuncionario = Funcionario::query()
+            ->whereKey($user->id)
+            ->first();
+
         $registroEndereco = $registroFuncionario?->endereco;
+
         if ($registroEndereco) {
             $registroEndereco->update($endereco);
-            $registroEndereco->forceFill(['organization_id' => $organizationId])->save();
+
+            $registroEndereco->forceFill([
+                'organization_id' => $organizationId,
+            ])->save();
         } else {
             $registroEndereco = new Endereco($endereco);
-            $registroEndereco->forceFill(['organization_id' => $organizationId])->save();
+
+            $registroEndereco->forceFill([
+                'organization_id' => $organizationId,
+            ])->save();
         }
 
-        $registroFuncionario = Funcionario::query()->firstOrNew(['id' => $user->id]);
+        $registroFuncionario = Funcionario::query()
+            ->firstOrNew(['id' => $user->id]);
+
         $registroFuncionario->fill([
             'telefone' => $telefone,
             'cpf' => $cpf,
             'data_nascimento' => $dataNascimento,
             'endereco_id' => $registroEndereco->id,
         ]);
-        $registroFuncionario->forceFill(['organization_id' => $organizationId])->save();
+
+        $registroFuncionario->forceFill([
+            'organization_id' => $organizationId,
+        ])->save();
 
         return $user;
     }

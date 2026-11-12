@@ -131,8 +131,13 @@ function normalizeClient(client: ClientData): ClientData {
   };
 }
 
-function clientPayload(form: ClientData) {
-  const payload = { ...form, pf: { ...(form.pf ?? {}) }, pj: { ...(form.pj ?? {}) }, endereco: { ...(form.endereco ?? {}) } };
+function clientPayload(form: ClientData): ClientData {
+  const payload: ClientData = {
+    ...form,
+    pf: { ...(form.pf ?? {}) },
+    pj: { ...(form.pj ?? {}) },
+    endereco: { ...(form.endereco ?? {}) },
+  };
   payload.email = payload.email || null;
   payload.telefone = payload.telefone || null;
   if (payload.tipo === 'pf') delete payload.pj;

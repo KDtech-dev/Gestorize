@@ -73,7 +73,7 @@ export function EmployeePermissionsDialog({ permissions, selected, inherited, on
               const isInherited = inheritedIds.includes(id);
               const isSelected = isInherited || selected.includes(id);
               return <label className={`${styles.option} ${isSelected ? styles.selectedOption : ''}`} key={id}>
-                <Checkbox checked={isSelected} disabled={isInherited} onChange={() => togglePermission(id)} size="small" sx={{ gridColumn: 1, gridRow: 1, p: 0, mt: '1px', color: 'var(--muted)', '&.Mui-checked': { color: '#005ce4' }, '&.Mui-disabled': { color: 'var(--muted)' } }} inputProps={{ 'aria-label': permission.nome }} />
+                <Checkbox checked={isSelected} disabled={isInherited} onChange={() => togglePermission(id)} size="small" sx={{ gridColumn: 1, gridRow: 1, p: 0, mt: '1px', color: 'var(--muted)', '&.Mui-checked': { color: '#005ce4' }, '&.Mui-disabled': { color: 'var(--muted)' } }} slotProps={{ input: { 'aria-label': permission.nome } }} />
                 <span className={styles.optionCopy}><strong>{permission.nome}</strong>{permission.acao && <small>{permission.acao}</small>}</span>
                 {isInherited && <span className={styles.inheritedBadge}><Icon icon="mdi:lock-outline" width={13} height={13} />Do perfil</span>}
               </label>;

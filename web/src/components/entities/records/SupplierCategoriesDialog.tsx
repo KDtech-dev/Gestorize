@@ -41,7 +41,7 @@ export function SupplierCategoriesDialog({ categories, selected, onChange, onClo
         {filtered.map((category) => {
           const id = String(category.id);
           const checked = selected.includes(id);
-          return <label className={`${styles.option} ${checked ? styles.selected : ''}`} key={id}><Checkbox checked={checked} onChange={() => toggle(id)} size="small" sx={{ p: 0, color: 'var(--muted)', '&.Mui-checked': { color: '#005ce4' } }} inputProps={{ 'aria-label': category.nome || 'Categoria sem nome' }} /><span>{category.nome || 'Categoria sem nome'}</span></label>;
+          return <label className={`${styles.option} ${checked ? styles.selected : ''}`} key={id}><Checkbox checked={checked} onChange={() => toggle(id)} size="small" sx={{ p: 0, color: 'var(--muted)', '&.Mui-checked': { color: '#005ce4' } }} slotProps={{ input: { 'aria-label': category.nome || 'Categoria sem nome' } }} /><span>{category.nome || 'Categoria sem nome'}</span></label>;
         })}
         {!filtered.length && <p className={styles.empty}>{categories.length ? 'Nenhum ramo corresponde à busca.' : 'Nenhum ramo de atividade disponível.'}</p>}
       </div>
