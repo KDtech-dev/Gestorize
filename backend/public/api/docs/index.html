@@ -82,7 +82,7 @@ Accept: application/json</pre>
 
     <section id="respostas">
       <h2>Respostas e erros</h2>
-      <p class="muted">A maioria dos endpoints usa o envelope abaixo. Alguns endpoints administrativos retornam <code>success</code> e <code>data</code> sem <code>message</code>; a listagem paginada de usuários também traz metadados de paginação do Laravel.</p>
+      <p class="muted">A maioria dos endpoints usa o envelope abaixo. Alguns endpoints administrativos retornam apenas <code>success</code> e <code>data</code> (ou <code>success</code> e <code>message</code>). A rota <code>GET /users</code> retorna até 15 usuários em <code>data</code> por página e aceita <code>?page=N</code>, mas não inclui metadados de paginação na resposta.</p>
       <div class="grid">
         <article class="card"><h3><span class="response-code ok">2xx · sucesso</span></h3><pre>{
   "success": true,
@@ -135,8 +135,8 @@ Accept: application/json</pre>
 const groups = [
  {name:'Autenticação e perfil', routes:[
   ['POST','/login','Público','Autentica e retorna token Sanctum. Corpo: email, password.'],
-  ['POST','/logout','Token','Revoga o token atual. Corpo também exige token.'],
-  ['POST','/refresh','Token','Substitui o token atual antes do vencimento. Corpo: token.'],
+  ['POST','/logout','Token Bearer · contexto da organização','Revoga o token enviado no cabeçalho Authorization. Não exige corpo.'],
+  ['POST','/refresh','Token Bearer · contexto da organização','Substitui o token atual antes do vencimento, mantendo a expiração original. Não exige corpo.'],
   ['GET','/me','Token','Retorna o usuário autenticado, papel e permissões.'],
   ['PUT','/me','Token','Atualiza perfil. Corpo: name, email; password, funcionario e endereco opcionais.'],
   ['POST','/primeiro-acesso/alterar-senha','Token · limite 5/min','Corpo: current_password, password, password_confirmation.']
@@ -144,7 +144,7 @@ const groups = [
  {name:'Organizações (admin global)',routes:[
   ['GET','/organizations','Admin global','Lista organizações, gestores e contagem de usuários.'],
   ['GET','/organizations/metrics','Admin global','Retorna totais e métricas de organizações/usuários.'],
-  ['POST','/organizations','Admin global','Cria organização e gestor inicial. Corpo: name e manager {name,email,password,cpf}; document,email,phone,settings opcionais.'],
+  ['POST','/organizations','Admin global','Cria organização e gestor inicial. Corpo: name e manager {name,email,password,cpf}; document,email,phone opcionais.'],
   ['PUT','/organizations/{organization}','Admin global','Atualiza organização. Corpo parcial: name, document, email, phone, settings, active, manager_id.']
  ]},
  {name:'Painel e relatórios',routes:[
@@ -185,18 +185,18 @@ const groups = [
 ];
 const requestDetails = {
  'POST /login':{fields:'Body JSON: email e password obrigatórios.',example:{email:'gestor@example.com',password:'sua-senha'}},
- 'POST /logout':{fields:'Body JSON: token obrigatório. Envie também o mesmo token no cabeçalho Bearer.',example:{token:'SEU_TOKEN'}},
- 'POST /refresh':{fields:'Body JSON: token obrigatório. O token anterior é revogado.',example:{token:'SEU_TOKEN'}},
+ 'POST /logout':{fields:'Sem corpo JSON. Envie o token atual em Authorization: Bearer SEU_TOKEN; a API revoga esse token.'},
+ 'POST /refresh':{fields:'Sem corpo JSON. Envie o token atual em Authorization: Bearer SEU_TOKEN; a API revoga o token atual e emite outro com a mesma expiração.'},
  'PUT /me':{fields:'Body JSON: name e email obrigatórios; password, funcionario e endereco são opcionais. Campos de endereço incluem cep, logradouro, numero, complemento, bairro, cidade e estado.',example:{name:'Nome atualizado',email:'gestor@example.com',funcionario:{telefone:'11999990000'},endereco:{cidade:'São Paulo',estado:'SP'}}},
  'POST /primeiro-acesso/alterar-senha':{fields:'Body JSON: current_password, password (mínimo 8 caracteres) e password_confirmation.',example:{current_password:'senha-inicial',password:'nova-senha-segura',password_confirmation:'nova-senha-segura'}},
- 'POST /organizations':{fields:'Body JSON: name e manager.name, manager.email, manager.password e manager.cpf obrigatórios. document, email, phone e settings opcionais.',example:{name:'Empresa Exemplo',document:'00.000.000/0001-00',manager:{name:'Gestor Exemplo',email:'gestor@empresa.com',password:'senha-segura',cpf:'12345678901'}}},
+ 'POST /organizations':{fields:'Body JSON: name e manager.name, manager.email, manager.password e manager.cpf obrigatórios. document, email e phone opcionais. As configurações da organização são iniciadas pelo backend com o gestor responsável.',example:{name:'Empresa Exemplo',document:'00.000.000/0001-00',manager:{name:'Gestor Exemplo',email:'gestor@empresa.com',password:'senha-segura',cpf:'12345678901'}}},
  'PUT /organizations/{organization}':{fields:'Path: organization (UUID). Body parcial: name, document, email, phone, settings, active ou manager_id. manager_id deve ser gestor desta organização ou null.',example:{active:true,manager_id:'UUID_DO_GESTOR'}},
  'GET /relatorios':{fields:'Query opcional: periodo=hoje|semana|mes|ano; tipo=movimentacao|orcamentos|vendas|clientes|produtos.',queryExample:'?periodo=mes&tipo=vendas'},
  'POST /clientes':{fields:'Body JSON: nome e tipo (pf|pj). PF exige pf.cpf, pf.rg e pf.data_nascimento. PJ exige pj.cnpj, pj.razao_social, pj.nome_responsavel e pj.cpf_responsavel. endereco e contato são opcionais.',example:{nome:'Maria Silva',tipo:'pf',email:'maria@example.com',telefone:'11999990000',pf:{cpf:'12345678901',rg:'123456789',data_nascimento:'1990-05-10'}}},
  'PUT /clientes/{id}':{fields:'Path: id (UUID). Body parcial com os campos permitidos no cadastro; os campos pf/pj atualizam os dados correspondentes.',example:{nome:'Maria Silva Atualizada',telefone:'11988887777'}},
  'POST /clientes/{id}/imagem':{fields:'Path: id (UUID). multipart/form-data: avatar obrigatório, JPG/PNG/WebP até 2 MB.',bodyText:'multipart/form-data\navatar=<arquivo de imagem>'},
  'GET /produtos/codigo/{codigo}':{fields:'Path: codigo (texto lido pelo aplicativo; sem corpo JSON). A busca compara código interno PRD..., código comercial e prefixo UUID de etiqueta. O cliente deve codificar caracteres reservados da URL. Retorna 404 quando não há correspondência única.'},
- 'POST /produtos':{fields:'Body JSON: nome, preco_custo, porcentagem_lucro, preco_venda, data_entrada, unidade_medida_id e estoque obrigatórios. categoria_id, fornecedor_id, descricao e validade opcionais. codigos_barras é uma lista opcional de até 20 códigos comerciais em texto (até 64 caracteres cada); zeros à esquerda são preservados.',example:{nome:'Lâmpada LED Kian 28 W',descricao:'Lâmpada LED bivolt',preco_custo:10,porcentagem_lucro:50,preco_venda:15,data_entrada:'2026-10-23',categoria_id:'UUID_DA_CATEGORIA',fornecedor_id:'UUID_DO_FORNECEDOR',unidade_medida_id:'UUID_DA_UNIDADE',estoque:50,codigos_barras:['07891234567890']}},
+ 'POST /produtos':{fields:'Body JSON: nome, preco_custo, porcentagem_lucro, preco_venda, data_entrada, unidade_medida_id e estoque obrigatórios. categoria_id, fornecedor_id, descricao e validade opcionais. codigos_barras é uma lista opcional de até 20 códigos comerciais em texto (até 64 caracteres cada); zeros à esquerda são preservados.',example:{nome:'Lâmpada LED Kian 28 W',descricao:'Lâmpada LED bivolt',preco_custo:10,porcentagem_lucro:50,preco_venda:15,data_entrada:'2026-11-20',categoria_id:'UUID_DA_CATEGORIA',fornecedor_id:'UUID_DO_FORNECEDOR',unidade_medida_id:'UUID_DA_UNIDADE',estoque:50,codigos_barras:['07891234567890']}},
  'PUT /produtos/{produto}':{fields:'Path: produto (UUID). Body parcial com campos de produto. codigos_barras opcional: omitir mantém a lista atual; enviar uma lista sincroniza os códigos comerciais; enviar [] remove todos. Até 20 códigos de até 64 caracteres cada. Valores duplicados ou já associados a outro produto da organização são rejeitados.',example:{preco_venda:16,estoque:18,codigos_barras:['07891234567890','07891234567891']}},
  'POST /produtos/{produto}/imagem':{fields:'Path: produto (UUID). multipart/form-data: imagem obrigatória (JPG/PNG/WebP até 10 MB); principal booleano opcional.',bodyText:'multipart/form-data\nimagem=<arquivo de imagem>\nprincipal=true'},
  'DELETE /produtos/{id}/imagem':{fields:'Path: id do produto (UUID). Body JSON: imagem_id obrigatório (UUID).',example:{imagem_id:'UUID_DA_IMAGEM'}},
@@ -209,7 +209,7 @@ const requestDetails = {
  'POST /funcionarios':{fields:'Body JSON: name, email, password (mínimo 8), password_confirmation, data_nascimento, cpf (11 dígitos) e role (gestor|funcionario) obrigatórios. telefone, endereco_id e permissions opcionais; permissions exige acessos.gerenciar.',example:{name:'Funcionário Exemplo',email:'funcionario@empresa.com',password:'senha-segura',password_confirmation:'senha-segura',data_nascimento:'1995-03-20',cpf:'12345678901',role:'funcionario',permissions:['fornecedores.ver']}},
  'PUT /funcionarios/{id}':{fields:'Path: id (UUID). Body parcial com dados do funcionário. Para enviar permissions, o ator precisa de acessos.gerenciar.',example:{role:'funcionario',permissions:['clientes.ver','produtos.ver','fornecedores.ver']}},
  'POST /funcionarios/{id}/avatar':{fields:'Path: id (UUID). multipart/form-data: avatar obrigatório, JPG/PNG/WebP até 2 MB.',bodyText:'multipart/form-data\navatar=<arquivo de imagem>'},
- 'GET /users':{fields:'Query opcional: page (página da paginação; 15 registros por página).',queryExample:'?page=2'},
+ 'GET /users':{fields:'Query opcional: page (página da paginação; 15 registros por página). A resposta contém a lista em data, sem metadados de paginação.',queryExample:'?page=2'},
  'POST /users':{fields:'Body JSON: name, email, password, password_confirmation, role e endereco. role não pode ser admin. Endereço exige cep (9 caracteres), logradouro, numero, bairro, cidade e estado; funcionario e permissions opcionais.',example:{name:'Operador Exemplo',email:'operador@empresa.com',password:'senha-segura',password_confirmation:'senha-segura',role:'funcionario',funcionario:{telefone:'11999990000',cpf:'12345678901'},endereco:{cep:'01001-000',logradouro:'Rua Exemplo',numero:'10',bairro:'Centro',cidade:'São Paulo',estado:'SP'}}},
  'PUT /users/{user}':{fields:'Path: user (UUID). Body parcial: name, email, password, role, funcionario, endereco ou permissions. A política de usuário também é aplicada.',example:{name:'Operador Atualizado'}},
  'PUT /acessos/users/{user}/permissoes':{fields:'Path: user (UUID da mesma organização). Body JSON: permissions obrigatório; lista pode estar vazia. Substitui as permissões individuais adicionais.',example:{permissions:['clientes.ver','produtos.ver','fornecedores.ver']}},
@@ -223,14 +223,14 @@ const requestDetails = {
 const responseSamples={
  'Autenticação e perfil':{id:'UUID_DO_USUARIO',name:'Usuário Exemplo',email:'usuario@example.com',role:'gestor',permissions:['clientes.ver']},
  'Organizações (admin global)':{id:'UUID_DA_ORGANIZACAO',name:'Empresa Exemplo',active:true,users_count:3},
- 'Painel e relatórios':{periodo:'mes',tipo:'vendas',intervalo:{inicio:'2026-10-01',fim:'2026-10-23'},totais:{valor_orcado:1200,orcamentos:8,aprovacoes:4,pendentes:3,clientes:5,produtos:2,vendas:6,faturamento_vendas:980,descontos_vendas:20,formas_pagamento:[]},serie:{rotulos:[],rotulos_vendas:[],valores:[],vendas:[],faturamento:[],categorias:[]}},
+ 'Painel e relatórios':{periodo:'mes',tipo:'vendas',intervalo:{inicio:'2026-11-01',fim:'2026-11-20'},nota:'Faturamento considera o valor líquido das vendas após a aplicação dos descontos.',metricas:{valor_orcado:{valor:1200,variacao:12.5},orcamentos:{valor:8,variacao:14.3},clientes:{valor:5,variacao:25},vendas:{valor:6,variacao:20},faturamento_vendas:{valor:980,variacao:10}},totais:{valor_orcado:1200,orcamentos:8,aprovacoes:4,pendentes:3,clientes:5,produtos:2,vendas:6,faturamento_vendas:980,descontos_vendas:20,formas_pagamento:[]},serie:{rotulos:[],rotulos_vendas:[],valores:[],vendas:[],faturamento:[],categorias:[]}},
  'Clientes':{id:'UUID_DO_CLIENTE',nome:'Maria Silva',tipo:'pf',email:'maria@example.com',telefone:'11999990000'},
  'Produtos e catálogos':{id:'UUID_DO_PRODUTO',nome:'Produto Exemplo',codigo_barras:'PRDABC123456',codigos_barras:['07891234567890'],preco_venda:15,estoque:20},
  'Fornecedores':{id:'UUID_DO_FORNECEDOR',nome:'Fornecedor Exemplo',cnpj:'12345678000190',telefone:'1133334444'},
  'Funcionários e usuários':{id:'UUID_DO_FUNCIONARIO',nome:'Funcionário Exemplo',email:'funcionario@empresa.com',role:'funcionario',permissions:['fornecedores.ver']},
  'Acesso / papéis':{id:'UUID_DO_PAPEL',name:'funcionario',label:'Funcionário',permissions:['Visualizar produtos','Visualizar fornecedores']},
  'Orçamentos':{id:'UUID_DO_ORCAMENTO',titulo:'Orçamento de demonstração',status:'pendente',valor_total:30,itens:[{produto_id:'UUID_DO_PRODUTO',quantidade:2}]},
- 'Vendas':{id:'UUID_DA_VENDA',valor_total:15,vendido_em:'2026-10-23T10:30:00Z',forma_pagamento:'pix',desconto:0,itens:[{produto_id:'UUID_DO_PRODUTO',quantidade:1}]},
+ 'Vendas':{id:'UUID_DA_VENDA',valor_total:15,vendido_em:'2026-11-20T10:30:00Z',forma_pagamento:'pix',desconto:0,itens:[{produto_id:'UUID_DO_PRODUTO',quantidade:1}]},
  'Etiquetas':{id:'UUID_DA_OPERACAO',tipo:'selecionados',status:'aguardando_confirmacao',total_produtos:1,total_etiquetas:3,itens:[{produto_id:'UUID_DO_PRODUTO',codigo_barras:'7890000000012',quantidade:3}]},
  'Ajuda':[]
 };
@@ -240,7 +240,7 @@ function makeCode(title,value,parent){const heading=document.createElement('h4')
 function responseFor(group,method,path){
  const key=`${method} ${path}`, base=responseSamples[group.name]??{};
  let data=base;
- if(path==='/login'||path==='/refresh')data={token:'TOKEN_SANCTUM',expires_at:'2026-10-23T15:00:00Z',user:responseSamples['Autenticação e perfil']};
+ if(path==='/login'||path==='/refresh')data={token:'TOKEN_SANCTUM',expires_at:'2026-11-20T15:00:00Z',user:responseSamples['Autenticação e perfil']};
  else if(path==='/logout'||path==='/ajuda/contato')data=[];
  else if(path==='/acessos/users/{user}/permissoes')data={id:'UUID_DO_USUARIO',name:'Funcionário Exemplo',permissions:['clientes.ver','produtos.ver']};
  else if(path.startsWith('/produtos/')&&path.includes('/imagem')&&method!=='DELETE')data={id:'UUID_DA_IMAGEM',url:'/storage/produtos/imagem.webp',principal:true};
@@ -250,9 +250,9 @@ function responseFor(group,method,path){
  else if(path==='/unidades-medida')data=[{id:'UUID_DA_UNIDADE',nome:'Unidade',sigla:'UN'}];
  else if(path==='/acessos/permissoes')data=[{id:'produtos.ver',nome:'Visualizar produtos',grupo:'Produtos',acao:'Visualizar'}];
  else if(path==='/etiquetas/produtos')data=[{id:'UUID_DO_PRODUTO',nome:'Produto Exemplo',codigo_barras:'7890000000012',etiqueta_status:'pendente'}];
- else if(path==='/organizations/metrics')data={organizations_total:4,organizations_active:3,organizations_inactive:1,users_total:25,users_active:21,users_inactive:4,managers_active:3,employees_active:18,organizations:[]};
+ else if(path==='/organizations/metrics')data={organizations_total:4,organizations_active:3,organizations_inactive:1,organizations_created_this_month:1,users_total:25,users_active:21,managers_active:3,employees_active:18,organizations:[]};
  else if(path==='/dashboard/resumo')data={clientes:12,orcamentos_aprovados:4,orcamentos_pendentes:3,produtos_em_estoque:26};
- else if(path==='/users'&&method==='GET')data={data:[base],current_page:1,per_page:15,total:1};
+ else if(path==='/users'&&method==='GET')data=[base];
  else if(method==='GET'&&!path.includes('{')&&!['/me','/relatorios','/organizations/metrics'].includes(path))data=Array.isArray(base)?base:[base];
  else if(method==='DELETE'){
   if(path.startsWith('/users/'))data=undefined;

@@ -31,6 +31,8 @@ php artisan serve --host=0.0.0.0
 
 A API ficará em `http://localhost:8000/api`. A documentação das rotas fica em `http://localhost:8000/api/docs/` e é servida do diretório público do Laravel. Use o IP da máquina no lugar de `localhost` quando um dispositivo da rede, como um celular, precisar acessar a API.
 
+O conteúdo da documentação interativa está em `public/api/docs/index.html`. Ao adicionar ou alterar uma rota, atualize essa página e confira a tabela de rotas efetivas com `php artisan route:list --path=api`.
+
 ## Leitor de códigos e API de produtos
 
 A câmera é controlada pelo aplicativo web ou mobile. O cliente decodifica a leitura e envia somente o texto para a API; nenhum endpoint recebe imagem ou vídeo da câmera. A API oferece dois fluxos: localizar um produto pela leitura e gravar códigos comerciais no cadastro.
@@ -100,6 +102,7 @@ php artisan db:seed --class=VendasSeeder
 ## Autenticação e permissões
 
 - O login é feito em `POST /api/login`; as rotas protegidas usam Laravel Sanctum.
+- O login emite um token válido por três horas. Envie-o em `Authorization: Bearer <token>`. `POST /api/refresh` recebe o token atual pelo cabeçalho, revoga-o e emite outro com a mesma expiração; `POST /api/logout` revoga o token atual. Essas duas rotas não recebem o token no corpo.
 - O middleware de contexto da organização delimita os registros operacionais para a organização do usuário autenticado.
 - Rotas e ações verificam permissões como `produtos.ver`, `clientes.criar` e `users.editar`.
 - O Gestor tem permissões para administrar funcionários e pode atribuir permissões individuais; os papéis também definem permissões padrão.
@@ -134,6 +137,10 @@ Em resumo, o acesso efetivo é a combinação das permissões do papel com as pe
 ## Áreas da API
 
 As rotas estão em `routes/api.php`. Entre os recursos disponíveis estão autenticação e perfil, clientes, produtos, fornecedores, funcionários e acessos, orçamentos, vendas, relatórios, etiquetas, categorias e unidades de medida. A maioria das rotas exige autenticação e permissão correspondente.
+
+As respostas padrão usam `success`, `message`, `data` e `meta`; alguns endpoints administrativos retornam apenas parte desses campos. Falhas de validação retornam HTTP `422` e podem incluir `errors` por campo. `GET /api/users` retorna até 15 usuários no campo `data` e aceita `?page=N`, mas a resposta atual não inclui metadados da paginação.
+
+Os comprovantes de venda são montados pelos clientes web e mobile a partir da resposta de `POST /api/vendas`. A API registra a venda, seus itens e a atualização de estoque; ela não gera arquivo de cupom nem envia comandos diretamente à impressora.
 
 ## Uploads
 

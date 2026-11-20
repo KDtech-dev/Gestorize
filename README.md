@@ -6,7 +6,7 @@ Sistema de gestão para micro e pequenas empresas, com uma API Laravel compartil
 
 - **Backend (`backend/`)**: API REST em Laravel 12, PHP 8.2+, Sanctum para autenticação e Spatie Permission para papéis e permissões.
 - **Web (`web/`)**: Next.js 16 e React 19, com interface responsiva baseada em MUI e ícones Iconify. Inclui tema claro e escuro.
-- **Mobile (`mobile/`)**: React Native 0.86, Expo 57 e TypeScript.
+- **Mobile (`mobile/`)**: React Native 0.88, Expo 58 e TypeScript.
 - **Banco de dados**: MySQL. As aplicações web e mobile usam a mesma API e os mesmos registros.
 
 Cada aplicação tem seu próprio guia de configuração: [API/backend](backend/README.md), [web](web/README.md) e [mobile](mobile/README.md).
@@ -27,7 +27,7 @@ As aplicações web e mobile trabalham sobre a mesma API. As áreas e ações qu
 ### Vendas e acompanhamento
 
 - **Registro de venda:** pesquisa e inclusão de produtos, leitura de código de barras, seleção de cliente ou orçamento, ajuste de quantidades, desconto percentual ou em valor e escolha da forma de pagamento.
-- **Conclusão:** registra a venda e atualiza o estoque pela API. As validações do backend protegem os dados e valores enviados pelas aplicações.
+- **Conclusão:** registra a venda e atualiza o estoque pela API. Web e mobile confirmam a operação e apresentam um comprovante com produtos e preços unitários. A web imprime em bobina de 80 mm; no mobile, é possível escolher 58 mm ou 80 mm, imprimir ou compartilhar o comprovante em PDF.
 - **Visão geral web:** indicadores do dia, total e valor médio das vendas, operadores, histórico pesquisável e filtrável por forma de pagamento, além dos detalhes de cada venda.
 - **Relatórios web:** consulta por período e categoria de dados, com indicadores, séries históricas e visualizações em colunas, área ou rosca; também permite pré-visualizar e imprimir/salvar em PDF.
 - **Dashboard:** resumo da operação da organização e atalhos para áreas disponíveis ao usuário.
@@ -71,7 +71,7 @@ O acesso efetivo combina permissões do papel com permissões individuais adicio
 
 - PHP 8.2 ou superior e Composer.
 - MySQL.
-- Node.js e npm.
+- Node.js 22.13 ou superior na série 22, ou 24.3 ou superior na série 24, e npm (requisitos do Expo 58; atendem também ao Next.js).
 - Expo Go para abrir o aplicativo mobile em um dispositivo físico, se desejado.
 
 ## Configuração e execução
@@ -97,7 +97,7 @@ php artisan serve --host=0.0.0.0
 
 A API ficará disponível em `http://localhost:8000/api`. Para acessar em um celular ou por outro dispositivo, use o IP da máquina que executa o Laravel no lugar de `localhost`.
 
-Com o servidor local em execução, consulte a [documentação interativa da API](http://localhost:8000/api/docs/) para ver as rotas, permissões, parâmetros e exemplos de resposta.
+Com o servidor local em execução, consulte a [documentação da API](http://localhost:8000/api/docs/) para ver rotas, permissões, parâmetros e exemplos de resposta. O arquivo-fonte fica em `backend/public/api/docs/index.html`.
 
 O seeder principal cria permissões, papéis, usuários e dados demonstrativos, incluindo vendas feitas por mais de um usuário. Papéis, permissões, categorias e unidades de medida são globais e compartilhados entre organizações; os usuários e registros operacionais demonstrativos são associados à organização padrão. As credenciais de demonstração são:
 
