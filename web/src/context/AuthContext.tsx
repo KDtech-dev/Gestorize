@@ -11,6 +11,7 @@ export type WebUser = {
   role?: string;
   organization_id?: string | null;
   organization_name?: string | null;
+  organization?: { name?: string; settings?: Record<string, unknown> | null } | null;
   avatar?: string | null;
   avatar_url?: string | null;
   permissions?: string[];

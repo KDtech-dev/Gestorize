@@ -1,5 +1,6 @@
 import React, { useCallback, useRef, useState } from 'react';
 import {
+  Image,
   Keyboard,
   Modal,
   Pressable,
@@ -27,6 +28,7 @@ import { useAuth } from '@context/AuthContext';
 import { can, canSell } from '@utils/permissions';
 import Toast from 'react-native-toast-message';
 import * as Print from 'expo-print';
+import * as Sharing from 'expo-sharing';
 
 type CarrinhoItem = { produto: ProdutoType; quantidade: number; precoUnitario?: number };
 const moeda = (valor: number | string | null | undefined) => Number(valor ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -109,6 +111,8 @@ export default function NovaVenda() {
   const descontoInformado = Math.max(0, lerDesconto(desconto, descontoPercentual));
   const descontoAplicado = Math.min(subtotal, descontoPercentual ? subtotal * Math.min(descontoInformado, 100) / 100 : descontoInformado);
   const total = subtotal - descontoAplicado;
+  const logoOrganizacaoValor = user?.organization?.settings?.logo_url ?? user?.organization?.settings?.logo;
+  const logoOrganizacao = typeof logoOrganizacaoValor === 'string' && /^(https?:\/\/|data:image\/)/i.test(logoOrganizacaoValor) ? logoOrganizacaoValor : null;
 
   const adicionarProduto = (produto: ProdutoType) => {
     if (!podeCriar) return;
@@ -197,16 +201,37 @@ export default function NovaVenda() {
     }
   };
 
-  const imprimirComprovante = async () => {
+  const gerarHtmlComprovante = () => {
     if (!vendaConcluida) return;
     const escapar = (valor: unknown) => String(valor ?? '').replace(/[&<>"']/g, (caractere) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[caractere]!));
-    const itensHtml = (vendaConcluida.itens ?? []).map((item) => `<div class="item"><div>${escapar(item.produto_nome)}</div><div class="linha"><span>${item.quantidade} × ${moeda(item.preco_unitario)}</span><b>${moeda(item.subtotal)}</b></div></div>`).join('');
+    const itensHtml = (vendaConcluida.itens ?? []).flatMap((item) => Array.from({ length: Math.max(1, Number(item.quantidade)) }, () => `<div class="item"><span>${escapar(item.produto_nome)}</span><b>${moeda(item.preco_unitario)}</b></div>`)).join('');
     const larguraConteudo = larguraBobina === 58 ? 54 : 74;
-    const html = `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><style>@page{size:${larguraBobina}mm auto;margin:2mm}*{box-sizing:border-box}body{width:${larguraConteudo}mm;margin:0 auto;color:#111;font:12px/1.3 Arial,sans-serif}header{text-align:center;padding:3mm 0;border-bottom:1px dashed #555}h1{font-size:15px;margin:0}.muted{color:#444}.linha{display:flex;justify-content:space-between;gap:4px}.item{padding:2mm 0;border-bottom:1px dotted #aaa;overflow-wrap:anywhere}.totais{padding:3mm 0;border-bottom:1px dashed #555}.total{font-size:16px;font-weight:bold}.rodape{text-align:center;padding:4mm 0}</style></head><body><header><h1>COMPROVANTE DE VENDA</h1><p>${escapar(user?.organization?.name ?? user?.organization_name ?? 'Loja')}</p><p class="muted">Venda ${escapar(vendaConcluida.id.slice(0, 8))}</p><p>${escapar(new Date(vendaConcluida.vendido_em).toLocaleString('pt-BR'))}</p></header><p>Cliente: ${escapar(vendaConcluida.cliente_nome || 'Consumidor')}</p>${itensHtml}<section class="totais"><div class="linha"><span>Desconto</span><span>${moeda(vendaConcluida.desconto)}</span></div><div class="linha total"><span>Total</span><span>${moeda(vendaConcluida.valor_total)}</span></div><p>Pagamento: ${escapar(({ pix: 'Pix', dinheiro: 'Dinheiro', debito: 'Débito', credito: 'Crédito' } as Record<string, string>)[vendaConcluida.forma_pagamento ?? ''] ?? '—')}</p></section><p class="rodape">Obrigado pela preferência!</p></body></html>`;
+    const logo = logoOrganizacao ? `<img class="logo" src="${escapar(logoOrganizacao)}" alt="Logo da organização">` : '';
+    return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><style>@page{size:${larguraBobina}mm auto;margin:2mm}*{box-sizing:border-box}body{width:${larguraConteudo}mm;margin:0 auto;color:#111;font:12px/1.3 Arial,sans-serif}header{text-align:left;padding:3mm 0;border-bottom:1px dashed #555}.logo{display:block;max-width:38mm;max-height:18mm;object-fit:contain;object-position:left center;margin-bottom:2mm}h1{font-size:15px;margin:0}.muted{color:#444}.linha,.item{display:flex;justify-content:space-between;gap:4px;text-align:left}.item{padding:2mm 0;border-bottom:1px dotted #aaa;overflow-wrap:anywhere}.totais{padding:3mm 0;border-bottom:1px dashed #555}.total{font-size:16px;font-weight:bold}.rodape{text-align:left;padding:4mm 0}</style></head><body><header>${logo}<h1>COMPROVANTE DE VENDA</h1><p>${escapar(user?.organization?.name ?? user?.organization_name ?? 'Loja')}</p><p class="muted">Venda ${escapar(vendaConcluida.id.slice(0, 8))}</p><p>${escapar(new Date(vendaConcluida.vendido_em).toLocaleString('pt-BR'))}</p></header><p>Cliente: ${escapar(vendaConcluida.cliente_nome || 'Consumidor')}</p>${itensHtml}<section class="totais"><div class="linha"><span>Desconto</span><span>${moeda(vendaConcluida.desconto)}</span></div><div class="linha total"><span>Total</span><span>${moeda(vendaConcluida.valor_total)}</span></div><p>Pagamento: ${escapar(({ pix: 'Pix', dinheiro: 'Dinheiro', debito: 'Débito', credito: 'Crédito' } as Record<string, string>)[vendaConcluida.forma_pagamento ?? ''] ?? '—')}</p></section><p class="rodape">Obrigado pela preferência!</p></body></html>`;
+  };
+
+  const imprimirComprovante = async () => {
+    const html = gerarHtmlComprovante();
+    if (!html) return;
     try {
       await Print.printAsync({ html });
     } catch {
       Toast.show({ type: 'error', text1: 'Não foi possível abrir a impressão', text2: 'Verifique a conexão da impressora ou tente novamente.' });
+    }
+  };
+
+  const compartilharComprovante = async () => {
+    const html = gerarHtmlComprovante();
+    if (!html) return;
+    try {
+      if (!(await Sharing.isAvailableAsync())) {
+        Toast.show({ type: 'error', text1: 'Compartilhamento indisponível', text2: 'Este dispositivo não oferece compartilhamento de arquivos.' });
+        return;
+      }
+      const arquivo = await Print.printToFileAsync({ html });
+      await Sharing.shareAsync(arquivo.uri, { mimeType: 'application/pdf', dialogTitle: 'Compartilhar comprovante', UTI: 'com.adobe.pdf' });
+    } catch {
+      Toast.show({ type: 'error', text1: 'Não foi possível compartilhar o comprovante', text2: 'Tente novamente.' });
     }
   };
 
@@ -354,8 +379,16 @@ export default function NovaVenda() {
           <Text style={[styles.heading, { color: colors.text, textAlign: 'center' }]}>Venda concluída</Text>
           <Text style={[styles.hint, { color: colors.muted, textAlign: 'center' }]}>Venda {vendaConcluida?.id.slice(0, 8)} · {moeda(vendaConcluida?.valor_total)}</Text>
           <View style={styles.paperSelector}><Text style={[styles.hint, { color: colors.text }]}>Bobina:</Text>{([58, 80] as const).map((largura) => <Pressable key={largura} accessibilityRole="radio" accessibilityState={{ selected: larguraBobina === largura }} onPress={() => setLarguraBobina(largura)} style={[styles.paperOption, { borderColor: larguraBobina === largura ? colors.primary : colors.border, backgroundColor: larguraBobina === largura ? colors.elevated : colors.background }]}><Text style={{ color: colors.text, fontWeight: '800' }}>{largura} mm</Text></Pressable>)}</View>
-          <ScrollView style={{ maxHeight: 220, alignSelf: 'stretch' }}>{vendaConcluida?.itens?.map((item) => <View key={item.id} style={[styles.receiptRow, { borderColor: colors.border }]}><Text style={[styles.hint, { color: colors.text, flex: 1 }]}>{item.produto_nome} × {item.quantidade}</Text><Text style={[styles.hint, { color: colors.text }]}>{moeda(item.subtotal)}</Text></View>)}</ScrollView>
+          <ScrollView style={{ maxHeight: 220, alignSelf: 'stretch' }}>
+            {logoOrganizacao ? <Image source={{ uri: logoOrganizacao }} accessibilityLabel="Logo da organização" resizeMode="contain" style={styles.receiptLogo} /> : null}
+            <Text style={[styles.hint, { color: colors.muted, textAlign: 'left' }]}>{user?.organization?.name ?? user?.organization_name ?? 'Loja'} · {new Date(vendaConcluida?.vendido_em ?? Date.now()).toLocaleString('pt-BR')}</Text>
+            {vendaConcluida?.itens?.flatMap((item) => Array.from({ length: Math.max(1, Number(item.quantidade)) }, (_, index) => <View key={`${item.id}-${index}`} style={[styles.receiptRow, { borderColor: colors.border }]}><Text style={[styles.hint, { color: colors.text, flex: 1 }]}>{item.produto_nome}</Text><Text style={[styles.hint, { color: colors.text }]}>{moeda(item.preco_unitario)}</Text></View>))}
+            <View style={[styles.receiptRow, { borderColor: colors.border }]}><Text style={[styles.hint, { color: colors.text }]}>Desconto</Text><Text style={[styles.hint, { color: colors.text }]}>{moeda(vendaConcluida?.desconto)}</Text></View>
+            <View style={[styles.receiptRow, { borderColor: colors.border }]}><Text style={[styles.productName, { color: colors.text }]}>Total</Text><Text style={[styles.productName, { color: colors.text }]}>{moeda(vendaConcluida?.valor_total)}</Text></View>
+            <Text style={[styles.hint, { color: colors.text, textAlign: 'left', marginTop: 6 }]}>Pagamento: {({ pix: 'Pix', dinheiro: 'Dinheiro', debito: 'Débito', credito: 'Crédito' } as Record<string, string>)[vendaConcluida?.forma_pagamento ?? ''] ?? '—'}</Text>
+          </ScrollView>
           <Button title="Imprimir comprovante" onPress={() => void imprimirComprovante()} />
+          <Button title="Compartilhar comprovante" variant="outlined" onPress={() => void compartilharComprovante()} />
           <Pressable onPress={() => setVendaConcluida(null)} style={styles.receiptClose}><Text style={{ color: colors.primary, fontWeight: '800' }}>Fechar</Text></Pressable>
         </View></View>
       </Modal>
@@ -457,6 +490,7 @@ const styles = StyleSheet.create({
   receiptBackdrop: { flex: 1, backgroundColor: '#0008', justifyContent: 'center', padding: 22 },
   receiptCard: { borderRadius: 18, padding: 20, alignItems: 'center', gap: 10, maxHeight: '80%' },
   receiptRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 8, paddingVertical: 8, borderBottomWidth: StyleSheet.hairlineWidth },
+  receiptLogo: { width: 150, height: 64, alignSelf: 'flex-start' },
   receiptClose: { minHeight: 42, alignItems: 'center', justifyContent: 'center' },
   paperSelector: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
   paperOption: { minHeight: 40, paddingHorizontal: 14, borderWidth: 1, borderRadius: 10, justifyContent: 'center' },
