@@ -45,7 +45,7 @@ npm run typecheck
 - Login, alteração de senha no primeiro acesso, perfil e navegação conforme permissões.
 - Dashboard, clientes, produtos, fornecedores, funcionários e orçamentos.
 - Caixa de vendas com busca e leitura de códigos de barras, desconto, cliente e forma de pagamento. Após salvar, o sistema confirma a venda e exibe o comprovante. A impressão abre o diálogo do navegador em layout térmico de 80 mm.
-- Visão geral e histórico de vendas e relatórios com opção de impressão ou salvamento em PDF.
+- Visão geral e histórico de vendas: permite reimprimir o comprovante e estornar uma venda concluída. O estorno restaura os produtos ao estoque e reabre o caixa com os itens da venda selecionados; a venda original continua no histórico com seu status.
 - Central de etiquetas com formatos A4 e rolos Brother, histórico de impressão e confirmação das operações.
 - Administração global de organizações e permissões padrão para contas autorizadas.
 

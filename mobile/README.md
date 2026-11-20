@@ -49,6 +49,7 @@ Os comandos Android e iOS dependem de emulador ou dispositivo configurado. `npm 
 - Consultas e cadastros de clientes, produtos, fornecedores, funcionários e orçamentos.
 - Caixa de vendas com câmera para leitura de código de barras, seleção de produtos e cliente, descontos e formas de pagamento.
 - Confirmação da venda com toast; comprovante em bobina térmica selecionável de 58 mm ou 80 mm, impressão pelo sistema e compartilhamento do PDF pela folha nativa do dispositivo.
+- Histórico de vendas com reimpressão do comprovante e estorno de venda concluída. O estorno devolve os produtos ao estoque e retorna ao caixa com os itens selecionados para uma nova venda.
 - Central de etiquetas com formatos A4 e rolos Brother, impressão, confirmação de operação e histórico.
 - Dashboard, relatórios, perfil e suporte, conforme permissões.
 

@@ -25,6 +25,7 @@ class RelatorioService
             ->whereBetween('created_at', [$inicio, $fim])
             ->get(['id', 'categoria_id', 'created_at']);
         $vendas = Venda::query()
+            ->where('status', 'concluida')
             ->whereBetween('vendido_em', [$inicio, $fim])
             ->get(['vendido_em', 'valor_total', 'desconto', 'forma_pagamento']);
 
@@ -35,6 +36,7 @@ class RelatorioService
         $aprovacoes = Orcamento::query()
             ->whereBetween('aprovado_em', [$inicio, $fim]);
         $vendasAnteriores = Venda::query()
+            ->where('status', 'concluida')
             ->whereBetween('vendido_em', [$inicioAnterior, $fimAnterior]);
 
         $valorOrcado = (float) $orcamentos->sum(fn ($item) => (float) $item->valor_total);

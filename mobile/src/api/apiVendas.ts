@@ -20,6 +20,9 @@ export type VendaType = {
   vendido_em: string;
   vendedor: string | null;
   forma_pagamento?: 'pix' | 'dinheiro' | 'debito' | 'credito' | null;
+  status?: 'concluida' | 'estornada';
+  estornada_em?: string | null;
+  estornada_por?: string | null;
   desconto?: number | string;
   orcamento_id?: string | null;
   cliente_id?: string | null;
@@ -29,6 +32,11 @@ export type VendaType = {
 
 export const getVendas = async (): Promise<ResponseType<VendaType[]>> => {
   const response = await getAxios().get('/vendas');
+  return response.data;
+};
+
+export const estornarVenda = async (id: string): Promise<ResponseType<VendaType>> => {
+  const response = await getAxios().post(`/vendas/${encodeURIComponent(id)}/estornar`);
   return response.data;
 };
 

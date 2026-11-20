@@ -13,7 +13,7 @@ class VendaService
 {
     public function listar()
     {
-        return Venda::with(['usuario', 'cliente', 'itens'])->latest('vendido_em')->get();
+        return Venda::with(['usuario', 'cliente', 'itens', 'estornadaPor'])->latest('vendido_em')->get();
     }
 
     public function criar(array $dados, string $usuarioId): Venda
@@ -27,7 +27,7 @@ class VendaService
                 if ($orcamento->status !== 'aprovado') {
                     throw ValidationException::withMessages(['orcamento_id' => ['Somente orçamentos aprovados podem gerar uma venda.']]);
                 }
-                if (Venda::query()->where('orcamento_id', $orcamento->id)->exists()) {
+                if (Venda::query()->where('orcamento_id', $orcamento->id)->where('status', 'concluida')->exists()) {
                     throw ValidationException::withMessages(['orcamento_id' => ['Este orçamento já foi convertido em venda.']]);
                 }
 
@@ -117,6 +117,42 @@ class VendaService
             }
 
             return $venda->load(['usuario', 'cliente', 'itens']);
+        });
+    }
+
+    public function estornar(string $id, string $usuarioId): Venda
+    {
+        return DB::transaction(function () use ($id, $usuarioId) {
+            $venda = Venda::query()->with('itens')->lockForUpdate()->findOrFail($id);
+            if (($venda->status ?? 'concluida') !== 'concluida') {
+                throw ValidationException::withMessages(['venda' => ['Somente vendas concluídas podem ser estornadas.']]);
+            }
+
+            $itens = $venda->itens->sortBy('produto_id')->values();
+            $produtoIds = $itens->pluck('produto_id')->filter()->unique()->values();
+            $produtos = Produto::query()->whereIn('id', $produtoIds)->orderBy('id')->lockForUpdate()->get()->keyBy('id');
+            if ($itens->contains(fn ($item) => empty($item->produto_id)) || $produtos->count() !== $produtoIds->count()) {
+                throw ValidationException::withMessages(['itens' => ['Não foi possível devolver todos os produtos ao estoque. Confira se os produtos da venda ainda existem.']]);
+            }
+
+            foreach ($itens as $item) {
+                $produtos->get($item->produto_id)->increment('estoque', $item->quantidade);
+            }
+
+            if ($venda->orcamento_id) {
+                $orcamento = Orcamento::query()->lockForUpdate()->find($venda->orcamento_id);
+                if ($orcamento && $orcamento->status === 'vendido') {
+                    $orcamento->forceFill(['status' => 'aprovado'])->save();
+                }
+            }
+
+            $venda->forceFill([
+                'status' => 'estornada',
+                'estornada_em' => now(),
+                'estornada_por' => $usuarioId,
+            ])->save();
+
+            return $venda->fresh(['usuario', 'cliente', 'itens', 'estornadaPor']);
         });
     }
 }

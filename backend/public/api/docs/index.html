@@ -176,7 +176,7 @@ const groups = [
   ['GET','/orcamentos','orcamentos.ver','Lista orçamentos da organização.'],['POST','/orcamentos','orcamentos.criar','Cria orçamento. Corpo: titulo, cliente_id, itens[].'],['GET','/orcamentos/{id}','orcamentos.ver','Detalha orçamento.'],['PUT','/orcamentos/{id}','orcamentos.editar','Atualiza orçamento; orçamento vendido não pode ser editado.'],['PATCH','/orcamentos/{id}/aprovar','orcamentos.criar ou orcamentos.editar ou orcamentos.aprovar','Aprova orçamento conforme autorização e regra de negócio.'],['DELETE','/orcamentos/{id}','orcamentos.excluir','Remove orçamento.']
  ]},
  {name:'Vendas',routes:[
-  ['GET','/vendas','vendas.ver','Lista vendas da organização.'],['POST','/vendas','admin/gestor/funcionario ou vendas.criar','Registra venda. Corpo: itens[]; cliente_id, orcamento_id, forma_pagamento e desconto opcionais. Atualiza o estoque.']
+  ['GET','/vendas','vendas.ver','Lista vendas da organização, incluindo status concluida ou estornada.'],['POST','/vendas','admin/gestor/funcionario ou vendas.criar','Registra venda. Corpo: itens[]; cliente_id, orcamento_id, forma_pagamento e desconto opcionais. Atualiza o estoque.'],['POST','/vendas/{id}/estornar','admin/gestor/funcionario ou vendas.criar','Estorna uma venda concluída uma única vez, devolve os produtos ao estoque e reabre o orçamento vinculado quando houver. Não processa reembolso financeiro.']
  ]},
  {name:'Etiquetas',routes:[
   ['GET','/etiquetas/produtos','produtos.ver','Lista produtos e estado das etiquetas.'],['GET','/etiquetas/historico','produtos.ver','Lista até 100 operações recentes com itens.'],['POST','/etiquetas/operacoes','produtos.ver','Cria operação; tipo, idempotency_key e, para selecionados/reimpressao, itens[].'],['POST','/etiquetas/operacoes/{id}/concluir','produtos.ver','Confirma que a impressão foi realizada e registra o estado impresso.'],['POST','/etiquetas/operacoes/{id}/cancelar','produtos.ver','Cancela operação ainda pendente de confirmação.']
@@ -217,6 +217,7 @@ const requestDetails = {
  'POST /orcamentos':{fields:'Body JSON: titulo, cliente_id e itens com pelo menos um produto e quantidade inteira >= 1.',example:{titulo:'Orçamento de demonstração',cliente_id:'UUID_DO_CLIENTE',itens:[{produto_id:'UUID_DO_PRODUTO',quantidade:2}]}},
  'PUT /orcamentos/{id}':{fields:'Path: id (UUID). Body parcial: titulo, cliente_id ou itens. Orçamentos vendidos não podem ser alterados.',example:{titulo:'Orçamento atualizado'}},
  'POST /vendas':{fields:'Body JSON: itens com pelo menos um produto e quantidade inteira >= 1. cliente_id, orcamento_id, forma_pagamento e desconto opcionais.',example:{cliente_id:'UUID_DO_CLIENTE',forma_pagamento:'pix',desconto:0,itens:[{produto_id:'UUID_DO_PRODUTO',quantidade:1}]}},
+ 'POST /vendas/{id}/estornar':{fields:'Path: id (UUID da venda). Sem corpo JSON. A venda precisa estar concluída; uma venda já estornada retorna erro de validação. A resposta contém a venda atualizada com status estornada, estornada_em e estornada_por. O estoque dos itens é restaurado na mesma transação.',bodyText:'Sem corpo JSON.'},
  'POST /etiquetas/operacoes':{fields:'Body JSON: tipo e idempotency_key UUID obrigatórios. Para selecionados/reimpressao, itens[] é obrigatório, com produto_id e quantidade de 1 a 50. Máximo 5.000 etiquetas.',example:{tipo:'selecionados',idempotency_key:'UUID_UNICO_DA_OPERACAO',itens:[{produto_id:'UUID_DO_PRODUTO',quantidade:3}]}},
  'POST /ajuda/contato':{fields:'Body JSON: mensagem obrigatória, entre 10 e 5.000 caracteres.',example:{mensagem:'Preciso de ajuda com o cadastro de produtos.'}}
 };
@@ -230,7 +231,7 @@ const responseSamples={
  'Funcionários e usuários':{id:'UUID_DO_FUNCIONARIO',nome:'Funcionário Exemplo',email:'funcionario@empresa.com',role:'funcionario',permissions:['fornecedores.ver']},
  'Acesso / papéis':{id:'UUID_DO_PAPEL',name:'funcionario',label:'Funcionário',permissions:['Visualizar produtos','Visualizar fornecedores']},
  'Orçamentos':{id:'UUID_DO_ORCAMENTO',titulo:'Orçamento de demonstração',status:'pendente',valor_total:30,itens:[{produto_id:'UUID_DO_PRODUTO',quantidade:2}]},
- 'Vendas':{id:'UUID_DA_VENDA',valor_total:15,vendido_em:'2026-11-20T10:30:00Z',forma_pagamento:'pix',desconto:0,itens:[{produto_id:'UUID_DO_PRODUTO',quantidade:1}]},
+ 'Vendas':{id:'UUID_DA_VENDA',status:'concluida',valor_total:15,vendido_em:'2026-11-20T10:30:00Z',forma_pagamento:'pix',desconto:0,estornada_em:null,estornada_por:null,itens:[{produto_id:'UUID_DO_PRODUTO',quantidade:1}]},
  'Etiquetas':{id:'UUID_DA_OPERACAO',tipo:'selecionados',status:'aguardando_confirmacao',total_produtos:1,total_etiquetas:3,itens:[{produto_id:'UUID_DO_PRODUTO',codigo_barras:'7890000000012',quantidade:3}]},
  'Ajuda':[]
 };
@@ -246,6 +247,7 @@ function responseFor(group,method,path){
  else if(path.startsWith('/produtos/')&&path.includes('/imagem')&&method!=='DELETE')data={id:'UUID_DA_IMAGEM',url:'/storage/produtos/imagem.webp',principal:true};
  else if(path.endsWith('/concluir')&&group.name==='Etiquetas')data={...base,status:'concluida'};
  else if(path.endsWith('/cancelar')&&group.name==='Etiquetas')data={...base,status:'cancelada'};
+ else if(path.endsWith('/estornar')&&group.name==='Vendas')data={...base,status:'estornada',estornada_em:'2026-11-20T11:00:00Z',estornada_por:'Operador Exemplo'};
  else if(path==='/categorias')data=method==='GET'?[{id:'UUID_DA_CATEGORIA',nome:'Papelaria'}]:{id:'UUID_DA_CATEGORIA',nome:'Papelaria'};
  else if(path==='/unidades-medida')data=[{id:'UUID_DA_UNIDADE',nome:'Unidade',sigla:'UN'}];
  else if(path==='/acessos/permissoes')data=[{id:'produtos.ver',nome:'Visualizar produtos',grupo:'Produtos',acao:'Visualizar'}];

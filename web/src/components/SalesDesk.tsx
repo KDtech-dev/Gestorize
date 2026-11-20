@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Icon } from '@iconify/react';
 import { Alert, Box, Button, ButtonBase, Collapse, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, InputAdornment, Paper, Stack, TextField, Typography } from '@mui/material';
 import { canSell, useAuth } from '@/context/AuthContext';
@@ -9,11 +10,12 @@ import { apiFetch } from '@/lib/api';
 import { SalesCheckout, type DiscountMode, type SaleCustomer, type SaleQuote } from '@/components/sales/SalesCheckout';
 import type { PaymentMethod } from '@/components/sales/types';
 import { useToast } from '@/context/ToastContext';
+import { printSaleReceipt } from '@/lib/salesReceipt';
 
 type Product = { id: string; nome: string; codigo_barras?: string; preco_venda: number | string; estoque: number };
 type Customer = SaleCustomer;
 type Quote = SaleQuote & { itens: Array<SaleQuote['itens'][number] & { produto?: Product | null }> };
-type Sale = { id: string; usuario_id?: string; valor_total: number | string; desconto?: number | string; vendido_em: string; vendedor?: string; cliente_nome?: string; orcamento_id?: string | null; forma_pagamento?: PaymentMethod | null; itens?: Array<{ id: string; produto_nome: string; quantidade: number; preco_unitario: number | string; subtotal: number | string }> };
+type Sale = { id: string; usuario_id?: string; valor_total: number | string; desconto?: number | string; vendido_em: string; vendedor?: string; cliente_nome?: string; cliente_id?: string | null; orcamento_id?: string | null; forma_pagamento?: PaymentMethod | null; status?: 'concluida' | 'estornada'; itens?: Array<{ id: string; produto_id?: string | null; produto_nome: string; quantidade: number; preco_unitario: number | string; subtotal: number | string }> };
 type CartRow = { produto: Product; quantidade: number; precoUnitario?: number };
 
 function list<T>(payload: unknown): T[] {
@@ -32,6 +34,9 @@ const money = (value: unknown) => Number(value ?? 0).toLocaleString('pt-BR', { s
 const panelSx = { border: '1px solid var(--line)', borderRadius: '14px', bgcolor: 'var(--card)', color: 'var(--ink)', boxShadow: '0 5px 18px #0f172a0a' };
 
 export function SalesDesk() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const returnedSaleId = searchParams.get('retomar');
   const { can, user } = useAuth();
   const { showToast } = useToast();
   const [receipt, setReceipt] = useState<Sale | null>(null);
@@ -65,17 +70,40 @@ export function SalesDesk() {
       can('orcamentos.ver') ? apiFetch<unknown>('/orcamentos') : Promise.resolve([]),
     ]);
     const loadedSales = list<Sale>(salesData);
-    const soldQuoteIds = new Set(loadedSales.map((sale) => sale.orcamento_id).filter((id): id is string => Boolean(id)));
-    setProducts(list<Product>(productData));
+    const loadedProducts = list<Product>(productData);
+    const loadedCustomers = list<Customer>(customerData);
+    const loadedQuotes = list<Quote>(quoteData);
+    const soldQuoteIds = new Set(loadedSales.filter((sale) => sale.status !== 'estornada').map((sale) => sale.orcamento_id).filter((id): id is string => Boolean(id)));
+    setProducts(loadedProducts);
     setSales(can('vendas.ver') ? loadedSales.filter((sale) => sale.usuario_id === user?.id) : []);
-    setCustomers(list<Customer>(customerData));
-    setQuotes(list<Quote>(quoteData).filter((quote) => quote.status === 'aprovado' && !soldQuoteIds.has(quote.id)));
+    setCustomers(loadedCustomers);
+    const available = loadedQuotes.filter((quote) => quote.status === 'aprovado' && !soldQuoteIds.has(quote.id));
+    setQuotes(available);
+    return { sales: loadedSales, products: loadedProducts, customers: loadedCustomers, quotes: available };
   };
 
   useEffect(() => {
     setDateLabel(new Date().toLocaleDateString('pt-BR'));
-    load().catch((reason) => setError(reason instanceof Error ? reason.message : 'Erro ao carregar vendas.')).finally(() => setLoading(false));
-  }, []);
+    load().then((data) => {
+      if (!returnedSaleId) return;
+      const sale = data.sales.find((item) => item.id === returnedSaleId && item.status === 'estornada');
+      if (!sale) throw new Error('A venda estornada não foi encontrada para recuperar o carrinho.');
+      const rows = (sale.itens ?? []).map((item) => {
+        const product = data.products.find((candidate) => candidate.id === item.produto_id);
+        return product ? { produto: product, quantidade: Number(item.quantidade), precoUnitario: sale.orcamento_id ? Number(item.preco_unitario) : undefined } : null;
+      });
+      if (rows.some((row) => row === null)) throw new Error('Não foi possível localizar todos os produtos da venda estornada.');
+      setCart(rows as CartRow[]);
+      setCustomerId(sale.cliente_id ?? '');
+      setQuoteId(sale.orcamento_id ?? '');
+      setDiscountMode('amount');
+      setDiscountInput(Number(sale.desconto ?? 0).toFixed(2));
+      setPaymentMethod(sale.forma_pagamento ?? 'pix');
+      setHistoryOpen(false);
+      showToast('Carrinho recuperado. Revise os itens antes de finalizar a nova venda.', 'info');
+      router.replace('/vendas/nova');
+    }).catch((reason) => setError(reason instanceof Error ? reason.message : 'Erro ao carregar vendas.')).finally(() => setLoading(false));
+  }, [returnedSaleId]);
 
   useEffect(() => {
     if (window.matchMedia('(pointer: fine)').matches) searchInputRef.current?.focus();
@@ -235,14 +263,7 @@ export function SalesDesk() {
 
   function printReceipt() {
     if (!receipt) return;
-    const printWindow = window.open('', '_blank', 'width=420,height=720');
-    if (!printWindow) { showToast('Permita pop-ups para imprimir o comprovante.', 'error'); return; }
-    const safe = (value: unknown) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]!));
-    const items = (receipt.itens ?? []).flatMap((item) => Array.from({ length: Math.max(1, Number(item.quantidade)) }, () => `<section class="item"><span>${safe(item.produto_nome)}</span><strong>${safe(money(item.preco_unitario))}</strong></section>`)).join('');
-    const logoValue = receiptLogoUrl();
-    const logo = logoValue ? `<img class="logo" src="${safe(logoValue)}" alt="Logo da organização">` : '';
-    printWindow.document.write(`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Comprovante de venda</title><style>@page{size:80mm auto;margin:2mm}*{box-sizing:border-box}body{width:74mm;margin:0 auto;color:#111;font:12px/1.3 Arial,sans-serif}h1,p{margin:0}header{padding:3mm 0;border-bottom:1px dashed #555;text-align:left}.logo{display:block;max-width:38mm;max-height:18mm;object-fit:contain;object-position:left center;margin-bottom:2mm}h1{font-size:15px}.muted{color:#444}.row,.item{display:flex;justify-content:space-between;gap:4px;text-align:left}.item{padding:2mm 0;border-bottom:1px dotted #aaa;overflow-wrap:anywhere}.totals{padding:3mm 0;border-bottom:1px dashed #555}.grand{font-size:16px;font-weight:bold}.footer{padding:4mm 0;text-align:left}</style></head><body><header>${logo}<h1>COMPROVANTE DE VENDA</h1><p>${safe(user?.organization?.name || user?.organization_name || 'Loja')}</p><p class="muted">Venda ${safe(receipt.id.slice(0, 8))}</p><p>${safe(new Date(receipt.vendido_em).toLocaleString('pt-BR'))}</p></header><p style="padding:3mm 0">Cliente: ${safe(receipt.cliente_nome || 'Consumidor')}</p>${items}<section class="totals"><div class="row"><span>Desconto</span><span>${safe(money(receipt.desconto))}</span></div><div class="row grand"><span>Total</span><span>${safe(money(receipt.valor_total))}</span></div><p>Pagamento: ${safe(({ pix: 'Pix', dinheiro: 'Dinheiro', debito: 'Débito', credito: 'Crédito' } as Record<string, string>)[receipt.forma_pagamento ?? ''] ?? '—')}</p></section><p class="footer">Obrigado pela preferência!</p><script>window.onload=()=>{window.print();window.onafterprint=()=>window.close()}</script></body></html>`);
-    printWindow.document.close();
+    if (!printSaleReceipt(receipt, user?.organization?.name ?? user?.organization_name ?? 'Loja', receiptLogoUrl())) showToast('Permita pop-ups para imprimir o comprovante.', 'error');
   }
 
   function receiptLogoUrl() {

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Box, Button, Stack } from '@mui/material';
 import Link from 'next/link';
 import { Icon } from '@iconify/react';
@@ -11,6 +12,8 @@ import { SalesMetrics } from '@/components/sales/SalesMetrics';
 import { SalesHistory } from '@/components/sales/SalesHistory';
 import { SalesOperators } from '@/components/sales/SalesOperators';
 import { SaleDetails } from '@/components/sales/SaleDetails';
+import { useToast } from '@/context/ToastContext';
+import { printSaleReceipt } from '@/lib/salesReceipt';
 
 function unwrapList<T>(payload: unknown): T[] {
   const value = unwrap<unknown>(payload as never);
@@ -23,7 +26,9 @@ function isToday(value: string, today: Date) {
 }
 
 export function SalesOverview() {
-  const { can } = useAuth();
+  const router = useRouter();
+  const { can, user } = useAuth();
+  const { showToast } = useToast();
   const [sales, setSales] = useState<Sale[]>([]);
   const [selectedId, setSelectedId] = useState('');
   const [filter, setFilter] = useState<'todas' | PaymentMethod>('todas');
@@ -31,6 +36,7 @@ export function SalesOverview() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [today, setToday] = useState<Date | null>(null);
+  const [returningId, setReturningId] = useState('');
 
   useEffect(() => {
     setToday(new Date());
@@ -44,7 +50,8 @@ export function SalesOverview() {
       .finally(() => setLoading(false));
   }, []);
 
-  const todaysSales = useMemo(() => today ? sales.filter((sale) => isToday(sale.vendido_em, today)) : [], [sales, today]);
+  const completedSales = useMemo(() => sales.filter((sale) => sale.status !== 'estornada'), [sales]);
+  const todaysSales = useMemo(() => today ? completedSales.filter((sale) => isToday(sale.vendido_em, today)) : [], [completedSales, today]);
   const revenue = todaysSales.reduce((sum, sale) => sum + Number(sale.valor_total), 0);
   const average = todaysSales.length ? revenue / todaysSales.length : 0;
   const operators = useMemo<OperatorSummary[]>(() => {
@@ -68,6 +75,29 @@ export function SalesOverview() {
   }, [sales, filter, search]);
   const selected = sales.find((sale) => sale.id === selectedId) ?? visibleSales[0] ?? null;
 
+  const organizationLogo = user?.organization?.settings?.logo_url ?? user?.organization?.settings?.logo;
+  const logoUrl = typeof organizationLogo === 'string' ? organizationLogo : null;
+
+  const printReceipt = (sale: Sale) => {
+    if (!printSaleReceipt(sale, user?.organization?.name ?? user?.organization_name ?? 'Loja', logoUrl)) {
+      showToast('Permita pop-ups para imprimir o comprovante.', 'error');
+    }
+  };
+
+  const returnSale = async (sale: Sale) => {
+    if (!window.confirm(`Estornar a venda #${sale.id.slice(0, 8)}? Os itens voltarão ao estoque e a venda abrirá no caixa para edição.`)) return;
+    setReturningId(sale.id);
+    try {
+      await apiFetch(`/vendas/${encodeURIComponent(sale.id)}/estornar`, { method: 'POST' });
+      showToast('Venda estornada. Abrindo o caixa com os produtos no carrinho.', 'success');
+      router.push(`/vendas/nova?retomar=${encodeURIComponent(sale.id)}`);
+    } catch (reason) {
+      showToast(reason instanceof Error ? reason.message : 'Não foi possível estornar a venda.', 'error');
+    } finally {
+      setReturningId('');
+    }
+  };
+
   return <div className="clients-page sales-overview-page">
     <header className="clients-page-heading">
       <div className="clients-heading-content"><span className="eyebrow"><Icon icon="mdi:cash-register" width={19} height={19} /><span>COMERCIAL</span></span><h1>Vendas</h1><p>Acompanhe o desempenho diário, consulte o histórico e os detalhes das vendas.</p></div>
@@ -81,7 +111,7 @@ export function SalesOverview() {
       <SalesHistory sales={visibleSales} selectedId={selected?.id ?? ''} filter={filter} search={search} loading={loading} onSelect={setSelectedId} onFilter={setFilter} onSearch={setSearch} />
       <Stack spacing={1.75}>
         <SalesOperators operators={operators} loading={loading} />
-        <SaleDetails sale={selected} />
+        <SaleDetails sale={selected} canReturn={can('vendas.criar')} returning={returningId === selected?.id} onPrint={printReceipt} onReturn={(sale) => void returnSale(sale)} />
       </Stack>
     </Box>
   </div>;

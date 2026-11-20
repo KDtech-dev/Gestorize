@@ -29,6 +29,7 @@ As aplicações web e mobile trabalham sobre a mesma API. As áreas e ações qu
 - **Registro de venda:** pesquisa e inclusão de produtos, leitura de código de barras, seleção de cliente ou orçamento, ajuste de quantidades, desconto percentual ou em valor e escolha da forma de pagamento.
 - **Conclusão:** registra a venda e atualiza o estoque pela API. Web e mobile confirmam a operação e apresentam um comprovante com produtos e preços unitários. A web imprime em bobina de 80 mm; no mobile, é possível escolher 58 mm ou 80 mm, imprimir ou compartilhar o comprovante em PDF.
 - **Visão geral web:** indicadores do dia, total e valor médio das vendas, operadores, histórico pesquisável e filtrável por forma de pagamento, além dos detalhes de cada venda.
+- **Histórico:** permite imprimir novamente o comprovante ou estornar uma venda concluída. O estorno devolve os itens ao estoque e abre o caixa com os produtos selecionados para uma nova venda; a venda original permanece no histórico como estornada.
 - **Relatórios web:** consulta por período e categoria de dados, com indicadores, séries históricas e visualizações em colunas, área ou rosca; também permite pré-visualizar e imprimir/salvar em PDF.
 - **Dashboard:** resumo da operação da organização e atalhos para áreas disponíveis ao usuário.
 

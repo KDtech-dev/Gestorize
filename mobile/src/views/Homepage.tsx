@@ -57,10 +57,10 @@ const Homepage = () => {
   );
 
   const hoje = new Date();
-  const vendasHoje = vendas.filter((venda) => {
+  const vendasHoje = vendas.filter((venda) => venda.status !== 'estornada' && (() => {
     const data = new Date(venda.vendido_em);
     return data.getFullYear() === hoje.getFullYear() && data.getMonth() === hoje.getMonth() && data.getDate() === hoje.getDate();
-  });
+  })());
   const faturamentoHoje = vendasHoje.reduce((total, venda) => total + Number(venda.valor_total), 0);
 
   const metricas = [

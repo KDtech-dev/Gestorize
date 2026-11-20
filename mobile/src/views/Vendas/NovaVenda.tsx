@@ -12,12 +12,13 @@ import {
 } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
+import type { RouteProp } from '@react-navigation/native';
 import Nav from '@components/utilities/Nav';
 import Button from '@components/botoes/Button';
 import { getProdutos } from '@api/apiProdutos';
-import { FormaPagamento, getProdutoPorCodigo, registrarVenda, VendaType } from '@api/apiVendas';
-import { OrcamentoType, ProdutoType } from '@context/types';
+import { FormaPagamento, getProdutoPorCodigo, getVendas, registrarVenda, VendaType } from '@api/apiVendas';
+import { OrcamentoType, ProdutoType, RootStackParamList } from '@context/types';
 import { ClienteType } from '@context/types';
 import OrcamentoProdutoPicker from '@components/orcamentos/OrcamentoProdutoPicker';
 import OrcamentoClientePicker from '@components/orcamentos/OrcamentoClientePicker';
@@ -29,6 +30,7 @@ import { can, canSell } from '@utils/permissions';
 import Toast from 'react-native-toast-message';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
+import { createSaleReceiptHtml } from '@utils/salesReceipt';
 
 type CarrinhoItem = { produto: ProdutoType; quantidade: number; precoUnitario?: number };
 const moeda = (valor: number | string | null | undefined) => Number(valor ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -47,7 +49,8 @@ const formatarDesconto = (valor: string, percentual: boolean) => {
 const exibirPercentual = (valor: number) => valor ? String(valor).replace('.', ',') : '';
 
 export default function NovaVenda() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
+  const route = useRoute<RouteProp<RootStackParamList, 'NovaVenda'>>();
   const { colors, isDark } = useTheme();
   const corAcao = isDark ? '#2563EB' : colors.primary;
   const { user } = useAuth();
@@ -83,10 +86,13 @@ export default function NovaVenda() {
       podeVerOrcamentos ? getOrcamentos() : Promise.resolve(null),
     ]);
 
+    let produtosCarregados: ProdutoType[] = [];
+    let orcamentosCarregados: OrcamentoType[] = [];
     if (!podeCriar) {
       setProdutos([]);
     } else if (produtosResult.status === 'fulfilled' && produtosResult.value) {
-      setProdutos(produtosResult.value.data ?? []);
+      produtosCarregados = produtosResult.value.data ?? [];
+      setProdutos(produtosCarregados);
     } else {
       setProdutos([]);
       const erro = produtosResult.status === 'rejected' ? produtosResult.reason : null;
@@ -99,13 +105,40 @@ export default function NovaVenda() {
     }
     setCarregandoProdutos(false);
     if (orcamentosResult.status === 'fulfilled' && orcamentosResult.value) {
-      setOrcamentos((orcamentosResult.value.data ?? []).filter((orcamento) => orcamento.status === 'aprovado'));
+      orcamentosCarregados = (orcamentosResult.value.data ?? []).filter((orcamento) => orcamento.status === 'aprovado');
+      setOrcamentos(orcamentosCarregados);
     } else if (orcamentosResult.status === 'rejected') {
       setOrcamentos([]);
     }
+    return { produtos: produtosCarregados, orcamentos: orcamentosCarregados };
   }, [podeCriar, podeVerOrcamentos]);
 
-  useFocusEffect(useCallback(() => { carregar(); }, [carregar]));
+  useFocusEffect(useCallback(() => {
+    let ativo = true;
+    void carregar().then(async ({ produtos: carregados, orcamentos: orcamentosAprovados }) => {
+      const vendaId = route.params?.retomarVendaId;
+      if (!ativo || !vendaId) return;
+      const historico = await getVendas();
+      const venda = (historico.data ?? []).find((item) => item.id === vendaId && item.status === 'estornada');
+      if (!venda) throw new Error('A venda estornada não foi encontrada para recuperar o carrinho.');
+      const linhas = (venda.itens ?? []).map((item) => {
+        const produto = carregados.find((candidate) => candidate.id === item.produto_id);
+        return produto ? { produto, quantidade: Number(item.quantidade), precoUnitario: venda.orcamento_id ? Number(item.preco_unitario) : undefined } : null;
+      });
+      if (linhas.some((linha) => linha === null)) throw new Error('Não foi possível localizar todos os produtos da venda estornada.');
+      setCarrinho(linhas as CarrinhoItem[]);
+      setFormaPagamento(venda.forma_pagamento ?? 'pix');
+      setDescontoPercentual(false);
+      setDesconto(formatarDesconto(String(Math.round(Number(venda.desconto ?? 0) * 100)), false));
+      const orcamento = orcamentosAprovados.find((item) => item.id === venda.orcamento_id) ?? null;
+      setOrcamentoSelecionado(orcamento);
+      if (orcamento) setClienteSelecionado(orcamento.cliente ?? null);
+      setVendaConcluida(null);
+      Toast.show({ type: 'info', text1: 'Carrinho recuperado', text2: 'Revise os itens antes de finalizar a nova venda.' });
+      navigation.setParams({ retomarVendaId: undefined });
+    }).catch((error: any) => Toast.show({ type: 'error', text1: 'Não foi possível recuperar a venda', text2: error?.response?.data?.message ?? error?.message ?? 'Tente novamente.' }));
+    return () => { ativo = false; };
+  }, [carregar, navigation, route.params?.retomarVendaId]));
 
   const subtotal = carrinho.reduce((soma, item) => soma + Number(item.precoUnitario ?? item.produto.preco_venda ?? 0) * item.quantidade, 0);
   const descontoInformado = Math.max(0, lerDesconto(desconto, descontoPercentual));
@@ -203,11 +236,7 @@ export default function NovaVenda() {
 
   const gerarHtmlComprovante = () => {
     if (!vendaConcluida) return;
-    const escapar = (valor: unknown) => String(valor ?? '').replace(/[&<>"']/g, (caractere) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[caractere]!));
-    const itensHtml = (vendaConcluida.itens ?? []).flatMap((item) => Array.from({ length: Math.max(1, Number(item.quantidade)) }, () => `<div class="item"><span>${escapar(item.produto_nome)}</span><b>${moeda(item.preco_unitario)}</b></div>`)).join('');
-    const larguraConteudo = larguraBobina === 58 ? 54 : 74;
-    const logo = logoOrganizacao ? `<img class="logo" src="${escapar(logoOrganizacao)}" alt="Logo da organização">` : '';
-    return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><style>@page{size:${larguraBobina}mm auto;margin:2mm}*{box-sizing:border-box}body{width:${larguraConteudo}mm;margin:0 auto;color:#111;font:12px/1.3 Arial,sans-serif}header{text-align:left;padding:3mm 0;border-bottom:1px dashed #555}.logo{display:block;max-width:38mm;max-height:18mm;object-fit:contain;object-position:left center;margin-bottom:2mm}h1{font-size:15px;margin:0}.muted{color:#444}.linha,.item{display:flex;justify-content:space-between;gap:4px;text-align:left}.item{padding:2mm 0;border-bottom:1px dotted #aaa;overflow-wrap:anywhere}.totais{padding:3mm 0;border-bottom:1px dashed #555}.total{font-size:16px;font-weight:bold}.rodape{text-align:left;padding:4mm 0}</style></head><body><header>${logo}<h1>COMPROVANTE DE VENDA</h1><p>${escapar(user?.organization?.name ?? user?.organization_name ?? 'Loja')}</p><p class="muted">Venda ${escapar(vendaConcluida.id.slice(0, 8))}</p><p>${escapar(new Date(vendaConcluida.vendido_em).toLocaleString('pt-BR'))}</p></header><p>Cliente: ${escapar(vendaConcluida.cliente_nome || 'Consumidor')}</p>${itensHtml}<section class="totais"><div class="linha"><span>Desconto</span><span>${moeda(vendaConcluida.desconto)}</span></div><div class="linha total"><span>Total</span><span>${moeda(vendaConcluida.valor_total)}</span></div><p>Pagamento: ${escapar(({ pix: 'Pix', dinheiro: 'Dinheiro', debito: 'Débito', credito: 'Crédito' } as Record<string, string>)[vendaConcluida.forma_pagamento ?? ''] ?? '—')}</p></section><p class="rodape">Obrigado pela preferência!</p></body></html>`;
+    return createSaleReceiptHtml(vendaConcluida, user?.organization?.name ?? user?.organization_name ?? 'Loja', logoOrganizacao, larguraBobina);
   };
 
   const imprimirComprovante = async () => {

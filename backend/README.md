@@ -140,7 +140,7 @@ As rotas estão em `routes/api.php`. Entre os recursos disponíveis estão auten
 
 As respostas padrão usam `success`, `message`, `data` e `meta`; alguns endpoints administrativos retornam apenas parte desses campos. Falhas de validação retornam HTTP `422` e podem incluir `errors` por campo. `GET /api/users` retorna até 15 usuários no campo `data` e aceita `?page=N`, mas a resposta atual não inclui metadados da paginação.
 
-Os comprovantes de venda são montados pelos clientes web e mobile a partir da resposta de `POST /api/vendas`. A API registra a venda, seus itens e a atualização de estoque; ela não gera arquivo de cupom nem envia comandos diretamente à impressora.
+Os comprovantes de venda são montados pelos clientes web e mobile a partir da resposta de `POST /api/vendas`. A API registra a venda, seus itens e a atualização de estoque; ela não gera arquivo de cupom nem envia comandos diretamente à impressora. `GET /api/vendas` inclui o status da venda. `POST /api/vendas/{id}/estornar` marca uma venda concluída como estornada, restaura o estoque em uma transação e reabre o orçamento associado, quando houver. O endpoint não processa reembolso financeiro. A migração `2026_11_20_000001_add_estorno_to_vendas_table.php` adiciona status e dados de auditoria; aplique-a com `php artisan migrate` antes de usar a funcionalidade.
 
 ## Uploads
 

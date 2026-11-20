@@ -1,27 +1,33 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Alert, ScrollView, StyleSheet, View } from 'react-native';
 import { Text, List } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import Nav from '@components/utilities/Nav';
-import { getVendas, VendaType } from '@api/apiVendas';
+import Button from '@components/botoes/Button';
+import { estornarVenda, getVendas, VendaType } from '@api/apiVendas';
 import { useTheme } from '@context/ThemeContext';
-import { can } from '@utils/permissions';
+import { can, canSell } from '@utils/permissions';
 import { useAuth } from '@context/AuthContext';
+import Toast from 'react-native-toast-message';
+import * as Print from 'expo-print';
+import { createSaleReceiptHtml } from '@utils/salesReceipt';
 
 const moeda = (valor: number | string | null | undefined) => Number(valor ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 const pagamentos: Record<string, string> = { pix: 'Pix', dinheiro: 'Dinheiro', debito: 'Débito', credito: 'Crédito' };
 
 export default function Vendas() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
   const { colors } = useTheme();
   const { user } = useAuth();
   const podeVer = can(user, 'vendas.ver');
+  const podeVender = canSell(user);
   const [vendas, setVendas] = useState<VendaType[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState('');
   const [abertaId, setAbertaId] = useState<string | undefined>();
   const [hoje, setHoje] = useState(() => new Date());
+  const [estornandoId, setEstornandoId] = useState('');
 
   useFocusEffect(useCallback(() => {
     let ativo = true;
@@ -45,10 +51,10 @@ export default function Vendas() {
     return () => { ativo = false; };
   }, [podeVer]));
 
-  const vendasHoje = useMemo(() => vendas.filter((venda) => {
+  const vendasHoje = useMemo(() => vendas.filter((venda) => venda.status !== 'estornada' && (() => {
     const data = new Date(venda.vendido_em);
     return data.getFullYear() === hoje.getFullYear() && data.getMonth() === hoje.getMonth() && data.getDate() === hoje.getDate();
-  }), [vendas, hoje]);
+  })()), [vendas, hoje]);
   const faturamento = vendasHoje.reduce((total, venda) => total + Number(venda.valor_total), 0);
   const ticketMedio = vendasHoje.length ? faturamento / vendasHoje.length : 0;
   const operadores = new Set(vendasHoje.map((venda) => venda.vendedor?.trim() || 'Operador não informado')).size;
@@ -58,6 +64,33 @@ export default function Vendas() {
     { label: 'Ticket médio', value: moeda(ticketMedio), caption: 'Valor médio por venda hoje', icon: 'chart-line' as const },
     { label: 'Operadores', value: String(operadores), caption: 'Com vendas registradas hoje', icon: 'account-tie-outline' as const },
   ];
+
+  const imprimirComprovante = async (venda: VendaType) => {
+    const logo = user?.organization?.settings?.logo_url ?? user?.organization?.settings?.logo;
+    const html = createSaleReceiptHtml(venda, user?.organization?.name ?? user?.organization_name ?? 'Loja', typeof logo === 'string' ? logo : null, 80);
+    try { await Print.printAsync({ html }); }
+    catch { Toast.show({ type: 'error', text1: 'Não foi possível abrir a impressão do comprovante.' }); }
+  };
+
+  const pedirEstorno = (venda: VendaType) => Alert.alert(
+    'Retornar venda?',
+    'A venda será marcada como estornada, os produtos voltarão ao estoque e o caixa abrirá com esses itens no carrinho.',
+    [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Estornar e retomar', style: 'destructive', onPress: () => {
+        void (async () => {
+          setEstornandoId(venda.id);
+          try {
+            await estornarVenda(venda.id);
+            Toast.show({ type: 'success', text1: 'Venda estornada', text2: 'Abrindo o caixa com os produtos no carrinho.' });
+            navigation.navigate('NovaVenda', { retomarVendaId: venda.id });
+          } catch (error: any) {
+            Toast.show({ type: 'error', text1: 'Não foi possível estornar a venda', text2: error?.response?.data?.message ?? 'Tente novamente.' });
+          } finally { setEstornandoId(''); }
+        })();
+      } },
+    ],
+  );
 
   return <View style={[styles.screen, { backgroundColor: colors.background }]}>
     <Nav title="Vendas" subtitle="Acompanhamento, histórico e resultados" onBackPress={() => navigation.goBack()} rightType="menu" />
@@ -90,11 +123,16 @@ export default function Vendas() {
           rippleColor={colors.border}
         >
           <View style={[styles.details, { borderColor: colors.border }]}>
+            {venda.status === 'estornada' ? <Text style={[styles.voidStatus, { color: colors.error }]}>Venda estornada{venda.estornada_em ? ` em ${new Date(venda.estornada_em).toLocaleString('pt-BR')}` : ''}{venda.estornada_por ? ` por ${venda.estornada_por}` : ''}</Text> : null}
             <Text style={[styles.detailText, { color: colors.muted }]}>Vendedor: {venda.vendedor || 'Equipe'}</Text>
             <Text style={[styles.detailText, { color: colors.muted }]}>Pagamento: {venda.forma_pagamento ? pagamentos[venda.forma_pagamento] : 'Não informado'}</Text>
             {Number(venda.desconto ?? 0) > 0 ? <Text style={[styles.detailText, { color: colors.muted }]}>Desconto: {moeda(venda.desconto)}</Text> : null}
             {venda.itens?.map((item) => <View key={item.id} style={[styles.itemRow, { borderColor: colors.border }]}><View style={styles.itemCopy}><Text style={[styles.itemName, { color: colors.text }]}>{item.produto_nome}</Text><Text style={[styles.detailText, { color: colors.muted }]}>{item.quantidade} × {moeda(item.preco_unitario)}</Text></View><Text style={[styles.itemTotal, { color: colors.text }]}>{moeda(item.subtotal)}</Text></View>)}
             <View style={styles.totalRow}><Text style={[styles.totalLabel, { color: colors.text }]}>Total da venda</Text><Text style={[styles.totalValue, { color: colors.primary }]}>{moeda(venda.valor_total)}</Text></View>
+            <View style={styles.historyActions}>
+              <Button title="Imprimir comprovante" variant="outlined" onPress={() => void imprimirComprovante(venda)} />
+              {podeVender && venda.status !== 'estornada' ? <Button title={estornandoId === venda.id ? 'Estornando...' : 'Retornar venda'} variant="outlined" color="secondary" disabled={Boolean(estornandoId)} onPress={() => pedirEstorno(venda)} /> : null}
+            </View>
           </View>
         </List.Accordion>)}
       </View>
@@ -109,5 +147,5 @@ const styles = StyleSheet.create({
   metricTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 7 }, metricLabel: { fontSize: 15, fontWeight: '700', flex: 1, lineHeight: 20 }, metricIcon: { width: 36, height: 36, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
   metricValue: { fontSize: 24, fontWeight: '900' }, metricCaption: { fontSize: 14, lineHeight: 19 }, panel: { borderWidth: 1, borderRadius: 16, padding: 15 }, panelHeading: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }, heading: { fontSize: 20, fontWeight: '900' },
   empty: { paddingVertical: 20, fontSize: 16 }, error: { paddingVertical: 14, fontSize: 16 }, saleAccordion: { borderWidth: 1, borderRadius: 13, marginTop: 9, overflow: 'hidden' }, saleTitle: { fontSize: 19, lineHeight: 25, fontWeight: '800' }, saleDescription: { fontSize: 14, lineHeight: 20 }, details: { padding: 15, borderTopWidth: StyleSheet.hairlineWidth, gap: 10 }, detailText: { fontSize: 16, lineHeight: 23 },
-  itemRow: { flexDirection: 'row', alignItems: 'center', gap: 11, paddingVertical: 10, borderBottomWidth: StyleSheet.hairlineWidth }, itemCopy: { flex: 1, gap: 4 }, itemName: { fontSize: 17, lineHeight: 23, fontWeight: '700' }, itemTotal: { fontSize: 16, fontWeight: '800' }, totalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 }, totalLabel: { fontSize: 16, fontWeight: '800' }, totalValue: { fontSize: 21, fontWeight: '900' },
+  itemRow: { flexDirection: 'row', alignItems: 'center', gap: 11, paddingVertical: 10, borderBottomWidth: StyleSheet.hairlineWidth }, itemCopy: { flex: 1, gap: 4 }, itemName: { fontSize: 17, lineHeight: 23, fontWeight: '700' }, itemTotal: { fontSize: 16, fontWeight: '800' }, totalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 }, totalLabel: { fontSize: 16, fontWeight: '800' }, totalValue: { fontSize: 21, fontWeight: '900' }, historyActions: { gap: 8, marginTop: 8 }, voidStatus: { fontSize: 14, fontWeight: '900' },
 });

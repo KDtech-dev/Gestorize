@@ -272,7 +272,7 @@ export type RootStackParamList = {
   AdministracaoGlobal: undefined;
   OrganizacaoForm: { modo: "criar" | "editar"; organizationId?: string };
   Vendas: undefined;
-  NovaVenda: undefined;
+  NovaVenda: { retomarVendaId?: string } | undefined;
   Relatorios: undefined;
   Configuracoes: undefined;
   Ajuda: undefined;

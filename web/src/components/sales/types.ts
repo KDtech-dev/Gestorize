@@ -7,6 +7,12 @@ export type Sale = {
   vendedor?: string | null;
   cliente_nome?: string | null;
   forma_pagamento?: PaymentMethod | null;
+  status?: 'concluida' | 'estornada';
+  desconto?: number | string;
+  estornada_em?: string | null;
+  estornada_por?: string | null;
+  orcamento_id?: string | null;
+  cliente_id?: string | null;
   itens?: Array<{ id: string; produto_nome: string; quantidade: number; preco_unitario: number | string; subtotal: number | string }>;
 };
 

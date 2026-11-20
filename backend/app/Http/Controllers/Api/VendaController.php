@@ -8,6 +8,7 @@ use App\Http\Resources\VendaResource;
 use App\Services\ResponseService;
 use App\Services\VendaService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class VendaController extends Controller
 {
@@ -23,5 +24,12 @@ class VendaController extends Controller
         $venda = $this->service->criar($request->validated(), (string) $request->user()->id);
 
         return ResponseService::success(new VendaResource($venda), 'Venda registrada e estoque atualizado.', 201);
+    }
+
+    public function estornar(Request $request, string $id): JsonResponse
+    {
+        $venda = $this->service->estornar($id, (string) $request->user()->id);
+
+        return ResponseService::success(new VendaResource($venda), 'Venda estornada e produtos devolvidos ao estoque.');
     }
 }
