@@ -11,6 +11,7 @@ import { SalesCheckout, type DiscountMode, type SaleCustomer, type SaleQuote } f
 import type { PaymentMethod } from '@/components/sales/types';
 import { useToast } from '@/context/ToastContext';
 import { printSaleReceipt } from '@/lib/salesReceipt';
+import { ConfirmationDialog } from '@/components/ConfirmationDialog';
 
 type Product = { id: string; nome: string; codigo_barras?: string; preco_venda: number | string; estoque: number };
 type Customer = SaleCustomer;
@@ -40,6 +41,8 @@ export function SalesDesk() {
   const { can, user } = useAuth();
   const { showToast } = useToast();
   const [receipt, setReceipt] = useState<Sale | null>(null);
+  const [returnTarget, setReturnTarget] = useState<Sale | null>(null);
+  const [returning, setReturning] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [quotes, setQuotes] = useState<Quote[]>([]);
@@ -261,9 +264,25 @@ export function SalesDesk() {
     finally { setBusy(false); }
   }
 
-  function printReceipt() {
-    if (!receipt) return;
-    if (!printSaleReceipt(receipt, user?.organization?.name ?? user?.organization_name ?? 'Loja', receiptLogoUrl())) showToast('Permita pop-ups para imprimir o comprovante.', 'error');
+  function printReceipt(sale: Sale | null = receipt) {
+    if (!sale) return;
+    if (!printSaleReceipt(sale, user?.organization?.name ?? user?.organization_name ?? 'Loja', receiptLogoUrl())) showToast('Permita pop-ups para imprimir o comprovante.', 'error');
+  }
+
+  async function returnSale() {
+    const sale = returnTarget;
+    if (!sale || !canSell(user) || sale.status === 'estornada' || returning) return;
+    setReturning(true);
+    try {
+      await apiFetch<unknown>(`/vendas/${encodeURIComponent(sale.id)}/estornar`, { method: 'POST' });
+      showToast('Venda estornada. Abrindo o caixa com os produtos no carrinho.', 'success');
+      setReturnTarget(null);
+      router.replace(`/vendas/nova?retomar=${encodeURIComponent(sale.id)}`);
+    } catch (reason) {
+      showToast(reason instanceof Error ? reason.message : 'Não foi possível estornar a venda.', 'error');
+    } finally {
+      setReturning(false);
+    }
   }
 
   function receiptLogoUrl() {
@@ -297,7 +316,14 @@ export function SalesDesk() {
                 <Typography sx={{ fontSize: 15, fontWeight: 700 }}>{money(sale.valor_total)}</Typography>
                 <Icon icon={expanded === sale.id ? 'mdi:chevron-up' : 'mdi:chevron-down'} width={18} height={18} />
               </ButtonBase>
-              <Collapse in={expanded === sale.id}><Box sx={{ pl: 4, pb: 1.25 }}>{sale.itens?.map((item) => <Stack key={item.id} direction="row" sx={{ justifyContent: 'space-between', gap: 1, py: 0.5, color: 'var(--muted)', fontSize: 11 }}><span>{item.produto_nome} × {item.quantidade}</span><span>{money(item.subtotal)}</span></Stack>)}</Box></Collapse>
+              <Collapse in={expanded === sale.id}><Box sx={{ pl: 4, pb: 1.25 }}>
+                {sale.status === 'estornada' && <Typography sx={{ mb: 0.75, color: 'error.main', fontSize: 12, fontWeight: 700 }}>Venda estornada</Typography>}
+                {sale.itens?.map((item) => <Stack key={item.id} direction="row" sx={{ justifyContent: 'space-between', gap: 1, py: 0.5, color: 'var(--muted)', fontSize: 11 }}><span>{item.produto_nome} × {item.quantidade}</span><span>{money(item.subtotal)}</span></Stack>)}
+                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ mt: 1 }}>
+                  <Button size="small" variant="outlined" startIcon={<Icon icon="mdi:printer-outline" />} onClick={() => printReceipt(sale)}>Imprimir comprovante</Button>
+                  {canSell(user) && sale.status !== 'estornada' && <Button size="small" variant="outlined" color="error" startIcon={<Icon icon="mdi:keyboard-return" />} onClick={() => setReturnTarget(sale)}>Retornar venda</Button>}
+                </Stack>
+              </Box></Collapse>
             </Box>) : <Typography sx={{ py: 2, color: 'var(--muted)', fontSize: 13 }}>Nenhuma venda registrada.</Typography>}
           </Paper>
         </Box>
@@ -395,8 +421,17 @@ export function SalesDesk() {
             <Typography sx={{ textAlign: 'left', fontFamily: 'inherit', fontSize: 11, mt: 1 }}>Obrigado pela preferência!</Typography>
           </Box>}
         </DialogContent>
-        <DialogActions><Button onClick={() => setReceipt(null)}>Fechar</Button><Button variant="contained" onClick={printReceipt} startIcon={<Icon icon="mdi:printer-outline" />}>Imprimir comprovante</Button></DialogActions>
+        <DialogActions><Button onClick={() => setReceipt(null)}>Fechar</Button><Button variant="contained" onClick={() => printReceipt()} startIcon={<Icon icon="mdi:printer-outline" />}>Imprimir comprovante</Button></DialogActions>
       </Dialog>
+      <ConfirmationDialog
+        open={Boolean(returnTarget)}
+        title="Retornar venda?"
+        message="A venda será marcada como estornada, os produtos voltarão ao estoque e o caixa abrirá com esses itens no carrinho."
+        confirmLabel={returning ? 'Estornando…' : 'Estornar e retomar'}
+        confirmDisabled={returning}
+        onConfirm={() => void returnSale()}
+        onCancel={() => { if (!returning) setReturnTarget(null); }}
+      />
 
     </Box>
   );

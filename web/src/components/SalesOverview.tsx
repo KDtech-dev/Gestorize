@@ -14,6 +14,7 @@ import { SalesOperators } from '@/components/sales/SalesOperators';
 import { SaleDetails } from '@/components/sales/SaleDetails';
 import { useToast } from '@/context/ToastContext';
 import { printSaleReceipt } from '@/lib/salesReceipt';
+import { ConfirmationDialog } from '@/components/ConfirmationDialog';
 
 function unwrapList<T>(payload: unknown): T[] {
   const value = unwrap<unknown>(payload as never);
@@ -37,6 +38,7 @@ export function SalesOverview() {
   const [error, setError] = useState('');
   const [today, setToday] = useState<Date | null>(null);
   const [returningId, setReturningId] = useState('');
+  const [returnTarget, setReturnTarget] = useState<Sale | null>(null);
 
   useEffect(() => {
     setToday(new Date());
@@ -84,12 +86,14 @@ export function SalesOverview() {
     }
   };
 
-  const returnSale = async (sale: Sale) => {
-    if (!window.confirm(`Estornar a venda #${sale.id.slice(0, 8)}? Os itens voltarão ao estoque e a venda abrirá no caixa para edição.`)) return;
+  const returnSale = async () => {
+    const sale = returnTarget;
+    if (!sale || returningId) return;
     setReturningId(sale.id);
     try {
       await apiFetch(`/vendas/${encodeURIComponent(sale.id)}/estornar`, { method: 'POST' });
       showToast('Venda estornada. Abrindo o caixa com os produtos no carrinho.', 'success');
+      setReturnTarget(null);
       router.push(`/vendas/nova?retomar=${encodeURIComponent(sale.id)}`);
     } catch (reason) {
       showToast(reason instanceof Error ? reason.message : 'Não foi possível estornar a venda.', 'error');
@@ -111,8 +115,17 @@ export function SalesOverview() {
       <SalesHistory sales={visibleSales} selectedId={selected?.id ?? ''} filter={filter} search={search} loading={loading} onSelect={setSelectedId} onFilter={setFilter} onSearch={setSearch} />
       <Stack spacing={1.75}>
         <SalesOperators operators={operators} loading={loading} />
-        <SaleDetails sale={selected} canReturn={can('vendas.criar')} returning={returningId === selected?.id} onPrint={printReceipt} onReturn={(sale) => void returnSale(sale)} />
+        <SaleDetails sale={selected} canReturn={can('vendas.criar')} returning={returningId === selected?.id} onPrint={printReceipt} onReturn={setReturnTarget} />
       </Stack>
     </Box>
+    <ConfirmationDialog
+      open={Boolean(returnTarget)}
+      title="Retornar venda?"
+      message={returnTarget ? `A venda #${returnTarget.id.slice(0, 8)} será marcada como estornada, os itens voltarão ao estoque e o caixa abrirá com os produtos selecionados.` : ''}
+      confirmLabel={returningId ? 'Estornando…' : 'Estornar e retomar'}
+      confirmDisabled={Boolean(returningId)}
+      onConfirm={() => void returnSale()}
+      onCancel={() => { if (!returningId) setReturnTarget(null); }}
+    />
   </div>;
 }
