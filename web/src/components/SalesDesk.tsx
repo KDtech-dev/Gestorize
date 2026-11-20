@@ -3,16 +3,17 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Icon } from '@iconify/react';
-import { Alert, Box, Button, ButtonBase, Collapse, IconButton, InputAdornment, Paper, Stack, TextField, Typography } from '@mui/material';
+import { Alert, Box, Button, ButtonBase, Collapse, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, InputAdornment, Paper, Stack, TextField, Typography } from '@mui/material';
 import { canSell, useAuth } from '@/context/AuthContext';
 import { apiFetch } from '@/lib/api';
 import { SalesCheckout, type DiscountMode, type SaleCustomer, type SaleQuote } from '@/components/sales/SalesCheckout';
 import type { PaymentMethod } from '@/components/sales/types';
+import { useToast } from '@/context/ToastContext';
 
 type Product = { id: string; nome: string; codigo_barras?: string; preco_venda: number | string; estoque: number };
 type Customer = SaleCustomer;
 type Quote = SaleQuote & { itens: Array<SaleQuote['itens'][number] & { produto?: Product | null }> };
-type Sale = { id: string; usuario_id?: string; valor_total: number | string; vendido_em: string; vendedor?: string; cliente_nome?: string; orcamento_id?: string | null; forma_pagamento?: PaymentMethod | null; itens?: Array<{ id: string; produto_nome: string; quantidade: number; preco_unitario: number | string; subtotal: number | string }> };
+type Sale = { id: string; usuario_id?: string; valor_total: number | string; desconto?: number | string; vendido_em: string; vendedor?: string; cliente_nome?: string; orcamento_id?: string | null; forma_pagamento?: PaymentMethod | null; itens?: Array<{ id: string; produto_nome: string; quantidade: number; preco_unitario: number | string; subtotal: number | string }> };
 type CartRow = { produto: Product; quantidade: number; precoUnitario?: number };
 
 function list<T>(payload: unknown): T[] {
@@ -32,6 +33,8 @@ const panelSx = { border: '1px solid var(--line)', borderRadius: '14px', bgcolor
 
 export function SalesDesk() {
   const { can, user } = useAuth();
+  const { showToast } = useToast();
+  const [receipt, setReceipt] = useState<Sale | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [quotes, setQuotes] = useState<Quote[]>([]);
@@ -219,10 +222,25 @@ export function SalesDesk() {
     if (!cart.length || !canSell(user)) return;
     setBusy(true); setError('');
     try {
-      await apiFetch('/vendas', { method: 'POST', body: JSON.stringify({ cliente_id: customerId || null, orcamento_id: quoteId || null, forma_pagamento: paymentMethod, desconto: appliedDiscount, itens: cart.map(({ produto, quantidade }) => ({ produto_id: produto.id, quantidade })) }) });
-      setCart([]); setCustomerId(''); setQuoteId(''); setDiscountInput(''); setDiscountMode('percent'); setPaymentMethod('pix'); await load();
+      const payload = await apiFetch<unknown>('/vendas', { method: 'POST', body: JSON.stringify({ cliente_id: customerId || null, orcamento_id: quoteId || null, forma_pagamento: paymentMethod, desconto: appliedDiscount, itens: cart.map(({ produto, quantidade }) => ({ produto_id: produto.id, quantidade })) }) });
+      const sale = record<Sale>(payload);
+      if (!sale) throw new Error('Venda registrada, mas não foi possível montar o comprovante.');
+      setReceipt(sale);
+      showToast('Venda registrada com sucesso. O estoque foi atualizado.', 'success');
+      setCart([]); setCustomerId(''); setQuoteId(''); setDiscountInput(''); setDiscountMode('percent'); setPaymentMethod('pix');
+      load().catch(() => showToast('Venda registrada. Não foi possível atualizar o histórico agora.', 'warning'));
     } catch (reason) { setError(reason instanceof Error ? reason.message : 'Não foi possível registrar a venda.'); }
     finally { setBusy(false); }
+  }
+
+  function printReceipt() {
+    if (!receipt) return;
+    const printWindow = window.open('', '_blank', 'width=420,height=720');
+    if (!printWindow) { showToast('Permita pop-ups para imprimir o comprovante.', 'error'); return; }
+    const safe = (value: unknown) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]!));
+    const items = (receipt.itens ?? []).flatMap((item) => Array.from({ length: Math.max(1, Number(item.quantidade)) }, () => `<section class="item"><span>${safe(item.produto_nome)}</span><strong>${safe(money(item.preco_unitario))}</strong></section>`)).join('');
+    printWindow.document.write(`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Comprovante de venda</title><style>@page{size:80mm auto;margin:2mm}*{box-sizing:border-box}body{width:74mm;margin:0 auto;color:#111;font:12px/1.3 Arial,sans-serif}h1,p{margin:0}header{text-align:center;padding:3mm 0;border-bottom:1px dashed #555}h1{font-size:15px}.muted{color:#444}.row,.item{display:flex;justify-content:space-between;gap:4px}.item{padding:2mm 0;border-bottom:1px dotted #aaa;overflow-wrap:anywhere}.totals{padding:3mm 0;border-bottom:1px dashed #555}.grand{font-size:16px;font-weight:bold}.footer{text-align:center;padding:4mm 0}</style></head><body><header><h1>COMPROVANTE DE VENDA</h1><p>${safe(user?.organization_name || 'Loja')}</p><p class="muted">Venda ${safe(receipt.id.slice(0, 8))}</p><p>${safe(new Date(receipt.vendido_em).toLocaleString('pt-BR'))}</p></header><p style="padding:3mm 0">Cliente: ${safe(receipt.cliente_nome || 'Consumidor')}</p>${items}<section class="totals"><div class="row"><span>Desconto</span><span>${safe(money(receipt.desconto))}</span></div><div class="row grand"><span>Total</span><span>${safe(money(receipt.valor_total))}</span></div><p>Pagamento: ${safe(({ pix: 'Pix', dinheiro: 'Dinheiro', debito: 'Débito', credito: 'Crédito' } as Record<string, string>)[receipt.forma_pagamento ?? ''] ?? '—')}</p></section><p class="footer">Obrigado pela preferência!</p><script>window.onload=()=>{window.print();window.onafterprint=()=>window.close()}</script></body></html>`);
+    printWindow.document.close();
   }
 
   return (
@@ -331,6 +349,24 @@ export function SalesDesk() {
           onCancel={() => { setCart([]); setCustomerId(''); setQuoteId(''); setDiscountInput(''); setDiscountMode('percent'); setError(''); }}
         />
       </Box>
+
+      <Dialog open={Boolean(receipt)} onClose={() => setReceipt(null)} fullWidth maxWidth="xs">
+        <DialogTitle>Venda concluída</DialogTitle>
+        <DialogContent dividers>
+          <Typography sx={{ mb: 1 }}>A venda foi registrada e o estoque atualizado.</Typography>
+          {receipt && <Box sx={{ mx: 'auto', p: 2, width: 300, maxWidth: '100%', bgcolor: '#fff', color: '#111', border: '1px solid #ddd', boxShadow: '0 3px 14px #0002', fontFamily: 'monospace' }}>
+            <Typography sx={{ textAlign: 'center', fontFamily: 'inherit', fontSize: 14, fontWeight: 800 }}>COMPROVANTE DE VENDA</Typography>
+            <Typography sx={{ textAlign: 'center', fontFamily: 'inherit', fontSize: 12 }}>{user?.organization_name || 'Loja'}</Typography>
+            <Typography sx={{ textAlign: 'center', fontFamily: 'inherit', fontSize: 11, mb: 1 }}>{new Date(receipt.vendido_em).toLocaleString('pt-BR')} · Nº {receipt.id.slice(0, 8)}</Typography>
+            <Box sx={{ borderTop: '1px dashed #777', borderBottom: '1px dashed #777', py: 0.75 }}>{receipt.itens?.flatMap((item) => Array.from({ length: Math.max(1, Number(item.quantidade)) }, (_, index) => <Stack key={`${item.id}-${index}`} direction="row" sx={{ justifyContent: 'space-between', gap: 1 }}><Typography sx={{ fontFamily: 'inherit', fontSize: 12, overflowWrap: 'anywhere' }}>{item.produto_nome}</Typography><Typography sx={{ fontFamily: 'inherit', fontSize: 12, whiteSpace: 'nowrap' }}>{money(item.preco_unitario)}</Typography></Stack>))}</Box>
+            <Stack direction="row" sx={{ justifyContent: 'space-between', pt: 0.75 }}><Typography sx={{ fontFamily: 'inherit', fontSize: 12 }}>Desconto</Typography><Typography sx={{ fontFamily: 'inherit', fontSize: 12 }}>{money(receipt.desconto)}</Typography></Stack>
+            <Stack direction="row" sx={{ justifyContent: 'space-between' }}><Typography sx={{ fontFamily: 'inherit', fontSize: 13, fontWeight: 800 }}>TOTAL</Typography><Typography sx={{ fontFamily: 'inherit', fontSize: 13, fontWeight: 800 }}>{money(receipt.valor_total)}</Typography></Stack>
+            <Typography sx={{ fontFamily: 'inherit', fontSize: 12, mt: 0.5 }}>Pagamento: {({ pix: 'Pix', dinheiro: 'Dinheiro', debito: 'Débito', credito: 'Crédito' } as Record<string, string>)[receipt.forma_pagamento ?? ''] ?? '—'}</Typography>
+            <Typography sx={{ textAlign: 'center', fontFamily: 'inherit', fontSize: 11, mt: 1 }}>Obrigado pela preferência!</Typography>
+          </Box>}
+        </DialogContent>
+        <DialogActions><Button onClick={() => setReceipt(null)}>Fechar</Button><Button variant="contained" onClick={printReceipt} startIcon={<Icon icon="mdi:printer-outline" />}>Imprimir comprovante</Button></DialogActions>
+      </Dialog>
 
     </Box>
   );

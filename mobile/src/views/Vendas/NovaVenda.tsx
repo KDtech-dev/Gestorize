@@ -15,7 +15,7 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import Nav from '@components/utilities/Nav';
 import Button from '@components/botoes/Button';
 import { getProdutos } from '@api/apiProdutos';
-import { FormaPagamento, getProdutoPorCodigo, registrarVenda } from '@api/apiVendas';
+import { FormaPagamento, getProdutoPorCodigo, registrarVenda, VendaType } from '@api/apiVendas';
 import { OrcamentoType, ProdutoType } from '@context/types';
 import { ClienteType } from '@context/types';
 import OrcamentoProdutoPicker from '@components/orcamentos/OrcamentoProdutoPicker';
@@ -26,6 +26,7 @@ import { useTheme } from '@context/ThemeContext';
 import { useAuth } from '@context/AuthContext';
 import { can, canSell } from '@utils/permissions';
 import Toast from 'react-native-toast-message';
+import * as Print from 'expo-print';
 
 type CarrinhoItem = { produto: ProdutoType; quantidade: number; precoUnitario?: number };
 const moeda = (valor: number | string | null | undefined) => Number(valor ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -68,6 +69,8 @@ export default function NovaVenda() {
   const [carregandoProdutos, setCarregandoProdutos] = useState(true);
   const [cameraVisivel, setCameraVisivel] = useState(false);
   const [salvando, setSalvando] = useState(false);
+  const [vendaConcluida, setVendaConcluida] = useState<VendaType | null>(null);
+  const [larguraBobina, setLarguraBobina] = useState<58 | 80>(80);
   const [permission, requestPermission] = useCameraPermissions();
   const processandoScan = useRef(false);
 
@@ -173,11 +176,12 @@ export default function NovaVenda() {
     if (!carrinho.length || !podeCriar) return;
     try {
       setSalvando(true);
-      await registrarVenda(
+      const resposta = await registrarVenda(
         carrinho.map(({ produto, quantidade }) => ({ produto_id: produto.id, quantidade })),
         clienteSelecionado?.id ?? orcamentoSelecionado?.cliente_id,
         { orcamentoId: orcamentoSelecionado?.id, formaPagamento, desconto: descontoAplicado },
       );
+      setVendaConcluida(resposta.data);
       Toast.show({ type: 'success', text1: 'Venda registrada', text2: 'O estoque foi atualizado.' });
       setCarrinho([]);
       setClienteSelecionado(null);
@@ -190,6 +194,19 @@ export default function NovaVenda() {
       Toast.show({ type: 'error', text1: 'Erro ao registrar venda', text2: mensagem });
     } finally {
       setSalvando(false);
+    }
+  };
+
+  const imprimirComprovante = async () => {
+    if (!vendaConcluida) return;
+    const escapar = (valor: unknown) => String(valor ?? '').replace(/[&<>"']/g, (caractere) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[caractere]!));
+    const itensHtml = (vendaConcluida.itens ?? []).map((item) => `<div class="item"><div>${escapar(item.produto_nome)}</div><div class="linha"><span>${item.quantidade} × ${moeda(item.preco_unitario)}</span><b>${moeda(item.subtotal)}</b></div></div>`).join('');
+    const larguraConteudo = larguraBobina === 58 ? 54 : 74;
+    const html = `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><style>@page{size:${larguraBobina}mm auto;margin:2mm}*{box-sizing:border-box}body{width:${larguraConteudo}mm;margin:0 auto;color:#111;font:12px/1.3 Arial,sans-serif}header{text-align:center;padding:3mm 0;border-bottom:1px dashed #555}h1{font-size:15px;margin:0}.muted{color:#444}.linha{display:flex;justify-content:space-between;gap:4px}.item{padding:2mm 0;border-bottom:1px dotted #aaa;overflow-wrap:anywhere}.totais{padding:3mm 0;border-bottom:1px dashed #555}.total{font-size:16px;font-weight:bold}.rodape{text-align:center;padding:4mm 0}</style></head><body><header><h1>COMPROVANTE DE VENDA</h1><p>${escapar(user?.organization?.name ?? user?.organization_name ?? 'Loja')}</p><p class="muted">Venda ${escapar(vendaConcluida.id.slice(0, 8))}</p><p>${escapar(new Date(vendaConcluida.vendido_em).toLocaleString('pt-BR'))}</p></header><p>Cliente: ${escapar(vendaConcluida.cliente_nome || 'Consumidor')}</p>${itensHtml}<section class="totais"><div class="linha"><span>Desconto</span><span>${moeda(vendaConcluida.desconto)}</span></div><div class="linha total"><span>Total</span><span>${moeda(vendaConcluida.valor_total)}</span></div><p>Pagamento: ${escapar(({ pix: 'Pix', dinheiro: 'Dinheiro', debito: 'Débito', credito: 'Crédito' } as Record<string, string>)[vendaConcluida.forma_pagamento ?? ''] ?? '—')}</p></section><p class="rodape">Obrigado pela preferência!</p></body></html>`;
+    try {
+      await Print.printAsync({ html });
+    } catch {
+      Toast.show({ type: 'error', text1: 'Não foi possível abrir a impressão', text2: 'Verifique a conexão da impressora ou tente novamente.' });
     }
   };
 
@@ -331,6 +348,18 @@ export default function NovaVenda() {
         </View>
       </ScrollView>
 
+      <Modal visible={Boolean(vendaConcluida)} transparent animationType="fade" onRequestClose={() => setVendaConcluida(null)}>
+        <View style={styles.receiptBackdrop}><View style={[styles.receiptCard, { backgroundColor: colors.surface }]}>
+          <MaterialCommunityIcons name="check-circle" size={42} color="#16a34a" />
+          <Text style={[styles.heading, { color: colors.text, textAlign: 'center' }]}>Venda concluída</Text>
+          <Text style={[styles.hint, { color: colors.muted, textAlign: 'center' }]}>Venda {vendaConcluida?.id.slice(0, 8)} · {moeda(vendaConcluida?.valor_total)}</Text>
+          <View style={styles.paperSelector}><Text style={[styles.hint, { color: colors.text }]}>Bobina:</Text>{([58, 80] as const).map((largura) => <Pressable key={largura} accessibilityRole="radio" accessibilityState={{ selected: larguraBobina === largura }} onPress={() => setLarguraBobina(largura)} style={[styles.paperOption, { borderColor: larguraBobina === largura ? colors.primary : colors.border, backgroundColor: larguraBobina === largura ? colors.elevated : colors.background }]}><Text style={{ color: colors.text, fontWeight: '800' }}>{largura} mm</Text></Pressable>)}</View>
+          <ScrollView style={{ maxHeight: 220, alignSelf: 'stretch' }}>{vendaConcluida?.itens?.map((item) => <View key={item.id} style={[styles.receiptRow, { borderColor: colors.border }]}><Text style={[styles.hint, { color: colors.text, flex: 1 }]}>{item.produto_nome} × {item.quantidade}</Text><Text style={[styles.hint, { color: colors.text }]}>{moeda(item.subtotal)}</Text></View>)}</ScrollView>
+          <Button title="Imprimir comprovante" onPress={() => void imprimirComprovante()} />
+          <Pressable onPress={() => setVendaConcluida(null)} style={styles.receiptClose}><Text style={{ color: colors.primary, fontWeight: '800' }}>Fechar</Text></Pressable>
+        </View></View>
+      </Modal>
+
       <OrcamentoProdutoPicker
         visible={seletorProdutosVisivel}
         products={produtos.filter((produto) => Number(produto.estoque) > 0)}
@@ -425,6 +454,12 @@ const styles = StyleSheet.create({
   quoteList: { paddingVertical: 12, gap: 10 },
   quoteOption: { minHeight: 68, padding: 14, borderWidth: 1, borderRadius: 14, flexDirection: 'row', alignItems: 'center', gap: 12 },
   cameraScreen: { flex: 1, backgroundColor: '#000' },
+  receiptBackdrop: { flex: 1, backgroundColor: '#0008', justifyContent: 'center', padding: 22 },
+  receiptCard: { borderRadius: 18, padding: 20, alignItems: 'center', gap: 10, maxHeight: '80%' },
+  receiptRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 8, paddingVertical: 8, borderBottomWidth: StyleSheet.hairlineWidth },
+  receiptClose: { minHeight: 42, alignItems: 'center', justifyContent: 'center' },
+  paperSelector: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  paperOption: { minHeight: 40, paddingHorizontal: 14, borderWidth: 1, borderRadius: 10, justifyContent: 'center' },
   cameraOverlay: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'space-around', padding: 28 },
   cameraTitle: { color: '#fff', fontWeight: '800', fontSize: 18, textAlign: 'center', backgroundColor: '#0009', padding: 12, borderRadius: 12 },
   scanFrame: { width: '88%', height: 180, borderWidth: 3, borderColor: '#FACC15', borderRadius: 20 },
