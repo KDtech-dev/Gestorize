@@ -67,7 +67,7 @@ export default function Vendas() {
 
   const imprimirComprovante = async (venda: VendaType) => {
     const logo = user?.organization?.settings?.logo_url ?? user?.organization?.settings?.logo;
-    const html = createSaleReceiptHtml(venda, user?.organization?.name ?? user?.organization_name ?? 'Loja', typeof logo === 'string' ? logo : null, 80);
+    const html = createSaleReceiptHtml(venda, user?.organization?.name ?? user?.organization_name ?? 'Loja', typeof logo === 'string' ? logo : null);
     try { await Print.printAsync({ html }); }
     catch { Toast.show({ type: 'error', text1: 'Não foi possível abrir a impressão do comprovante.' }); }
   };
