@@ -29,9 +29,7 @@ import { useAuth } from '@context/AuthContext';
 import { can, canSell } from '@utils/permissions';
 import Toast from 'react-native-toast-message';
 import * as Print from 'expo-print';
-import * as Sharing from 'expo-sharing';
-import * as FileSystem from 'expo-file-system/legacy';
-import { createSaleReceiptHtml } from '@utils/salesReceipt';
+import { createSaleReceiptHtml, shareSaleReceipt } from '@utils/salesReceipt';
 
 type CarrinhoItem = { produto: ProdutoType; quantidade: number; precoUnitario?: number };
 const moeda = (valor: number | string | null | undefined) => Number(valor ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -251,18 +249,9 @@ export default function NovaVenda() {
 
   const compartilharComprovante = async () => {
     const html = gerarHtmlComprovante();
-    if (!html) return;
+    if (!html || !vendaConcluida) return;
     try {
-      if (!(await Sharing.isAvailableAsync())) {
-        Toast.show({ type: 'error', text1: 'Compartilhamento indisponível', text2: 'Este dispositivo não oferece compartilhamento de arquivos.' });
-        return;
-      }
-      const arquivo = await Print.printToFileAsync({ html, base64: true });
-      if (!arquivo.base64) throw new Error('O PDF foi gerado sem os dados necessários para compartilhá-lo.');
-      if (!FileSystem.cacheDirectory) throw new Error('O armazenamento temporário do dispositivo está indisponível.');
-      const arquivoCompartilhavel = `${FileSystem.cacheDirectory}comprovante-venda-${vendaConcluida!.id.slice(0, 8)}-${Date.now()}.pdf`;
-      await FileSystem.writeAsStringAsync(arquivoCompartilhavel, arquivo.base64, { encoding: FileSystem.EncodingType.Base64 });
-      await Sharing.shareAsync(arquivoCompartilhavel, { mimeType: 'application/pdf', dialogTitle: 'Compartilhar comprovante' });
+      await shareSaleReceipt(html, vendaConcluida.id);
     } catch (error: any) {
       console.error('Erro ao gerar ou compartilhar o comprovante:', error);
       Toast.show({

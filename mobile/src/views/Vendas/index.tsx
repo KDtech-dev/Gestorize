@@ -11,7 +11,7 @@ import { can, canSell } from '@utils/permissions';
 import { useAuth } from '@context/AuthContext';
 import Toast from 'react-native-toast-message';
 import * as Print from 'expo-print';
-import { createSaleReceiptHtml } from '@utils/salesReceipt';
+import { createSaleReceiptHtml, shareSaleReceipt } from '@utils/salesReceipt';
 
 const moeda = (valor: number | string | null | undefined) => Number(valor ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 const pagamentos: Record<string, string> = { pix: 'Pix', dinheiro: 'Dinheiro', debito: 'Débito', credito: 'Crédito' };
@@ -70,6 +70,16 @@ export default function Vendas() {
     const html = createSaleReceiptHtml(venda, user?.organization?.name ?? user?.organization_name ?? 'Loja', typeof logo === 'string' ? logo : null);
     try { await Print.printAsync({ html }); }
     catch { Toast.show({ type: 'error', text1: 'Não foi possível abrir a impressão do comprovante.' }); }
+  };
+
+  const compartilharComprovante = async (venda: VendaType) => {
+    const logo = user?.organization?.settings?.logo_url ?? user?.organization?.settings?.logo;
+    const html = createSaleReceiptHtml(venda, user?.organization?.name ?? user?.organization_name ?? 'Loja', typeof logo === 'string' ? logo : null);
+    try { await shareSaleReceipt(html, venda.id); }
+    catch (error: any) {
+      console.error('Erro ao compartilhar o comprovante da venda:', error);
+      Toast.show({ type: 'error', text1: 'Não foi possível compartilhar o comprovante', text2: error?.message ?? 'Tente novamente.' });
+    }
   };
 
   const pedirEstorno = (venda: VendaType) => Alert.alert(
@@ -131,6 +141,7 @@ export default function Vendas() {
             <View style={styles.totalRow}><Text style={[styles.totalLabel, { color: colors.text }]}>Total da venda</Text><Text style={[styles.totalValue, { color: colors.primary }]}>{moeda(venda.valor_total)}</Text></View>
             <View style={styles.historyActions}>
               <Button title="Imprimir comprovante" variant="outlined" onPress={() => void imprimirComprovante(venda)} />
+              <Button title="Compartilhar comprovante" variant="outlined" onPress={() => void compartilharComprovante(venda)} />
               {podeVender && venda.status !== 'estornada' ? <Button title={estornandoId === venda.id ? 'Estornando...' : 'Retornar venda'} variant="outlined" color="secondary" disabled={Boolean(estornandoId)} onPress={() => pedirEstorno(venda)} /> : null}
             </View>
           </View>

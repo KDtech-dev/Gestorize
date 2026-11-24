@@ -1,4 +1,7 @@
 import { VendaType } from '@api/apiVendas';
+import * as Print from 'expo-print';
+import * as Sharing from 'expo-sharing';
+import * as FileSystem from 'expo-file-system/legacy';
 
 const escapeHtml = (value: unknown) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]!));
 const currency = (value: unknown) => Number(value ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -15,4 +18,18 @@ export function createSaleReceiptHtml(sale: VendaType, organizationName: string,
   const payment = sale.forma_pagamento ? payments[sale.forma_pagamento] : 'Não informado';
 
   return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><style>@page{size:A4 portrait;margin:15mm}*{box-sizing:border-box}html,body{margin:0;padding:0}body{width:100%;max-width:180mm;margin:0 auto;color:#111;font:12px/1.4 Arial,sans-serif}header{text-align:left;padding:3mm 0;border-bottom:1px dashed #555}.logo{display:block;max-width:50mm;max-height:24mm;object-fit:contain;object-position:left center;margin-bottom:2mm}h1{font-size:18px;margin:0}.linha,.item{display:flex;justify-content:space-between;gap:8px;text-align:left}.item{padding:3mm 0;border-bottom:1px dotted #aaa;overflow-wrap:anywhere}.totais{padding:4mm 0;border-bottom:1px dashed #555}.total{font-size:18px;font-weight:bold}.rodape{text-align:left;padding:5mm 0}.status{font-weight:bold;color:#991b1b}</style></head><body><header>${logo}<h1>COMPROVANTE DE VENDA</h1><p>${escapeHtml(organizationName || 'Loja')}</p><p>Venda ${escapeHtml(sale.id.slice(0, 8))} · ${escapeHtml(new Date(sale.vendido_em).toLocaleString('pt-BR'))}</p><p>Cliente: ${escapeHtml(sale.cliente_nome || 'Consumidor')}</p>${voidLabel}</header>${itemsHtml}<section class="totais"><div class="linha"><span>Desconto</span><span>${currency(sale.desconto)}</span></div><div class="linha total"><span>Total</span><span>${currency(sale.valor_total)}</span></div><p>Pagamento: ${escapeHtml(payment)}</p></section><p class="rodape">Obrigado pela preferência!</p></body></html>`;
+}
+
+export async function shareSaleReceipt(html: string, saleId: string) {
+  if (!(await Sharing.isAvailableAsync())) {
+    throw new Error('Este dispositivo não oferece compartilhamento de arquivos.');
+  }
+
+  const pdf = await Print.printToFileAsync({ html, base64: true });
+  if (!pdf.base64) throw new Error('O PDF foi gerado sem os dados necessários para compartilhá-lo.');
+  if (!FileSystem.cacheDirectory) throw new Error('O armazenamento temporário do dispositivo está indisponível.');
+
+  const sharedFile = `${FileSystem.cacheDirectory}comprovante-venda-${saleId.slice(0, 8)}-${Date.now()}.pdf`;
+  await FileSystem.writeAsStringAsync(sharedFile, pdf.base64, { encoding: FileSystem.EncodingType.Base64 });
+  await Sharing.shareAsync(sharedFile, { mimeType: 'application/pdf', dialogTitle: 'Compartilhar comprovante' });
 }
