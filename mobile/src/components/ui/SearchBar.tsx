@@ -8,9 +8,10 @@ type Props = {
   placeholder?: string;
   onChangeText?: (text: string) => void;
   rightElement?: React.ReactNode;
+  accessibilityLabel?: string;
 };
 
-const SearchBar = ({ value, onChangeText, placeholder, rightElement }: Props) => {
+const SearchBar = ({ value, onChangeText, placeholder, rightElement, accessibilityLabel }: Props) => {
   const { colors } = useTheme();
   const isDark = colors.background !== '#ffffff';
 
@@ -32,6 +33,7 @@ const SearchBar = ({ value, onChangeText, placeholder, rightElement }: Props) =>
         onChangeText={onChangeText}
         placeholder={placeholder}
         placeholderTextColor={placeholderColor}
+        accessibilityLabel={accessibilityLabel ?? placeholder ?? 'Buscar'}
         style={[styles.input, { color: textColor }]}
       />
       {rightElement}

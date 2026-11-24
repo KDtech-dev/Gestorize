@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
-import { ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { Card, Divider, List, Text } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
 import Nav from '@components/utilities/Nav';
 import Button from '@components/botoes/Button';
+import InputCard from '@components/InputCard';
+import SearchBar from '@components/ui/SearchBar';
 import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '@context/ThemeContext';
 import { useAuth } from '@context/AuthContext';
@@ -28,7 +31,11 @@ const perguntas = [
   },
   {
     titulo: 'Como salvar um relatório em PDF?',
-    texto: 'Na tela Relatórios, escolha o período e o tipo de informação e toque em Imprimir ou salvar em PDF. No diálogo do sistema, selecione Salvar como PDF ou a impressora desejada.',
+    texto: 'Abra Relatórios e selecione Hoje, Semana, Mês ou Ano. Os indicadores e gráficos são atualizados para o período escolhido. Toque em Imprimir ou salvar em PDF e, no diálogo do dispositivo, escolha uma impressora ou a opção para salvar o arquivo.',
+  },
+  {
+    titulo: 'Como compartilhar ou imprimir um comprovante?',
+    texto: 'Ao concluir uma venda, use Compartilhar comprovante para abrir as opções do dispositivo ou Imprimir comprovante para selecionar uma impressora. Você também pode abrir Vendas, expandir o registro no histórico e compartilhar ou imprimir novamente. O comprovante é gerado em PDF no formato A4.',
   },
   {
     titulo: 'Por que uma opção não aparece para mim?',
@@ -42,16 +49,16 @@ const perguntas = [
 
 const etapas = [
   {
-    titulo: 'Abra a função que precisa',
-    texto: 'Na página inicial, use Acessos principais para abrir cadastros e relatórios. Toque em Vender + para registrar uma venda ou em Vendas para consultar histórico e faturamento.',
+    titulo: 'Acesse a área certa',
+    texto: 'Na página inicial, use os acessos principais para abrir cadastros e relatórios. Entre em Vender + para iniciar uma venda ou em Vendas para consultar o histórico.',
   },
   {
     titulo: 'Escolha como iniciar a venda',
-    texto: 'No caixa, adicione produtos pela busca ou pela câmera. Se a venda partir de uma proposta já aprovada, selecione o orçamento para carregar os itens e o cliente.',
+    texto: 'No caixa, localize produtos pela busca, digite o código de barras ou leia pela câmera. Para usar uma proposta aprovada, selecione o orçamento e carregue os itens e o cliente.',
   },
   {
     titulo: 'Revise os itens e o cliente',
-    texto: 'Confira os produtos, quantidades e estoque disponível. Associe ou confirme o cliente antes de continuar.',
+    texto: 'Confira os nomes, preços e quantidades. Verifique o estoque disponível e confirme ou selecione o cliente antes de seguir.',
   },
   {
     titulo: 'Defina desconto e pagamento',
@@ -59,7 +66,7 @@ const etapas = [
   },
   {
     titulo: 'Finalize e acompanhe',
-    texto: 'Toque em Finalizar venda para registrar a operação e atualizar o estoque. Depois, abra Vendas para consultar faturamento do dia, ticket médio e detalhes do histórico. Nos relatórios, escolha o período para analisar ou exportar os dados.',
+    texto: 'Toque em Finalizar venda para registrar a operação e atualizar o estoque. Na confirmação, você pode imprimir ou compartilhar o comprovante. Depois, consulte os indicadores e o histórico na área Vendas.',
   },
 ];
 
@@ -69,8 +76,12 @@ const Ajuda = () => {
   const corEtapa = isDark ? '#2563EB' : colors.primary;
   const { user } = useAuth();
   const [perguntaAberta, setPerguntaAberta] = useState<string | undefined>();
+  const [busca, setBusca] = useState('');
   const [mensagem, setMensagem] = useState('');
   const [enviando, setEnviando] = useState(false);
+  const termoBusca = busca.trim().toLocaleLowerCase('pt-BR').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const perguntasFiltradas = perguntas.filter((pergunta) => `${pergunta.titulo} ${pergunta.texto}`
+    .toLocaleLowerCase('pt-BR').normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(termoBusca));
 
   const enviarMensagem = async () => {
     const texto = mensagem.trim();
@@ -99,18 +110,26 @@ const Ajuda = () => {
         rightType="menu"
       />
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <Card mode="contained" style={[styles.introCard, { backgroundColor: colors.surface }]}>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+        <Card mode="contained" style={[styles.introCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Card.Content>
-            <Text style={[styles.eyebrow, { color: colors.primary }]}>GESTORIZE</Text>
-            <Text style={[styles.introTitle, { color: colors.text }]}>Encontre orientação para cada etapa</Text>
+            <View style={styles.introHeading}>
+              <View style={[styles.introIcon, { backgroundColor: `${colors.primary}20` }]}><MaterialCommunityIcons name="lifebuoy" size={25} color={colors.primary} /></View>
+              <View style={styles.introCopy}>
+                <Text style={[styles.eyebrow, { color: colors.primary }]}>CENTRAL GESTORIZE</Text>
+                <Text style={[styles.introTitle, { color: colors.text }]}>Como podemos ajudar?</Text>
+              </View>
+            </View>
             <Text style={[styles.body, { color: colors.muted }]}>
-              Consulte os passos principais e as respostas para dúvidas comuns sobre cadastros, orçamentos, vendas, relatórios e acesso.
+              Pesquise uma dúvida, siga o passo a passo de vendas ou envie uma mensagem ao suporte. As respostas abaixo cobrem as principais funções do aplicativo.
             </Text>
           </Card.Content>
         </Card>
 
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Comece por aqui</Text>
+        <View style={styles.sectionHeading}>
+          <View><Text style={[styles.sectionTitle, { color: colors.text }]}>Comece por aqui</Text><Text style={[styles.sectionHint, { color: colors.muted }]}>Fluxo rápido para registrar uma venda</Text></View>
+          <MaterialCommunityIcons name="cart-check" size={23} color={colors.primary} />
+        </View>
         <Card mode="outlined" style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <Card.Content style={styles.steps}>
             {etapas.map((etapa, index) => <React.Fragment key={etapa.titulo}>
@@ -126,9 +145,13 @@ const Ajuda = () => {
           </Card.Content>
         </Card>
 
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Dúvidas frequentes</Text>
+        <View style={styles.sectionHeading}>
+          <View><Text style={[styles.sectionTitle, { color: colors.text }]}>Dúvidas frequentes</Text><Text style={[styles.sectionHint, { color: colors.muted }]}>Busque por assunto ou palavra-chave</Text></View>
+          <Text style={[styles.resultCount, { color: colors.muted }]}>{perguntasFiltradas.length}</Text>
+        </View>
+        <SearchBar value={busca} onChangeText={setBusca} placeholder="Ex.: vendas, orçamento, PDF" accessibilityLabel="Buscar dúvidas de ajuda" />
         <View style={[styles.faqCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          {perguntas.map((pergunta, index) => (
+          {perguntasFiltradas.length ? perguntasFiltradas.map((pergunta, index) => (
             <React.Fragment key={pergunta.titulo}>
               {index > 0 ? <Divider style={{ backgroundColor: colors.border }} /> : null}
               <List.Accordion
@@ -143,33 +166,41 @@ const Ajuda = () => {
                 <Text style={[styles.answer, { color: colors.muted }]}>{pergunta.texto}</Text>
               </List.Accordion>
             </React.Fragment>
-          ))}
+          )) : <Text style={[styles.noResults, { color: colors.muted }]}>Não encontrei uma resposta com esse termo. Tente outra palavra ou envie sua dúvida ao suporte.</Text>}
         </View>
 
         <Card mode="outlined" style={[styles.supportCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <Card.Content>
-            <Text style={[styles.stepTitle, { color: colors.text }]}>Fale com o suporte</Text>
-            <Text style={[styles.body, { color: colors.muted, marginTop: 5 }]}>
-              Envie um report de ajuda Gestorize. Sua mensagem e o e-mail da sua conta serão encaminhados para kennedy@kdtech.dev.
-            </Text>
-            <Text style={[styles.fieldLabel, { color: colors.text }]}>Seu e-mail</Text>
-            <TextInput
+            <View style={styles.supportHeading}>
+              <View style={[styles.supportIcon, { backgroundColor: `${colors.primary}20` }]}><MaterialCommunityIcons name="message-question-outline" size={22} color={colors.primary} /></View>
+              <View style={styles.supportCopy}>
+                <Text style={[styles.stepTitle, { color: colors.text }]}>Ainda precisa de ajuda?</Text>
+                <Text style={[styles.body, { color: colors.muted, marginTop: 3 }]}>Envie os detalhes para o suporte Gestorize. O e-mail da sua conta será incluído para que possamos responder.</Text>
+              </View>
+            </View>
+            <InputCard
+              label="E-mail da conta"
               value={user?.email ?? ''}
               editable={false}
               accessibilityLabel="E-mail associado ao report"
-              style={[styles.input, styles.emailInput, { color: colors.muted, borderColor: colors.border, backgroundColor: colors.elevated }]}
+              containerStyle={[styles.inputContainer, styles.emailInput, { backgroundColor: colors.elevated, borderColor: colors.border }]}
+              labelStyle={[styles.inputLabel, { color: colors.muted }]}
+              inputStyle={[styles.inputText, { color: colors.muted }]}
+              placeholderTextColor={colors.muted}
             />
-            <Text style={[styles.fieldLabel, { color: colors.text }]}>Mensagem</Text>
-            <TextInput
+            <InputCard
+              label="Como podemos ajudar?"
               value={mensagem}
               onChangeText={setMensagem}
-              placeholder="Descreva sua dúvida ou problema"
-              placeholderTextColor={colors.muted}
+              placeholder="Descreva o que aconteceu e em qual tela. Não inclua senhas ou dados sensíveis."
               multiline
               maxLength={5000}
               textAlignVertical="top"
               accessibilityLabel="Mensagem para o suporte Gestorize"
-              style={[styles.input, styles.messageInput, { color: colors.text, borderColor: colors.border, backgroundColor: colors.background }]}
+              containerStyle={[styles.inputContainer, styles.messageInput, { backgroundColor: colors.background, borderColor: colors.border }]}
+              labelStyle={[styles.inputLabel, { color: colors.text }]}
+              inputStyle={[styles.inputText, styles.multilineInput, { color: colors.text }]}
+              placeholderTextColor={colors.muted}
             />
             <Text style={[styles.characterCount, { color: colors.muted }]}>{mensagem.length}/5000</Text>
             <Button title={enviando ? 'Enviando...' : 'Enviar mensagem'} onPress={enviarMensagem} disabled={enviando || mensagem.trim().length < 10 || !user?.email} />
@@ -185,11 +216,17 @@ export default Ajuda;
 const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { padding: 18, paddingBottom: 36, gap: 12 },
-  introCard: { borderRadius: 18 },
-  eyebrow: { fontSize: 11, fontWeight: '900', letterSpacing: 1.2 },
-  introTitle: { fontSize: 21, lineHeight: 27, fontWeight: '900', marginTop: 7 },
+  introCard: { borderRadius: 18, borderWidth: 1 },
+  introHeading: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 },
+  introIcon: { width: 48, height: 48, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
+  introCopy: { flex: 1, gap: 3 },
+  eyebrow: { fontSize: 10, fontWeight: '900', letterSpacing: 1.1 },
+  introTitle: { fontSize: 21, lineHeight: 26, fontWeight: '900' },
   body: { fontSize: 14, lineHeight: 21 },
-  sectionTitle: { fontSize: 18, fontWeight: '900', marginTop: 8, marginBottom: 1 },
+  sectionHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 7, paddingHorizontal: 2 },
+  sectionTitle: { fontSize: 18, fontWeight: '900' },
+  sectionHint: { fontSize: 12, lineHeight: 17, marginTop: 2 },
+  resultCount: { fontSize: 13, fontWeight: '800' },
   card: { borderRadius: 16, overflow: 'hidden' },
   faqCard: { borderRadius: 16, borderWidth: 1, overflow: 'hidden' },
   steps: { gap: 13 },
@@ -199,10 +236,16 @@ const styles = StyleSheet.create({
   stepTitle: { fontSize: 15, fontWeight: '800' },
   question: { fontSize: 14, fontWeight: '700' },
   answer: { fontSize: 14, lineHeight: 21, paddingHorizontal: 16, paddingBottom: 17, paddingTop: 2 },
+  noResults: { fontSize: 14, lineHeight: 21, padding: 16 },
   supportCard: { borderRadius: 16, marginTop: 5 },
-  fieldLabel: { fontSize: 14, fontWeight: '800', marginTop: 15, marginBottom: 6 },
-  input: { borderWidth: 1, borderRadius: 11, paddingHorizontal: 12, fontSize: 15 },
-  emailInput: { minHeight: 46, paddingVertical: 11 },
-  messageInput: { minHeight: 140, paddingTop: 12, paddingBottom: 12 },
+  supportHeading: { flexDirection: 'row', alignItems: 'flex-start', gap: 11, marginBottom: 8 },
+  supportIcon: { width: 40, height: 40, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
+  supportCopy: { flex: 1, gap: 2 },
+  inputContainer: { width: '100%', height: 'auto', maxWidth: '100%', backgroundColor: 'transparent', borderWidth: 1, borderRadius: 12, paddingHorizontal: 13, paddingVertical: 9, marginBottom: 11, justifyContent: 'center' },
+  inputLabel: { fontSize: 12, fontWeight: '800', marginTop: 0, marginBottom: 5 },
+  inputText: { fontSize: 15, lineHeight: 21, fontWeight: '500', paddingVertical: 0 },
+  emailInput: { minHeight: 65 },
+  messageInput: { minHeight: 185, justifyContent: 'flex-start' },
+  multilineInput: { minHeight: 115, paddingTop: 1 },
   characterCount: { textAlign: 'right', fontSize: 12, marginTop: 5, marginBottom: 8 },
 });

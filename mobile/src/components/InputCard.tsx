@@ -24,6 +24,10 @@ type Props = {
   maxLength?: number;
   onFocus?: () => void;
   onBlur?: () => void;
+  editable?: boolean;
+  multiline?: boolean;
+  textAlignVertical?: 'auto' | 'top' | 'bottom' | 'center';
+  accessibilityLabel?: string;
   width?: DimensionValue;
   containerStyle?: StyleProp<ViewStyle>;
   inputStyle?: StyleProp<TextStyle>;
@@ -42,6 +46,10 @@ const InputCard = ({
   placeholder = '',
   onChangeText,
   maxLength,
+  editable = true,
+  multiline = false,
+  textAlignVertical,
+  accessibilityLabel,
   width = '100%',
   containerStyle,
   inputStyle,
@@ -77,7 +85,10 @@ const InputCard = ({
             inputStyle,
           ]}
           keyboardType={keyboardType}
-          editable={!onlyView}
+          editable={!onlyView && editable}
+          multiline={multiline}
+          textAlignVertical={textAlignVertical}
+          accessibilityLabel={accessibilityLabel ?? label}
           secureTextEntry={isPassword && secureText}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
