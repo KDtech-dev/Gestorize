@@ -22,14 +22,12 @@ export const secureStore = {
         });
       }
     } catch {
-      // silently fail
     }
   },
   async remove(key: string): Promise<void> {
     try {
       await SecureStore.deleteItemAsync(key);
     } catch {
-      // silently fail
     }
   },
 };
