@@ -18,7 +18,7 @@ const pagamentos: Record<string, string> = { pix: 'Pix', dinheiro: 'Dinheiro', d
 
 export default function Vendas() {
   const navigation = useNavigation<any>();
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const { user } = useAuth();
   const podeVer = can(user, 'vendas.ver');
   const podeVender = canSell(user);
@@ -113,7 +113,9 @@ export default function Vendas() {
     onPress={() => setAbertaId((atual) => atual === venda.id ? undefined : venda.id)}
     titleStyle={[styles.saleTitle, { color: colors.text }]}
     descriptionStyle={[styles.saleDescription, { color: colors.muted }]}
-    style={[styles.saleAccordion, { backgroundColor: colors.surface, borderColor: colors.border }]}
+    style={[styles.saleAccordion, { backgroundColor: colors.card, borderColor: colors.border, shadowColor: isDark ? '#ffffff' : '#000000', shadowOpacity: isDark ? 0.08 : 0.12 }]}
+    left={({ style }) => <View style={[style, styles.saleIconCircle, { backgroundColor: isDark ? colors.elevated : 'rgba(6, 32, 70, 0.12)' }]}><MaterialCommunityIcons name="receipt-text-outline" size={26} color={isDark ? '#ffffff' : '#062046'} /></View>}
+    right={({ isExpanded }) => <MaterialCommunityIcons name={isExpanded ? 'chevron-up' : 'chevron-down'} size={26} color={colors.primary} />}
     rippleColor={colors.border}
   >
     <View style={[styles.details, { backgroundColor: colors.surface, borderColor: colors.border }]}>
@@ -138,9 +140,10 @@ export default function Vendas() {
       <Text style={[styles.subtitle, { color: colors.muted }]}>Resumo do dia e histórico das vendas registradas.</Text>
     </View>
     <View style={styles.metrics}>
-      {indicadores.map((item) => <View key={item.label} style={[styles.metricCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-        <View style={styles.metricTop}><Text style={[styles.metricLabel, { color: colors.muted }]}>{item.label}</Text><View style={[styles.metricIcon, { backgroundColor: colors.elevated }]}><MaterialCommunityIcons name={item.icon} size={18} color={colors.primary} /></View></View>
+      {indicadores.map((item) => <View key={item.label} style={[styles.metricCard, { backgroundColor: colors.surface, borderColor: colors.border, shadowColor: isDark ? '#ffffff' : '#000000' }]}>
+        <View style={styles.metricTop}><View style={[styles.metricIcon, { backgroundColor: `${colors.primary}20` }]}><MaterialCommunityIcons name={item.icon} size={19} color={colors.primary} /></View></View>
         <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85} style={[styles.metricValue, { color: colors.text }]}>{carregando ? '—' : item.value}</Text>
+        <Text style={[styles.metricLabel, { color: colors.muted }]}>{item.label}</Text>
         <Text style={[styles.metricCaption, { color: colors.muted }]}>{item.caption}</Text>
       </View>)}
     </View>
@@ -171,9 +174,9 @@ export default function Vendas() {
 const styles = StyleSheet.create({
   screen: { flex: 1 }, content: { padding: 18, paddingBottom: 40, gap: 12 }, listHeader: { gap: 16, marginBottom: 4 }, intro: { gap: 6, marginBottom: 3 },
   eyebrow: { fontSize: 12, fontWeight: '900', letterSpacing: 1.1 }, title: { fontSize: 28, lineHeight: 34, fontWeight: '900' }, subtitle: { fontSize: 14, lineHeight: 21 },
-  metrics: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 }, metricCard: { flexBasis: '47%', flexGrow: 1, minHeight: 136, padding: 15, borderWidth: 1, borderRadius: 14, justifyContent: 'space-between' },
-  metricTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 7 }, metricLabel: { fontSize: 15, fontWeight: '700', flex: 1, lineHeight: 20 }, metricIcon: { width: 36, height: 36, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
-  metricValue: { fontSize: 24, fontWeight: '900' }, metricCaption: { fontSize: 14, lineHeight: 19 }, panelHeading: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderWidth: 1, borderRadius: 14, padding: 15 }, heading: { fontSize: 20, fontWeight: '900' },
-  empty: { paddingVertical: 20, paddingHorizontal: 4, fontSize: 16 }, error: { paddingVertical: 14, fontSize: 16 }, saleAccordion: { borderWidth: 1, borderRadius: 14, marginBottom: 10, overflow: 'hidden' }, saleTitle: { fontSize: 17, lineHeight: 23, fontWeight: '800' }, saleDescription: { fontSize: 13, lineHeight: 19 }, details: { padding: 15, borderTopWidth: StyleSheet.hairlineWidth, gap: 10 }, detailText: { fontSize: 16, lineHeight: 23 },
+  metrics: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 }, metricCard: { flex: 1, flexBasis: '46%', maxWidth: '49%', minWidth: '45%', minHeight: 118, padding: 12, borderRadius: 14, borderWidth: 1, justifyContent: 'space-between', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 3 },
+  metricTop: { flexDirection: 'row', alignItems: 'center', marginBottom: 9 }, metricLabel: { fontSize: 12, lineHeight: 15, fontWeight: '600' }, metricIcon: { width: 32, height: 32, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
+  metricValue: { fontSize: 22, fontWeight: 'bold', marginBottom: 3 }, metricCaption: { fontSize: 10, lineHeight: 14, fontWeight: '700' }, panelHeading: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderWidth: 1, borderRadius: 14, padding: 15 }, heading: { fontSize: 20, fontWeight: '900' },
+  empty: { paddingVertical: 20, paddingHorizontal: 4, fontSize: 16 }, error: { paddingVertical: 14, fontSize: 16 }, saleAccordion: { borderWidth: 1, borderRadius: 18, marginBottom: 11, paddingVertical: 8, paddingHorizontal: 8, overflow: 'hidden', shadowRadius: 10, elevation: 3 }, saleIconCircle: { width: 54, height: 54, borderRadius: 15, alignItems: 'center', justifyContent: 'center' }, saleTitle: { fontSize: 16, lineHeight: 21, fontWeight: '800' }, saleDescription: { fontSize: 12, lineHeight: 18 }, details: { padding: 15, borderTopWidth: StyleSheet.hairlineWidth, gap: 10 }, detailText: { fontSize: 16, lineHeight: 23 },
   itemRow: { flexDirection: 'row', alignItems: 'center', gap: 11, paddingVertical: 10, borderBottomWidth: StyleSheet.hairlineWidth }, itemCopy: { flex: 1, gap: 4 }, itemName: { fontSize: 17, lineHeight: 23, fontWeight: '700' }, itemTotal: { fontSize: 16, fontWeight: '800' }, totalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 }, totalLabel: { fontSize: 16, fontWeight: '800' }, totalValue: { fontSize: 21, fontWeight: '900' }, historyActions: { gap: 8, marginTop: 8 }, voidStatus: { fontSize: 14, fontWeight: '900' },
 });
