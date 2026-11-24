@@ -257,9 +257,15 @@ export default function NovaVenda() {
         return;
       }
       const arquivo = await Print.printToFileAsync({ html });
-      await Sharing.shareAsync(arquivo.uri, { mimeType: 'application/pdf', dialogTitle: 'Compartilhar comprovante', UTI: 'com.adobe.pdf' });
-    } catch {
-      Toast.show({ type: 'error', text1: 'Não foi possível compartilhar o comprovante', text2: 'Tente novamente.' });
+      if (!arquivo.uri) throw new Error('O arquivo PDF não foi gerado.');
+      await Sharing.shareAsync(arquivo.uri, { mimeType: 'application/pdf', dialogTitle: 'Compartilhar comprovante' });
+    } catch (error: any) {
+      console.error('Erro ao gerar ou compartilhar o comprovante:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Não foi possível compartilhar o comprovante',
+        text2: error?.message ?? 'Confira se há um aplicativo disponível para compartilhar arquivos.',
+      });
     }
   };
 
