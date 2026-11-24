@@ -75,7 +75,6 @@ export default function NovaVenda() {
   const [cameraVisivel, setCameraVisivel] = useState(false);
   const [salvando, setSalvando] = useState(false);
   const [vendaConcluida, setVendaConcluida] = useState<VendaType | null>(null);
-  const [larguraBobina, setLarguraBobina] = useState<58 | 80>(80);
   const [permission, requestPermission] = useCameraPermissions();
   const processandoScan = useRef(false);
 
@@ -236,7 +235,7 @@ export default function NovaVenda() {
 
   const gerarHtmlComprovante = () => {
     if (!vendaConcluida) return;
-    return createSaleReceiptHtml(vendaConcluida, user?.organization?.name ?? user?.organization_name ?? 'Loja', logoOrganizacao, larguraBobina);
+    return createSaleReceiptHtml(vendaConcluida, user?.organization?.name ?? user?.organization_name ?? 'Loja', logoOrganizacao);
   };
 
   const imprimirComprovante = async () => {
@@ -407,7 +406,6 @@ export default function NovaVenda() {
           <MaterialCommunityIcons name="check-circle" size={42} color="#16a34a" />
           <Text style={[styles.heading, { color: colors.text, textAlign: 'center' }]}>Venda concluída</Text>
           <Text style={[styles.hint, { color: colors.muted, textAlign: 'center' }]}>Venda {vendaConcluida?.id.slice(0, 8)} · {moeda(vendaConcluida?.valor_total)}</Text>
-          <View style={styles.paperSelector}><Text style={[styles.hint, { color: colors.text }]}>Bobina:</Text>{([58, 80] as const).map((largura) => <Pressable key={largura} accessibilityRole="radio" accessibilityState={{ selected: larguraBobina === largura }} onPress={() => setLarguraBobina(largura)} style={[styles.paperOption, { borderColor: larguraBobina === largura ? colors.primary : colors.border, backgroundColor: larguraBobina === largura ? colors.elevated : colors.background }]}><Text style={{ color: colors.text, fontWeight: '800' }}>{largura} mm</Text></Pressable>)}</View>
           <ScrollView style={{ maxHeight: 220, alignSelf: 'stretch' }}>
             {logoOrganizacao ? <Image source={{ uri: logoOrganizacao }} accessibilityLabel="Logo da organização" resizeMode="contain" style={styles.receiptLogo} /> : null}
             <Text style={[styles.hint, { color: colors.muted, textAlign: 'left' }]}>{user?.organization?.name ?? user?.organization_name ?? 'Loja'} · {new Date(vendaConcluida?.vendido_em ?? Date.now()).toLocaleString('pt-BR')}</Text>
@@ -521,8 +519,6 @@ const styles = StyleSheet.create({
   receiptRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 8, paddingVertical: 8, borderBottomWidth: StyleSheet.hairlineWidth },
   receiptLogo: { width: 150, height: 64, alignSelf: 'flex-start' },
   receiptClose: { minHeight: 42, alignItems: 'center', justifyContent: 'center' },
-  paperSelector: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
-  paperOption: { minHeight: 40, paddingHorizontal: 14, borderWidth: 1, borderRadius: 10, justifyContent: 'center' },
   cameraOverlay: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'space-around', padding: 28 },
   cameraTitle: { color: '#fff', fontWeight: '800', fontSize: 18, textAlign: 'center', backgroundColor: '#0009', padding: 12, borderRadius: 12 },
   scanFrame: { width: '88%', height: 180, borderWidth: 3, borderColor: '#FACC15', borderRadius: 20 },
