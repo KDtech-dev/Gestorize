@@ -1,9 +1,6 @@
 import * as SecureStore from 'expo-secure-store';
 
-/**
- * Wrapper para armazenar tokens de forma mais segura.
- * Em caso de falha, podemos retroceder para AsyncStorage se necessário.
- */
+
 export const secureStore = {
   async get(key: string): Promise<string | null> {
     try {
