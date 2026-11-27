@@ -10,7 +10,7 @@ class Venda extends Model
 {
     use HasUuids, BelongsToOrganization;
 
-    protected $fillable = ['usuario_id', 'cliente_id', 'orcamento_id', 'cliente_nome', 'forma_pagamento', 'desconto', 'valor_total', 'vendido_em', 'status', 'estornada_em', 'estornada_por'];
+    protected $fillable = ['usuario_id', 'cliente_id', 'orcamento_id', 'cliente_nome', 'forma_pagamento', 'desconto', 'valor_total', 'vendido_em', 'status', 'estornada_em', 'estornada_por', 'estornada_autorizada_por', 'estornada_autorizada_nome'];
 
     protected function casts(): array
     {
@@ -40,5 +40,10 @@ class Venda extends Model
     public function estornadaPor()
     {
         return $this->belongsTo(User::class, 'estornada_por');
+    }
+
+    public function estornadaAutorizadaPor()
+    {
+        return $this->belongsTo(User::class, 'estornada_autorizada_por');
     }
 }

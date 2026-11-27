@@ -41,6 +41,13 @@ class AcessoService
             );
         }
 
+        if ($role->name !== RoleEnum::GESTOR->value && in_array('vendas.estornar', $permissoes, true)) {
+            throw new DomainException(
+                'A permissão de estorno de vendas só pode ser atribuída ao papel gestor.',
+                Response::HTTP_FORBIDDEN
+            );
+        }
+
         $role->syncPermissions($permissoes);
 
         return $role->load('permissions:id,name');
@@ -51,6 +58,12 @@ class AcessoService
         array $permissoes
     ): User {
         $user = User::findOrFail($userId);
+        if (! $user->hasRole(RoleEnum::GESTOR->value) && in_array('vendas.estornar', $permissoes, true)) {
+            throw new DomainException(
+                'A permissão de estorno de vendas só pode ser atribuída a um gestor.',
+                Response::HTTP_FORBIDDEN
+            );
+        }
         $permissoesDoPapel = $user->getPermissionsViaRoles()->pluck('name')->all();
         $permissoesExtras = array_values(array_diff($permissoes, $permissoesDoPapel));
 

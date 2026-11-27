@@ -9,6 +9,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 
 
 class FuncionarioService
@@ -112,6 +113,11 @@ class FuncionarioService
         }
 
         if (array_key_exists('permissions', $dados)) {
+            if (! $user->hasRole('gestor') && in_array('vendas.estornar', $dados['permissions'] ?? [], true)) {
+                throw ValidationException::withMessages([
+                    'permissions' => ['A permissão de estorno de vendas só pode ser atribuída a um gestor.'],
+                ]);
+            }
             $doPapel = $user->getPermissionsViaRoles()->pluck('name')->all();
             $extras  = array_values(array_diff($dados['permissions'] ?? [], $doPapel));
             $user->syncPermissions($extras);
