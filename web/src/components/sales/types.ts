@@ -11,6 +11,7 @@ export type Sale = {
   desconto?: number | string;
   estornada_em?: string | null;
   estornada_por?: string | null;
+  estornada_autorizada_por?: string | null;
   orcamento_id?: string | null;
   cliente_id?: string | null;
   itens?: Array<{ id: string; produto_nome: string; quantidade: number; preco_unitario: number | string; subtotal: number | string }>;

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Box, Button, Stack } from '@mui/material';
+import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack, TextField, Typography } from '@mui/material';
 import Link from 'next/link';
 import { Icon } from '@iconify/react';
 import { apiFetch, unwrap } from '@/lib/api';
@@ -14,7 +14,6 @@ import { SalesOperators } from '@/components/sales/SalesOperators';
 import { SaleDetails } from '@/components/sales/SaleDetails';
 import { useToast } from '@/context/ToastContext';
 import { printSaleReceipt } from '@/lib/salesReceipt';
-import { ConfirmationDialog } from '@/components/ConfirmationDialog';
 
 function unwrapList<T>(payload: unknown): T[] {
   const value = unwrap<unknown>(payload as never);
@@ -39,6 +38,8 @@ export function SalesOverview() {
   const [today, setToday] = useState<Date | null>(null);
   const [returningId, setReturningId] = useState('');
   const [returnTarget, setReturnTarget] = useState<Sale | null>(null);
+  const [returnBadgeCode, setReturnBadgeCode] = useState('');
+  const [returnPassword, setReturnPassword] = useState('');
 
   useEffect(() => {
     setToday(new Date());
@@ -88,14 +89,21 @@ export function SalesOverview() {
 
   const returnSale = async () => {
     const sale = returnTarget;
-    if (!sale || returningId) return;
+    if (!sale || returningId || !returnBadgeCode.trim() || !returnPassword) return;
     setReturningId(sale.id);
     try {
-      await apiFetch(`/vendas/${encodeURIComponent(sale.id)}/estornar`, { method: 'POST' });
+      await apiFetch(`/vendas/${encodeURIComponent(sale.id)}/estornar`, {
+        method: 'POST',
+        body: JSON.stringify({ codigo_autorizador: returnBadgeCode.trim(), senha_autorizador: returnPassword }),
+      });
       showToast('Venda estornada. Abrindo o caixa com os produtos no carrinho.', 'success');
       setReturnTarget(null);
+      setReturnBadgeCode('');
+      setReturnPassword('');
       router.push(`/vendas/nova?retomar=${encodeURIComponent(sale.id)}`);
     } catch (reason) {
+      setReturnBadgeCode('');
+      setReturnPassword('');
       showToast(reason instanceof Error ? reason.message : 'Não foi possível estornar a venda.', 'error');
     } finally {
       setReturningId('');
@@ -118,14 +126,19 @@ export function SalesOverview() {
         <SaleDetails sale={selected} canReturn={can('vendas.criar')} returning={returningId === selected?.id} onPrint={printReceipt} onReturn={setReturnTarget} />
       </Stack>
     </Box>
-    <ConfirmationDialog
-      open={Boolean(returnTarget)}
-      title="Retornar venda?"
-      message={returnTarget ? `A venda #${returnTarget.id.slice(0, 8)} será marcada como estornada, os itens voltarão ao estoque e o caixa abrirá com os produtos selecionados.` : ''}
-      confirmLabel={returningId ? 'Estornando…' : 'Estornar e retomar'}
-      confirmDisabled={Boolean(returningId)}
-      onConfirm={() => void returnSale()}
-      onCancel={() => { if (!returningId) setReturnTarget(null); }}
-    />
+    <Dialog open={Boolean(returnTarget)} onClose={() => { if (!returningId) { setReturnTarget(null); setReturnBadgeCode(''); setReturnPassword(''); } }} fullWidth maxWidth="xs">
+      <DialogTitle sx={{ fontWeight: 800 }}>Autorização do gestor</DialogTitle>
+      <DialogContent>
+        <Typography sx={{ color: 'var(--muted)', fontSize: 13, mb: 2 }}>A venda #{returnTarget?.id.slice(0, 8).toUpperCase()} será estornada e os itens voltarão ao estoque. Peça ao gestor para escanear o crachá e confirmar com a senha da própria conta.</Typography>
+        <Stack spacing={1.5}>
+          <TextField autoFocus fullWidth label="Código do crachá do gestor" value={returnBadgeCode} onChange={(event) => setReturnBadgeCode(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); setReturnBadgeCode(event.currentTarget.value.trim()); document.getElementById('void-manager-password')?.focus(); } }} />
+          <TextField id="void-manager-password" fullWidth type="password" label="Senha do gestor" value={returnPassword} onChange={(event) => setReturnPassword(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') void returnSale(); }} />
+        </Stack>
+      </DialogContent>
+      <DialogActions sx={{ px: 3, pb: 2 }}>
+        <Button disabled={Boolean(returningId)} onClick={() => { setReturnTarget(null); setReturnBadgeCode(''); setReturnPassword(''); }} sx={{ textTransform: 'none' }}>Cancelar</Button>
+        <Button variant="contained" disabled={Boolean(returningId) || !returnBadgeCode.trim() || !returnPassword} onClick={() => void returnSale()} sx={{ textTransform: 'none' }}>{returningId ? 'Validando…' : 'Autorizar estorno'}</Button>
+      </DialogActions>
+    </Dialog>
   </div>;
 }

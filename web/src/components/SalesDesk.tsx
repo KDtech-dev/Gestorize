@@ -11,7 +11,6 @@ import { SalesCheckout, type DiscountMode, type SaleCustomer, type SaleQuote } f
 import type { PaymentMethod } from '@/components/sales/types';
 import { useToast } from '@/context/ToastContext';
 import { printSaleReceipt } from '@/lib/salesReceipt';
-import { ConfirmationDialog } from '@/components/ConfirmationDialog';
 
 type Product = { id: string; nome: string; codigo_barras?: string; preco_venda: number | string; estoque: number };
 type Customer = SaleCustomer;
@@ -43,6 +42,8 @@ export function SalesDesk() {
   const [receipt, setReceipt] = useState<Sale | null>(null);
   const [returnTarget, setReturnTarget] = useState<Sale | null>(null);
   const [returning, setReturning] = useState(false);
+  const [returnBadgeCode, setReturnBadgeCode] = useState('');
+  const [returnPassword, setReturnPassword] = useState('');
   const [products, setProducts] = useState<Product[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [quotes, setQuotes] = useState<Quote[]>([]);
@@ -68,7 +69,7 @@ export function SalesDesk() {
 
   const load = async () => {
     const [productData, salesData, customerData, quoteData] = await Promise.all([
-      apiFetch<unknown>('/produtos'), can('vendas.ver') ? apiFetch<unknown>('/vendas') : Promise.resolve([]),
+      apiFetch<unknown>('/produtos'), can('vendas.ver') ? apiFetch<unknown>('/vendas') : canSell(user) ? apiFetch<unknown>('/vendas/minhas') : Promise.resolve([]),
       can('clientes.ver') ? apiFetch<unknown>('/clientes') : Promise.resolve([]),
       can('orcamentos.ver') ? apiFetch<unknown>('/orcamentos') : Promise.resolve([]),
     ]);
@@ -78,7 +79,7 @@ export function SalesDesk() {
     const loadedQuotes = list<Quote>(quoteData);
     const soldQuoteIds = new Set(loadedSales.filter((sale) => sale.status !== 'estornada').map((sale) => sale.orcamento_id).filter((id): id is string => Boolean(id)));
     setProducts(loadedProducts);
-    setSales(can('vendas.ver') ? loadedSales.filter((sale) => sale.usuario_id === user?.id) : []);
+    setSales(loadedSales);
     setCustomers(loadedCustomers);
     const available = loadedQuotes.filter((quote) => quote.status === 'aprovado' && !soldQuoteIds.has(quote.id));
     setQuotes(available);
@@ -271,14 +272,21 @@ export function SalesDesk() {
 
   async function returnSale() {
     const sale = returnTarget;
-    if (!sale || !canSell(user) || sale.status === 'estornada' || returning) return;
+    if (!sale || !canSell(user) || sale.status === 'estornada' || returning || !returnBadgeCode.trim() || !returnPassword) return;
     setReturning(true);
     try {
-      await apiFetch<unknown>(`/vendas/${encodeURIComponent(sale.id)}/estornar`, { method: 'POST' });
+      await apiFetch<unknown>(`/vendas/${encodeURIComponent(sale.id)}/estornar`, {
+        method: 'POST',
+        body: JSON.stringify({ codigo_autorizador: returnBadgeCode.trim(), senha_autorizador: returnPassword }),
+      });
       showToast('Venda estornada. Abrindo o caixa com os produtos no carrinho.', 'success');
       setReturnTarget(null);
+      setReturnBadgeCode('');
+      setReturnPassword('');
       router.replace(`/vendas/nova?retomar=${encodeURIComponent(sale.id)}`);
     } catch (reason) {
+      setReturnBadgeCode('');
+      setReturnPassword('');
       showToast(reason instanceof Error ? reason.message : 'Não foi possível estornar a venda.', 'error');
     } finally {
       setReturning(false);
@@ -298,7 +306,7 @@ export function SalesDesk() {
         <Icon icon="mdi:cart-outline" width={22} height={22} />
         <Typography component="h1" sx={{ fontSize: 21, fontWeight: 800 }}>Nova venda</Typography>
         <Box sx={{ px: 1.2, py: 0.55, borderRadius: 99, bgcolor: 'var(--top-navigation-fg)', color: 'var(--top-navigation-bg)', fontSize: 13, fontWeight: 700 }}>Em andamento</Box>
-        {can('vendas.ver') && <Button onClick={() => setHistoryOpen((open) => !open)} startIcon={<Icon icon="mdi:history" width={19} height={19} />} sx={{ ml: { xs: 0, md: 1 }, px: 1, color: 'inherit', fontSize: 14, textTransform: 'none', whiteSpace: 'nowrap' }}>Histórico ({sales.length})</Button>}
+        {(can('vendas.ver') || canSell(user)) && <Button onClick={() => setHistoryOpen((open) => !open)} startIcon={<Icon icon="mdi:history" width={19} height={19} />} sx={{ ml: { xs: 0, md: 1 }, px: 1, color: 'inherit', fontSize: 14, textTransform: 'none', whiteSpace: 'nowrap' }}>{can('vendas.ver') ? `Histórico (${sales.length})` : `Minhas vendas (${sales.length})`}</Button>}
         <Stack direction="row" sx={{ alignItems: 'center', gap: { xs: 1, md: 2.5 }, ml: 'auto', fontSize: 13 }}>
           <Typography sx={{ color: 'inherit', fontSize: 'inherit' }}>Caixa web</Typography>
           <Typography sx={{ display: { xs: 'none', sm: 'block' }, color: 'inherit', fontSize: 'inherit' }}>Operador: {user?.name ?? '—'}</Typography>
@@ -306,10 +314,10 @@ export function SalesDesk() {
         </Stack>
       </Box>
 
-      {can('vendas.ver') && <Collapse in={historyOpen} unmountOnExit>
+      {(can('vendas.ver') || canSell(user)) && <Collapse in={historyOpen} unmountOnExit>
         <Box sx={{ px: { xs: 1.5, md: 2.5 }, pt: 1.5 }}>
           <Paper sx={{ ...panelSx, p: { xs: 1.5, md: 2 } }}>
-            {loading ? <Typography sx={{ py: 2, color: 'var(--muted)', fontSize: 13 }}>Carregando histórico…</Typography> : sales.length ? sales.map((sale) => <Box key={sale.id} sx={{ borderBottom: '1px solid var(--line)' }}>
+            {loading ? <Typography sx={{ py: 2, color: 'var(--muted)', fontSize: 13 }}>{can('vendas.ver') ? 'Carregando histórico…' : 'Carregando suas vendas…'}</Typography> : sales.length ? sales.map((sale) => <Box key={sale.id} sx={{ borderBottom: '1px solid var(--line)' }}>
               <ButtonBase onClick={() => setExpanded(expanded === sale.id ? null : sale.id)} sx={{ width: '100%', minHeight: 58, display: 'flex', justifyContent: 'flex-start', gap: 1.25, textAlign: 'left' }}>
                 <Icon icon="mdi:receipt-text-outline" width={20} height={20} color="#1d4ed8" />
                 <Box sx={{ flex: 1 }}><Typography sx={{ fontSize: 15, fontWeight: 700 }}>{sale.cliente_nome || 'Venda sem cliente'}</Typography><Typography sx={{ color: 'var(--muted)', fontSize: 13 }}>{new Date(sale.vendido_em).toLocaleString('pt-BR')} · {sale.itens?.length ?? 0} produto(s)</Typography></Box>
@@ -324,7 +332,7 @@ export function SalesDesk() {
                   {canSell(user) && sale.status !== 'estornada' && <Button size="small" variant="outlined" color="error" startIcon={<Icon icon="mdi:keyboard-return" />} onClick={() => setReturnTarget(sale)}>Retornar venda</Button>}
                 </Stack>
               </Box></Collapse>
-            </Box>) : <Typography sx={{ py: 2, color: 'var(--muted)', fontSize: 13 }}>Nenhuma venda registrada.</Typography>}
+            </Box>) : <Typography sx={{ py: 2, color: 'var(--muted)', fontSize: 13 }}>{can('vendas.ver') ? 'Nenhuma venda registrada.' : 'Você ainda não registrou vendas.'}</Typography>}
           </Paper>
         </Box>
       </Collapse>}
@@ -423,15 +431,20 @@ export function SalesDesk() {
         </DialogContent>
         <DialogActions><Button onClick={() => setReceipt(null)}>Fechar</Button><Button variant="contained" onClick={() => printReceipt()} startIcon={<Icon icon="mdi:printer-outline" />}>Imprimir comprovante</Button></DialogActions>
       </Dialog>
-      <ConfirmationDialog
-        open={Boolean(returnTarget)}
-        title="Retornar venda?"
-        message="A venda será marcada como estornada, os produtos voltarão ao estoque e o caixa abrirá com esses itens no carrinho."
-        confirmLabel={returning ? 'Estornando…' : 'Estornar e retomar'}
-        confirmDisabled={returning}
-        onConfirm={() => void returnSale()}
-        onCancel={() => { if (!returning) setReturnTarget(null); }}
-      />
+      <Dialog open={Boolean(returnTarget)} onClose={() => { if (!returning) { setReturnTarget(null); setReturnBadgeCode(''); setReturnPassword(''); } }} fullWidth maxWidth="xs">
+        <DialogTitle sx={{ fontWeight: 800 }}>Autorização do gestor</DialogTitle>
+        <DialogContent>
+          <Typography sx={{ color: 'var(--muted)', fontSize: 13, mb: 2 }}>A venda #{returnTarget?.id.slice(0, 8).toUpperCase()} será estornada e os itens voltarão ao estoque. Peça ao gestor para escanear o crachá e confirmar com a senha da própria conta.</Typography>
+          <Stack spacing={1.5}>
+            <TextField autoFocus fullWidth label="Código do crachá do gestor" value={returnBadgeCode} onChange={(event) => setReturnBadgeCode(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); setReturnBadgeCode(event.currentTarget.value.trim()); document.getElementById('desk-void-manager-password')?.focus(); } }} />
+            <TextField id="desk-void-manager-password" fullWidth type="password" label="Senha do gestor" value={returnPassword} onChange={(event) => setReturnPassword(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') void returnSale(); }} />
+          </Stack>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button disabled={returning} onClick={() => { setReturnTarget(null); setReturnBadgeCode(''); setReturnPassword(''); }} sx={{ textTransform: 'none' }}>Cancelar</Button>
+          <Button variant="contained" disabled={returning || !returnBadgeCode.trim() || !returnPassword} onClick={() => void returnSale()} sx={{ textTransform: 'none' }}>{returning ? 'Validando…' : 'Autorizar estorno'}</Button>
+        </DialogActions>
+      </Dialog>
 
     </Box>
   );

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useAuth } from '@/context/AuthContext';
+import { canSell, useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
 import Image from 'next/image';
 import { Icon } from '@iconify/react';
@@ -29,8 +29,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const guardedSignOut = () => requestGuardedAction(() => { void signOut(); });
   const visibleNavigation = navigation.filter((item) => {
     if (isGlobalAdmin) return item.href === '/';
+    if (item.href === '/vendas' && canSell(user)) return true;
     return !item.permission || can(item.permission);
-  });
+  }).map((item) => item.href === '/vendas' && !can('vendas.ver')
+    ? { ...item, href: '/vendas/nova', title: 'Caixa' }
+    : item);
   const isNavigationActive = (href: string) => pathname === href || (['/clientes', '/produtos'].includes(href) && pathname.startsWith(`${href}/`));
 
   return <div className="app-frame">

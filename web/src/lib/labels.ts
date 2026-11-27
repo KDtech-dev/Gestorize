@@ -102,6 +102,31 @@ function barcodeSvg(code: string) {
   return `<svg class="barcode" xmlns="http://www.w3.org/2000/svg" width="100%" height="12mm" viewBox="0 0 ${x} 48" preserveAspectRatio="none" shape-rendering="crispEdges" role="img" aria-label="Código de barras ${escapeHtml(code)}"><rect width="100%" height="100%" fill="#fff"/><g fill="#111">${bars.join('')}</g></svg>`;
 }
 
+export type EmployeeBadge = { codigo_cracha: string; nome?: string | null; avatar_url?: string | null };
+
+function employeeName(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  return parts.length > 1 ? `${parts[0]} ${parts[parts.length - 1]}` : parts[0] || 'Funcionário';
+}
+
+export function employeeBadgesPrintHtml(employees: EmployeeBadge[]) {
+  const cards = employees.map((employee) => {
+    const name = employeeName(String(employee.nome ?? ''));
+    const code = employee.codigo_cracha.toUpperCase();
+    const initials = name.split(/\s+/).map((part) => part[0]).join('').slice(0, 2).toUpperCase();
+    const avatar = employee.avatar_url
+      ? `<img class="avatar" src="${escapeHtml(employee.avatar_url)}" alt="">`
+      : `<div class="avatar initials">${escapeHtml(initials)}</div>`;
+    return `<article class="badge">${avatar}<h2>${escapeHtml(name)}</h2>${barcodeSvg(code)}<p class="code">${escapeHtml(code)}</p></article>`;
+  });
+  const pages = Array.from({ length: Math.ceil(cards.length / 9) }, (_, index) =>
+    `<section class="sheet${index === Math.ceil(cards.length / 9) - 1 ? ' last' : ''}">${cards.slice(index * 9, (index + 1) * 9).join('')}</section>`,
+  );
+  return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Crachás de funcionários</title><style>
+    *{box-sizing:border-box}@page{size:A4 portrait;margin:0}html,body{margin:0;padding:0;font-family:Arial,sans-serif;color:#111}.sheet{width:210mm;height:297mm;padding:10mm;display:grid;grid-template-columns:repeat(3,54mm);grid-template-rows:repeat(3,86mm);gap:5mm 7mm;justify-content:center;align-content:center;break-after:page;page-break-after:always}.sheet.last{break-after:auto;page-break-after:auto}.badge{width:54mm;height:86mm;border:.25mm solid #aab3c2;border-radius:3mm;padding:5mm 3mm 3mm;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;overflow:hidden;text-align:center}.avatar{width:25mm;height:25mm;border-radius:50%;object-fit:cover;flex:none;background:#e8edf5}.initials{display:flex;align-items:center;justify-content:center;font-size:20pt;font-weight:700;color:#17365f}h2{width:100%;height:10mm;margin:3mm 0 2mm;display:flex;align-items:center;justify-content:center;font-size:12pt;line-height:1.1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.barcode{width:100%;height:15mm;flex:none}.code{margin:2mm 0 0;font:6.5pt monospace;letter-spacing:.3px;overflow-wrap:anywhere}@media screen{body{background:#e8edf3}.sheet{margin:16px auto;background:#fff;box-shadow:0 4px 16px #0002}}@media print{.sheet{margin:0;box-shadow:none}}
+  </style></head><body>${pages.join('')}<script>window.addEventListener('load',()=>setTimeout(()=>window.print(),300));</script></body></html>`;
+}
+
 export function labelsPrintHtml(items: LabelOperationItem[], format: LabelPrintFormat = 'avery-l7159') {
   const labels = items.flatMap((item) => Array.from({ length: Number(item.quantidade) }, () => {
     const code = item.produto_id?.replace(/-/g, '').slice(0, 12).toUpperCase() || item.codigo_barras || '';

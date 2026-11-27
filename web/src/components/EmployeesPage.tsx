@@ -3,11 +3,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Icon } from '@iconify/react';
 import { useRouter } from 'next/navigation';
-import { FormControl, InputLabel, MenuItem, Select } from '@mui/material';
+import { Button, FormControl, InputLabel, MenuItem, Select } from '@mui/material';
 import { apiFetch } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import { UserAvatar } from '@/components/UserAvatar';
 import { EntityActionButton, EntityDirectoryHeading, EntityPageHeading, EntityPagination, EntitySummaryCard } from '@/components/entities/EntityPageParts';
+import { employeeBadgesPrintHtml, type EmployeeBadge } from '@/lib/labels';
 
 type Employee = Record<string, any>;
 const PAGE_SIZE = 9;
@@ -50,9 +51,9 @@ function date(value: unknown) {
   return Number.isNaN(parsed.getTime()) ? '—' : parsed.toLocaleDateString('pt-BR');
 }
 
-function EmployeeCard({ employee, selected, isSelf, canEdit, canDelete, onSelect, onEdit, onDelete }: {
+function EmployeeCard({ employee, selected, isSelf, canEdit, canDelete, onSelect, onEdit, onDelete, onPrint }: {
   employee: Employee; selected: boolean; isSelf: boolean; canEdit: boolean; canDelete: boolean;
-  onSelect: () => void; onEdit: () => void; onDelete: () => void;
+  onSelect: () => void; onEdit: () => void; onDelete: () => void; onPrint: () => void;
 }) {
   const name = String(employee.nome ?? 'Funcionário');
   const role = roleOf(employee);
@@ -74,6 +75,7 @@ function EmployeeCard({ employee, selected, isSelf, canEdit, canDelete, onSelect
       <span className="client-card-actions-label">Ações</span>
       <div className="client-card-actions">
         <EntityActionButton label={selected ? 'Ocultar detalhes' : 'Ver detalhes'} icon={selected ? 'mdi:chevron-up' : 'mdi:eye-outline'} onClick={onSelect} />
+        <EntityActionButton label="Imprimir crachá" icon="mdi:badge-account-outline" onClick={onPrint} />
         {canEdit && <EntityActionButton label="Editar funcionário" icon="mdi:pencil-outline" onClick={onEdit} />}
         {canDelete && !isSelf && <EntityActionButton label="Excluir funcionário" icon="mdi:trash-can-outline" onClick={onDelete} danger />}
       </div>
@@ -118,6 +120,18 @@ export function EmployeesPage() {
   const canEdit = can('users.editar');
   const canDelete = can('users.excluir');
 
+  function printBadges(records: EmployeeBadge[]) {
+    if (!records.length) return;
+    const popup = window.open('', '_blank');
+    if (!popup) {
+      setError('Permita pop-ups para imprimir os crachás.');
+      return;
+    }
+    popup.document.open();
+    popup.document.write(employeeBadgesPrintHtml(records));
+    popup.document.close();
+  }
+
   const reload = async () => setEmployees(await fetchEmployees());
   useEffect(() => {
     fetchEmployees()
@@ -158,8 +172,9 @@ export function EmployeesPage() {
     </section>
     <section className="client-directory">
       <EmployeeFilters search={search} role={role} count={filtered.length} onSearch={(value) => changeFilter(value, setSearch)} onRole={(value) => changeFilter(value, setRole)} />
+      {filtered.length > 0 && <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 14 }}><Button variant="outlined" onClick={() => printBadges(filtered.map((employee) => ({ codigo_cracha: String(employee.codigo_cracha), nome: employee.nome ?? null, avatar_url: employee.avatar_url ?? null })))} startIcon={<Icon icon="mdi:printer-outline" />} sx={{ borderRadius: '10px', textTransform: 'none', fontWeight: 700 }}>Imprimir crachás ({filtered.length})</Button></div>}
       {error && <div className="inline-error">{error}</div>}
-      {loading ? <div className="table-loading"><span className="spinner" />Carregando funcionários…</div> : pageItems.length ? <div className="client-card-grid">{pageItems.map((employee) => <EmployeeCard key={String(employee.id)} employee={employee} selected={selectedId === String(employee.id)} isSelf={String(employee.id) === String(user?.id)} canEdit={canEdit} canDelete={canDelete} onSelect={() => setSelectedId(selectedId === String(employee.id) ? null : String(employee.id))} onEdit={() => router.push(`/funcionarios/nova?id=${encodeURIComponent(String(employee.id))}`)} onDelete={() => void deleteEmployee(employee)} />)}</div> : <div className="empty-state compact"><span className="empty-icon"><Icon icon="mdi:account-search-outline" /></span><h2>{search || role ? 'Nenhum funcionário encontrado' : 'Ainda não há funcionários'}</h2><p>{search || role ? 'Ajuste a busca ou o perfil para ver outros cadastros.' : 'Cadastre o primeiro funcionário para começar.'}</p></div>}
+      {loading ? <div className="table-loading"><span className="spinner" />Carregando funcionários…</div> : pageItems.length ? <div className="client-card-grid">{pageItems.map((employee) => <EmployeeCard key={String(employee.id)} employee={employee} selected={selectedId === String(employee.id)} isSelf={String(employee.id) === String(user?.id)} canEdit={canEdit} canDelete={canDelete} onSelect={() => setSelectedId(selectedId === String(employee.id) ? null : String(employee.id))} onEdit={() => router.push(`/funcionarios/nova?id=${encodeURIComponent(String(employee.id))}`)} onDelete={() => void deleteEmployee(employee)} onPrint={() => printBadges([{ codigo_cracha: String(employee.codigo_cracha), nome: employee.nome ?? null, avatar_url: employee.avatar_url ?? null }])} />)}</div> : <div className="empty-state compact"><span className="empty-icon"><Icon icon="mdi:account-search-outline" /></span><h2>{search || role ? 'Nenhum funcionário encontrado' : 'Ainda não há funcionários'}</h2><p>{search || role ? 'Ajuste a busca ou o perfil para ver outros cadastros.' : 'Cadastre o primeiro funcionário para começar.'}</p></div>}
       {!loading && <EntityPagination noun="funcionários" page={currentPage} totalPages={totalPages} total={filtered.length} from={(currentPage - 1) * PAGE_SIZE + 1} to={Math.min(currentPage * PAGE_SIZE, filtered.length)} onChange={setPage} />}
     </section>
   </div>;
