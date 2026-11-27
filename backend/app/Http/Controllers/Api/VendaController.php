@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreVendaRequest;
+use App\Http\Requests\EstornarVendaRequest;
 use App\Http\Resources\VendaResource;
 use App\Services\ResponseService;
 use App\Services\VendaService;
@@ -19,6 +20,13 @@ class VendaController extends Controller
         return ResponseService::success(VendaResource::collection($this->service->listar()));
     }
 
+    public function minhas(Request $request): JsonResponse
+    {
+        return ResponseService::success(
+            VendaResource::collection($this->service->listarDoUsuario((string) $request->user()->id))
+        );
+    }
+
     public function store(StoreVendaRequest $request): JsonResponse
     {
         $venda = $this->service->criar($request->validated(), (string) $request->user()->id);
@@ -26,9 +34,15 @@ class VendaController extends Controller
         return ResponseService::success(new VendaResource($venda), 'Venda registrada e estoque atualizado.', 201);
     }
 
-    public function estornar(Request $request, string $id): JsonResponse
+    public function estornar(EstornarVendaRequest $request, string $id): JsonResponse
     {
-        $venda = $this->service->estornar($id, (string) $request->user()->id);
+        $dados = $request->validated();
+        $venda = $this->service->estornar(
+            $id,
+            (string) $request->user()->id,
+            $dados['codigo_autorizador'],
+            $dados['senha_autorizador'],
+        );
 
         return ResponseService::success(new VendaResource($venda), 'Venda estornada e produtos devolvidos ao estoque.');
     }

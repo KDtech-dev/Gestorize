@@ -27,6 +27,7 @@ enum PermissionEnum: string
 
     case VENDAS_VER = 'vendas.ver';
     case VENDAS_CRIAR = 'vendas.criar';
+    case VENDAS_ESTORNAR = 'vendas.estornar';
 
     case USERS_VER = 'users.ver';
     case USERS_CRIAR = 'users.criar';
@@ -65,6 +66,7 @@ enum PermissionEnum: string
 
             self::VENDAS_VER => 'Visualizar vendas',
             self::VENDAS_CRIAR => 'Registrar vendas',
+            self::VENDAS_ESTORNAR => 'Autorizar estorno de vendas',
 
             self::USERS_VER => 'Visualizar usuários',
             self::USERS_CRIAR => 'Cadastrar usuários',
@@ -105,6 +107,7 @@ enum PermissionEnum: string
 
             self::VENDAS_VER,
             self::VENDAS_CRIAR => 'Vendas',
+            self::VENDAS_ESTORNAR => 'Vendas',
 
             self::USERS_VER,
             self::USERS_CRIAR,
@@ -152,6 +155,7 @@ enum PermissionEnum: string
 
             self::RELATORIOS_GERAR => 'Gerar',
             self::VENDAS_CRIAR => 'Cadastrar',
+            self::VENDAS_ESTORNAR => 'Autorizar estorno',
             self::RELATORIOS_EXPORTAR => 'Exportar',
 
             self::ACESSOS_GERENCIAR => 'Gerenciar',
