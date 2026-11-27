@@ -145,13 +145,13 @@ npm install
 cp .env.example .env
 ```
 
-Configure `EXPO_PUBLIC_API_URL` no `.env` com a URL acessível pelo dispositivo, incluindo `/api`:
+Para desenvolvimento local, configure `EXPO_PUBLIC_API_URL` no `.env` com a URL acessível pelo dispositivo, incluindo `/api`:
 
 ```env
 EXPO_PUBLIC_API_URL=http://192.168.0.10:8000/api
 ```
 
-Substitua o IP pelo endereço da máquina que executa o backend. O celular e o computador precisam estar conectados à rede e o firewall deve permitir a porta `8000`. Inicie o Expo:
+Substitua o IP pelo endereço da máquina que executa o backend. O celular e o computador precisam estar conectados à rede e o firewall deve permitir a porta `8000`. HTTP é aceito somente durante o desenvolvimento. Em builds de produção, configure uma URL HTTPS pública; sem ela, o aplicativo interrompe as chamadas à API antes de enviar o token. Inicie o Expo:
 
 ```bash
 npx expo start

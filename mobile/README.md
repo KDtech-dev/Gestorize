@@ -18,13 +18,13 @@ npm install
 cp .env.example .env
 ```
 
-Defina `EXPO_PUBLIC_API_URL` em `.env`, incluindo `/api`:
+Para desenvolvimento local, defina `EXPO_PUBLIC_API_URL` em `.env`, incluindo `/api`:
 
 ```env
 EXPO_PUBLIC_API_URL=http://192.168.0.10:8000/api
 ```
 
-Troque o endereço pelo IP ou domínio do backend. Em aparelho físico, `localhost` aponta para o próprio aparelho. O celular e o computador precisam estar na mesma rede e a porta do servidor Laravel deve estar liberada. Use HTTPS para serviços publicados.
+Troque o endereço pelo IP ou domínio do backend. Em aparelho físico, `localhost` aponta para o próprio aparelho. O celular e o computador precisam estar na mesma rede e a porta do servidor Laravel deve estar liberada. HTTP continua permitido apenas em modo de desenvolvimento. Para qualquer build de produção, configure `EXPO_PUBLIC_API_URL` com a URL HTTPS pública da API; sem uma URL HTTPS válida, as chamadas são interrompidas antes de enviar o token.
 
 ## Executar
 

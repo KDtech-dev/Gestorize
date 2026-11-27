@@ -37,6 +37,30 @@ type AxiosOpts = {
   timeoutMs?: number;
 };
 
+const DEVELOPMENT_API_URL = 'http://10.220.84.176:8000/api';
+const configuredApiUrl = process.env.EXPO_PUBLIC_API_URL?.trim();
+
+function resolveApiBaseURL(): string | null {
+  const candidate = __DEV__
+    ? configuredApiUrl || DEVELOPMENT_API_URL
+    : configuredApiUrl;
+
+  if (!candidate) return null;
+
+  try {
+    const url = new URL(candidate);
+    if (!url.hostname || url.username || url.password) return null;
+    if (!__DEV__ && url.protocol !== 'https:') return null;
+    if (__DEV__ && !['http:', 'https:'].includes(url.protocol)) return null;
+
+    return candidate.replace(/\/+$/, '');
+  } catch {
+    return null;
+  }
+}
+
+const API_BASE_URL = resolveApiBaseURL();
+
 export const getAxios = ({
   contentType,
   timeoutMs,
@@ -50,13 +74,36 @@ export const getAxios = ({
   }
 
   const instance = axios.create({
-    baseURL: process.env.EXPO_PUBLIC_API_URL ?? 'http://10.220.84.176:8000/api',
+    baseURL: API_BASE_URL ?? undefined,
     timeout: timeoutMs ?? 15000,
     headers,
   });
 
   instance.interceptors.request.use(
     async (config: InternalAxiosRequestConfig) => {
+      if (!API_BASE_URL) {
+        return Promise.reject(
+          new Error(
+            __DEV__
+              ? 'EXPO_PUBLIC_API_URL precisa ser uma URL HTTP ou HTTPS válida.'
+              : 'Configure EXPO_PUBLIC_API_URL com uma URL HTTPS válida para a API.',
+          ),
+        );
+      }
+
+      try {
+        const baseUrl = new URL(API_BASE_URL);
+        const requestUrl = new URL(config.url ?? '', baseUrl);
+        if (
+          requestUrl.origin !== baseUrl.origin ||
+          (!__DEV__ && requestUrl.protocol !== 'https:')
+        ) {
+          return Promise.reject(new Error('Destino da API não permitido.'));
+        }
+      } catch {
+        return Promise.reject(new Error('URL de destino da API inválida.'));
+      }
+
       const token = await authStorage.get();
 
       if (token) {
