@@ -39,7 +39,8 @@ return [
     |
     */
 
-    'debug' => (bool) env('APP_DEBUG', false),
+    'debug' => in_array(env('APP_ENV', 'production'), ['local', 'testing'], true)
+        && (bool) env('APP_DEBUG', false),
 
     /*
     |--------------------------------------------------------------------------

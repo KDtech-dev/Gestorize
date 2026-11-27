@@ -31,6 +31,8 @@ php artisan serve --host=0.0.0.0
 
 A API ficará em `http://localhost:8000/api`. A documentação das rotas fica em `http://localhost:8000/api/docs/` e é servida do diretório público do Laravel. Use o IP da máquina no lugar de `localhost` quando um dispositivo da rede, como um celular, precisar acessar a API.
 
+O `.env.example` mantém `APP_DEBUG=false` e `LOG_LEVEL=warning` por padrão. Para depuração local, altere esses valores somente no `.env` ignorado pelo Git. Em qualquer ambiente publicado, configure `APP_ENV=production`, mantenha `APP_DEBUG=false` e defina `APP_URL` com a URL HTTPS pública da API. A configuração do Laravel também força o debug a permanecer desativado fora dos ambientes `local` e `testing`, mesmo se `APP_DEBUG=true` for informado.
+
 O conteúdo da documentação interativa está em `public/api/docs/index.html`. Ao adicionar ou alterar uma rota, atualize essa página e confira a tabela de rotas efetivas com `php artisan route:list --path=api`.
 
 ## Leitor de códigos e API de produtos

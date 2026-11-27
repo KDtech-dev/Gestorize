@@ -198,4 +198,6 @@ Gestorize/
 - Não compartilhe arquivos `.env`, tokens ou credenciais reais.
 - Use senhas próprias e permissões adequadas em ambientes de produção.
 - Configure `APP_URL`, banco de dados, URL da API e cookies de acordo com o ambiente.
+- Em produção, use `APP_ENV=production`, `APP_DEBUG=false` e `APP_URL` com HTTPS. O backend impede que o debug seja ativado fora dos ambientes `local` e `testing`.
+- O `.env.example` inicia com debug desativado. Se precisar depurar localmente, faça isso somente no `.env` ignorado pelo Git.
 - O servidor de desenvolvimento do Laravel não deve ser usado como servidor de produção.
