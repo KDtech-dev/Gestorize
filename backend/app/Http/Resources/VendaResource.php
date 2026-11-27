@@ -23,6 +23,9 @@ class VendaResource extends JsonResource
             'status' => $this->status ?? 'concluida',
             'estornada_em' => $this->estornada_em,
             'estornada_por' => $this->estornadaPor?->name,
+            'estornada_por_id' => $this->estornada_por,
+            'estornada_autorizada_por' => $this->estornada_autorizada_nome ?? $this->estornadaAutorizadaPor?->name,
+            'estornada_autorizada_por_id' => $this->estornada_autorizada_por,
             'itens' => VendaItemResource::collection($this->whenLoaded('itens')),
         ];
     }

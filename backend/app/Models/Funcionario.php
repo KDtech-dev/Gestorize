@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 use App\Models\Concerns\BelongsToOrganization;
 
 class Funcionario extends Model
@@ -13,6 +14,18 @@ class Funcionario extends Model
 
     protected static function booted(): void
     {
+        static::creating(function (self $funcionario): void {
+            if (filled($funcionario->codigo_cracha)) {
+                return;
+            }
+
+            do {
+                $codigo = Str::upper(Str::random(12));
+            } while (static::withoutGlobalScopes()->where('codigo_cracha', $codigo)->exists());
+
+            $funcionario->codigo_cracha = $codigo;
+        });
+
         static::addGlobalScope('funcionario_user_organization', function ($query): void {
             if (Auth::check()) {
                 $query->whereHas('user', fn ($users) => $users->where('organization_id', Auth::user()->organization_id));
@@ -28,6 +41,8 @@ class Funcionario extends Model
 
     protected $fillable = [
         'id',
+        'codigo_cracha',
+        'organization_id',
         'telefone',
         'data_nascimento',
         'cpf',
