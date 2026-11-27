@@ -38,7 +38,7 @@ export const canAccessRoute = (
   }
   if (routeName === 'Organizacoes' || routeName === 'OrganizacaoForm' || routeName === 'AdministracaoGlobal') return false;
   if (routeName === 'NovaVenda') return canSell(user);
-  if (routeName === 'Vendas') return can(user, 'vendas.ver');
+  if (routeName === 'Vendas') return can(user, 'vendas.ver') || canSell(user);
   const required = routePermission[routeName];
   if (required) return can(user, required);
   return ['Configuracoes', 'Ajuda', 'UserPerfil', 'Homepage'].includes(routeName);

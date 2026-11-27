@@ -242,6 +242,7 @@ export type AcessoType = {
 
 export type FuncionarioType = {
   id: string;
+  codigo_cracha: string;
   nome: string | null;
   email: string | null;
   role: string | null;

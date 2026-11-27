@@ -10,9 +10,26 @@ import { z } from "zod";
 const getFuncionarios = async (): Promise<
     ArrayResponseType<FuncionarioType>
 > => {
-    const response = await getAxios().get("/funcionarios");
+    const api = getAxios();
+    const firstResponse = await api.get("/funcionarios?page=1");
+    const first = firstResponse.data;
+    const collection = first?.data;
+    const funcionarios: FuncionarioType[] = Array.isArray(collection)
+        ? collection
+        : Array.isArray(collection?.data)
+            ? collection.data
+            : [];
+    const meta = collection?.meta ?? first?.meta;
+    const lastPage = Math.max(1, Number(meta?.last_page ?? 1));
 
-    return response.data;
+    for (let page = 2; page <= lastPage; page += 1) {
+        const response = await api.get(`/funcionarios?page=${page}`);
+        const data = response.data?.data;
+        const pageItems = Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : [];
+        funcionarios.push(...pageItems);
+    }
+
+    return { ...first, data: funcionarios };
 };
 
 const getFuncionario = async (

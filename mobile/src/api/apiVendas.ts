@@ -23,6 +23,9 @@ export type VendaType = {
   status?: 'concluida' | 'estornada';
   estornada_em?: string | null;
   estornada_por?: string | null;
+  estornada_por_id?: string | null;
+  estornada_autorizada_por?: string | null;
+  estornada_autorizada_por_id?: string | null;
   desconto?: number | string;
   orcamento_id?: string | null;
   cliente_id?: string | null;
@@ -35,8 +38,16 @@ export const getVendas = async (): Promise<ResponseType<VendaType[]>> => {
   return response.data;
 };
 
-export const estornarVenda = async (id: string): Promise<ResponseType<VendaType>> => {
-  const response = await getAxios().post(`/vendas/${encodeURIComponent(id)}/estornar`);
+export const getMinhasVendas = async (): Promise<ResponseType<VendaType[]>> => {
+  const response = await getAxios().get('/vendas/minhas');
+  return response.data;
+};
+
+export const estornarVenda = async (id: string, codigoAutorizador: string, senhaAutorizador: string): Promise<ResponseType<VendaType>> => {
+  const response = await getAxios().post(`/vendas/${encodeURIComponent(id)}/estornar`, {
+    codigo_autorizador: codigoAutorizador,
+    senha_autorizador: senhaAutorizador,
+  });
   return response.data;
 };
 

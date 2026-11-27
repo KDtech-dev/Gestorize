@@ -15,6 +15,7 @@ import {
     Text,
     View,
 } from 'react-native';
+import * as Print from 'expo-print';
 
 import {
     useFocusEffect,
@@ -37,6 +38,8 @@ import { getFuncionarios } from '@api/apiFuncionario';
 
 import Toast from 'react-native-toast-message';
 import { can } from '@utils/permissions';
+import Button from '@components/botoes/Button';
+import { crachasFuncionariosHtml } from '@utils/crachas';
 
 type Navigation = NativeStackNavigationProp<RootStackParamList>;
 
@@ -63,6 +66,7 @@ const Funcionarios = () => {
     const podeCriar = can(user, 'users.criar');
 
     const [funcionarios, setFuncionarios] = useState<FuncionarioType[]>([]);
+    const [funcionariosParaCracha, setFuncionariosParaCracha] = useState<FuncionarioType[]>([]);
 
     const [selectedPerfil, setSelectedPerfil] =
         useState<PerfilFuncionario | null>(null);
@@ -75,6 +79,7 @@ const Funcionarios = () => {
             setLoading(true);
 
             const response = await getFuncionarios();
+            setFuncionariosParaCracha(response.data.filter((funcionario) => funcionario.role?.toLowerCase() !== 'admin'));
 
             setFuncionarios(response.data.filter((funcionario) =>
                 String(funcionario.id) !== String(user?.id) &&
@@ -123,6 +128,23 @@ const Funcionarios = () => {
             return matchPerfil && matchSearch;
         });
     }, [funcionarios, search, selectedPerfil]);
+
+    const filteredCrachaData = useMemo(() => {
+        const normalizedSearch = search.trim().toLowerCase();
+
+        return funcionariosParaCracha.filter((item) => {
+            const nomePerfil = item.role?.toLowerCase() ?? '';
+            const matchPerfil = selectedPerfil ? nomePerfil === selectedPerfil : true;
+            const nome = item.nome ?? '';
+            const email = item.email ?? '';
+            const cpf = item.cpf ?? '';
+            const matchSearch = !normalizedSearch
+                || nome.toLowerCase().includes(normalizedSearch)
+                || email.toLowerCase().includes(normalizedSearch)
+                || cpf.toLowerCase().includes(normalizedSearch);
+            return matchPerfil && matchSearch;
+        });
+    }, [funcionariosParaCracha, search, selectedPerfil]);
 
     useEffect(() => {
         setVisibleCount(PAGE_SIZE);
@@ -204,6 +226,15 @@ const Funcionarios = () => {
                         }}
                     />
                 </View>
+                {filteredCrachaData.length > 0 && <Button
+                    title={`Imprimir crachás (${filteredCrachaData.length})`}
+                    variant="outlined"
+                    onPress={() => {
+                        void Print.printAsync({
+                            html: crachasFuncionariosHtml(filteredCrachaData.map(({ codigo_cracha, nome, avatar_url }) => ({ codigo_cracha, nome, avatar_url }))),
+                        }).catch(() => Toast.show({ type: 'error', text1: 'Não foi possível abrir a impressão dos crachás.' }));
+                    }}
+                />}
             </AnimatedListHeader>
 
             <Animated.FlatList

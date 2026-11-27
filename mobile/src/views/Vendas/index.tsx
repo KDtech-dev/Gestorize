@@ -1,11 +1,12 @@
-import React, { useCallback, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, StyleSheet, View } from 'react-native';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
+import { ActivityIndicator, FlatList, Modal, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 import { Text, List } from 'react-native-paper';
+import { CameraView, useCameraPermissions } from 'expo-camera';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import Nav from '@components/utilities/Nav';
 import Button from '@components/botoes/Button';
-import { estornarVenda, getVendas, VendaType } from '@api/apiVendas';
+import { estornarVenda, getMinhasVendas, getVendas, VendaType } from '@api/apiVendas';
 import { useTheme } from '@context/ThemeContext';
 import { can, canSell } from '@utils/permissions';
 import { useAuth } from '@context/AuthContext';
@@ -28,18 +29,25 @@ export default function Vendas() {
   const [abertaId, setAbertaId] = useState<string | undefined>();
   const [hoje, setHoje] = useState(() => new Date());
   const [estornandoId, setEstornandoId] = useState('');
+  const [returnTarget, setReturnTarget] = useState<VendaType | null>(null);
+  const [returnBadgeCode, setReturnBadgeCode] = useState('');
+  const [returnPassword, setReturnPassword] = useState('');
+  const [scannerVisivel, setScannerVisivel] = useState(false);
+  const [cameraPermission, requestCameraPermission] = useCameraPermissions();
+  const scanEmAndamento = useRef(false);
+  const passwordInput = useRef<TextInput>(null);
 
   useFocusEffect(useCallback(() => {
     let ativo = true;
     setHoje(new Date());
     setCarregando(true);
-    if (!podeVer) {
+    if (!podeVer && !podeVender) {
       setVendas([]);
       setErro('Seu perfil não tem permissão para consultar as vendas.');
       setCarregando(false);
       return () => { ativo = false; };
     }
-    getVendas().then((resposta) => {
+    (podeVer ? getVendas() : getMinhasVendas()).then((resposta) => {
       if (ativo) {
         const registros = (resposta.data ?? [])
           .map((venda) => ({ venda, timestamp: Date.parse(venda.vendido_em) }))
@@ -52,7 +60,7 @@ export default function Vendas() {
       if (ativo) setErro(error?.response?.data?.message ?? 'Não foi possível carregar o histórico de vendas.');
     }).finally(() => { if (ativo) setCarregando(false); });
     return () => { ativo = false; };
-  }, [podeVer]));
+  }, [podeVer, podeVender]));
 
   const vendasHoje = useMemo(() => vendas.filter((venda) => venda.status !== 'estornada' && (() => {
     const data = new Date(venda.vendido_em);
@@ -85,25 +93,40 @@ export default function Vendas() {
     }
   };
 
-  const pedirEstorno = (venda: VendaType) => Alert.alert(
-    'Retornar venda?',
-    'A venda será marcada como estornada, os produtos voltarão ao estoque e o caixa abrirá com esses itens no carrinho.',
-    [
-      { text: 'Cancelar', style: 'cancel' },
-      { text: 'Estornar e retomar', style: 'destructive', onPress: () => {
-        void (async () => {
-          setEstornandoId(venda.id);
-          try {
-            await estornarVenda(venda.id);
-            Toast.show({ type: 'success', text1: 'Venda estornada', text2: 'Abrindo o caixa com os produtos no carrinho.' });
-            navigation.navigate('NovaVenda', { retomarVendaId: venda.id });
-          } catch (error: any) {
-            Toast.show({ type: 'error', text1: 'Não foi possível estornar a venda', text2: error?.response?.data?.message ?? 'Tente novamente.' });
-          } finally { setEstornandoId(''); }
-        })();
-      } },
-    ],
-  );
+  const pedirEstorno = (venda: VendaType) => {
+    setReturnTarget(venda);
+    setReturnBadgeCode('');
+    setReturnPassword('');
+  };
+
+  const abrirScannerCracha = async () => {
+    if (!cameraPermission?.granted) {
+      const permission = await requestCameraPermission();
+      if (!permission.granted) {
+        Toast.show({ type: 'error', text1: 'A câmera não está autorizada.' });
+        return;
+      }
+    }
+    scanEmAndamento.current = false;
+    setScannerVisivel(true);
+  };
+
+  const autorizarEstorno = async () => {
+    const venda = returnTarget;
+    if (!venda || estornandoId || !returnBadgeCode.trim() || !returnPassword) return;
+    setEstornandoId(venda.id);
+    try {
+      await estornarVenda(venda.id, returnBadgeCode.trim(), returnPassword);
+      Toast.show({ type: 'success', text1: 'Venda estornada', text2: 'Abrindo o caixa com os produtos no carrinho.' });
+      setReturnTarget(null);
+      setReturnPassword('');
+      navigation.navigate('NovaVenda', { retomarVendaId: venda.id });
+    } catch (error: any) {
+      setReturnBadgeCode('');
+      setReturnPassword('');
+      Toast.show({ type: 'error', text1: 'Não foi possível estornar a venda', text2: error?.response?.data?.errors?.autorizador?.[0] ?? error?.response?.data?.message ?? 'Tente novamente.' });
+    } finally { setEstornandoId(''); }
+  };
 
   const renderVenda = ({ item: venda }: { item: VendaType }) => <List.Accordion
     key={venda.id}
@@ -119,7 +142,7 @@ export default function Vendas() {
     rippleColor={colors.border}
   >
     <View style={[styles.details, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-      {venda.status === 'estornada' ? <Text style={[styles.voidStatus, { color: colors.error }]}>Venda estornada{venda.estornada_em ? ` em ${new Date(venda.estornada_em).toLocaleString('pt-BR')}` : ''}{venda.estornada_por ? ` por ${venda.estornada_por}` : ''}</Text> : null}
+      {venda.status === 'estornada' ? <Text style={[styles.voidStatus, { color: colors.error }]}>Venda estornada{venda.estornada_em ? ` em ${new Date(venda.estornada_em).toLocaleString('pt-BR')}` : ''}{venda.estornada_por ? ` por ${venda.estornada_por}` : ''}{venda.estornada_autorizada_por ? ` · autorizada por ${venda.estornada_autorizada_por}` : ''}</Text> : null}
       <Text style={[styles.detailText, { color: colors.muted }]}>Vendedor: {venda.vendedor || 'Equipe'}</Text>
       <Text style={[styles.detailText, { color: colors.muted }]}>Pagamento: {venda.forma_pagamento ? pagamentos[venda.forma_pagamento] : 'Não informado'}</Text>
       {Number(venda.desconto ?? 0) > 0 ? <Text style={[styles.detailText, { color: colors.muted }]}>Desconto: {moeda(venda.desconto)}</Text> : null}
@@ -137,7 +160,7 @@ export default function Vendas() {
     <View style={styles.intro}>
       <Text style={[styles.eyebrow, { color: colors.primary }]}>ACOMPANHAMENTO</Text>
       <Text style={[styles.title, { color: colors.text }]}>Controle de vendas</Text>
-      <Text style={[styles.subtitle, { color: colors.muted }]}>Resumo do dia e histórico das vendas registradas.</Text>
+      <Text style={[styles.subtitle, { color: colors.muted }]}>{podeVer ? 'Resumo do dia e histórico das vendas registradas.' : 'Consulte suas vendas e solicite autorização para estorná-las.'}</Text>
     </View>
     <View style={styles.metrics}>
       {indicadores.map((item) => <View key={item.label} style={[styles.metricCard, { backgroundColor: colors.surface, borderColor: colors.border, shadowColor: isDark ? '#ffffff' : '#000000' }]}>
@@ -148,7 +171,7 @@ export default function Vendas() {
       </View>)}
     </View>
     <View style={[styles.panelHeading, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-      <View><Text style={[styles.heading, { color: colors.text }]}>Histórico de vendas</Text><Text style={[styles.subtitle, { color: colors.muted }]}>{vendas.length} registros</Text></View>
+      <View><Text style={[styles.heading, { color: colors.text }]}>{podeVer ? 'Histórico de vendas' : 'Minhas vendas'}</Text><Text style={[styles.subtitle, { color: colors.muted }]}>{vendas.length} registros</Text></View>
       {carregando ? <ActivityIndicator color={colors.primary} /> : null}
     </View>
     {erro ? <Text style={[styles.error, { color: colors.error }]}>{erro}</Text> : null}
@@ -168,6 +191,42 @@ export default function Vendas() {
       windowSize={7}
       showsVerticalScrollIndicator={false}
     />
+    <Modal visible={Boolean(returnTarget) && !scannerVisivel} transparent animationType="fade" onRequestClose={() => { if (!estornandoId) { setReturnTarget(null); setReturnBadgeCode(''); setReturnPassword(''); } }}>
+      <View style={styles.dialogBackdrop}>
+        <View style={[styles.authorizationCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Text style={[styles.authorizationTitle, { color: colors.text }]}>Autorização do gestor</Text>
+          <Text style={[styles.authorizationDescription, { color: colors.muted }]}>Venda #{returnTarget?.id.slice(0, 8).toUpperCase()}: os itens voltarão ao estoque. Peça ao gestor para escanear o crachá e confirmar com a senha da própria conta.</Text>
+          <TextInput value={returnBadgeCode} onChangeText={setReturnBadgeCode} onSubmitEditing={() => passwordInput.current?.focus()} returnKeyType="next" autoCapitalize="characters" autoCorrect={false} placeholder="Código do crachá do gestor" placeholderTextColor={colors.muted} style={[styles.authorizationInput, { color: colors.text, borderColor: colors.border }]} />
+          <TouchableOpacity style={[styles.scanBadgeButton, { borderColor: colors.primary }]} onPress={() => void abrirScannerCracha()}>
+            <MaterialCommunityIcons name="barcode-scan" size={19} color={colors.primary} />
+            <Text style={[styles.scanBadgeText, { color: colors.primary }]}>Ler crachá com a câmera</Text>
+          </TouchableOpacity>
+          <TextInput ref={passwordInput} value={returnPassword} onChangeText={setReturnPassword} onSubmitEditing={() => void autorizarEstorno()} returnKeyType="done" secureTextEntry autoCapitalize="none" autoCorrect={false} placeholder="Senha do gestor" placeholderTextColor={colors.muted} style={[styles.authorizationInput, { color: colors.text, borderColor: colors.border }]} />
+          <Button title="Cancelar" variant="outlined" disabled={Boolean(estornandoId)} onPress={() => { setReturnTarget(null); setReturnBadgeCode(''); setReturnPassword(''); }} />
+          <Button title={estornandoId ? 'Validando…' : 'Autorizar estorno'} disabled={Boolean(estornandoId) || !returnBadgeCode.trim() || !returnPassword} onPress={() => void autorizarEstorno()} />
+        </View>
+      </View>
+    </Modal>
+    <Modal visible={scannerVisivel} animationType="slide" onRequestClose={() => setScannerVisivel(false)}>
+      <View style={styles.cameraScreen}>
+        <CameraView
+          style={StyleSheet.absoluteFill}
+          facing="back"
+          barcodeScannerSettings={{ barcodeTypes: ['code39'] }}
+          onBarcodeScanned={({ data }) => {
+            if (scanEmAndamento.current) return;
+            scanEmAndamento.current = true;
+            setReturnBadgeCode(data.trim());
+            setScannerVisivel(false);
+          }}
+        />
+        <View style={styles.cameraOverlay}>
+          <Text style={styles.cameraTitle}>Aponte para o código do crachá do gestor</Text>
+          <View style={styles.scanFrame} />
+          <Button title="Cancelar leitura" variant="outlined" onPress={() => setScannerVisivel(false)} />
+        </View>
+      </View>
+    </Modal>
   </View>;
 }
 
@@ -179,4 +238,5 @@ const styles = StyleSheet.create({
   metricValue: { fontSize: 22, fontWeight: 'bold', marginBottom: 3 }, metricCaption: { fontSize: 10, lineHeight: 14, fontWeight: '700' }, panelHeading: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderWidth: 1, borderRadius: 14, padding: 15 }, heading: { fontSize: 20, fontWeight: '900' },
   empty: { paddingVertical: 20, paddingHorizontal: 4, fontSize: 16 }, error: { paddingVertical: 14, fontSize: 16 }, saleAccordion: { borderWidth: 1, borderRadius: 18, marginBottom: 11, paddingVertical: 8, paddingHorizontal: 8, overflow: 'hidden', shadowRadius: 10, elevation: 3 }, saleIconCircle: { width: 54, height: 54, borderRadius: 15, alignItems: 'center', justifyContent: 'center' }, saleTitle: { fontSize: 16, lineHeight: 21, fontWeight: '800' }, saleDescription: { fontSize: 12, lineHeight: 18 }, details: { padding: 15, borderTopWidth: StyleSheet.hairlineWidth, gap: 10 }, detailText: { fontSize: 16, lineHeight: 23 },
   itemRow: { flexDirection: 'row', alignItems: 'center', gap: 11, paddingVertical: 10, borderBottomWidth: StyleSheet.hairlineWidth }, itemCopy: { flex: 1, gap: 4 }, itemName: { fontSize: 17, lineHeight: 23, fontWeight: '700' }, itemTotal: { fontSize: 16, fontWeight: '800' }, totalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 }, totalLabel: { fontSize: 16, fontWeight: '800' }, totalValue: { fontSize: 21, fontWeight: '900' }, historyActions: { gap: 8, marginTop: 8 }, voidStatus: { fontSize: 14, fontWeight: '900' },
+  dialogBackdrop: { flex: 1, justifyContent: 'center', padding: 20, backgroundColor: '#0009' }, authorizationCard: { gap: 13, padding: 20, borderRadius: 18, borderWidth: 1 }, authorizationTitle: { fontSize: 20, fontWeight: '900' }, authorizationDescription: { fontSize: 13, lineHeight: 19 }, authorizationInput: { minHeight: 48, borderWidth: 1, borderRadius: 10, paddingHorizontal: 13, fontSize: 15 }, scanBadgeButton: { minHeight: 44, borderWidth: 1, borderRadius: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }, scanBadgeText: { fontSize: 14, fontWeight: '800' }, cameraScreen: { flex: 1, backgroundColor: '#000' }, cameraOverlay: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'space-around', padding: 28 }, cameraTitle: { color: '#fff', fontWeight: '800', fontSize: 18, textAlign: 'center', backgroundColor: '#0009', padding: 12, borderRadius: 12 }, scanFrame: { width: '88%', height: 180, borderWidth: 3, borderColor: '#FACC15', borderRadius: 20 },
 });
