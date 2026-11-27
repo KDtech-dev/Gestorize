@@ -86,8 +86,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::prefix('vendas')->group(function () {
         Route::get('/', [VendaController::class, 'index'])->middleware('permission:vendas.ver');
+        Route::get('/minhas', [VendaController::class, 'minhas'])->middleware('role_or_permission:admin|gestor|funcionario|vendas.criar');
         Route::post('/', [VendaController::class, 'store'])->middleware('role_or_permission:admin|gestor|funcionario|vendas.criar');
-        Route::post('/{id}/estornar', [VendaController::class, 'estornar'])->middleware('role_or_permission:admin|gestor|funcionario|vendas.criar');
+        Route::post('/{id}/estornar', [VendaController::class, 'estornar'])->middleware(['role_or_permission:admin|gestor|funcionario|vendas.criar', 'throttle:10,1']);
     });
 
     Route::prefix('fornecedores')->group(function () {
