@@ -99,16 +99,13 @@ const Fornecedores = () => {
             .map(([ramo]) => ramo);
     }, [fornecedores]);
 
-    /**
-     * Aplica a busca, o filtro de ramo e a ordenação alfabética.
-     */
+   
     const filteredData = useMemo(() => {
         const normalizedSearch = search.trim().toLowerCase();
         const normalizedNumbers = search.replace(/\D/g, '');
 
         return fornecedores
             .filter((item) => {
-                // Filtro por ramo de atividade
                 const matchRamoSelecionado = ramoSelecionado
                     ? item.categorias?.some((categoria) => categoria.nome === ramoSelecionado) || item.ramo_atividade?.trim() === ramoSelecionado
                     : true;
@@ -117,7 +114,6 @@ const Fornecedores = () => {
                     return false;
                 }
 
-                // Sem pesquisa, mantém os demais filtros
                 if (!normalizedSearch) {
                     return true;
                 }
