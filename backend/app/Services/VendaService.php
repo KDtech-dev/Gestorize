@@ -6,14 +6,25 @@ use App\Models\Produto;
 use App\Models\Venda;
 use App\Models\Cliente;
 use App\Models\Orcamento;
+use App\Models\Funcionario;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 
 class VendaService
 {
     public function listar()
     {
-        return Venda::with(['usuario', 'cliente', 'itens', 'estornadaPor'])->latest('vendido_em')->get();
+        return Venda::with(['usuario', 'cliente', 'itens', 'estornadaPor', 'estornadaAutorizadaPor'])->latest('vendido_em')->get();
+    }
+
+    public function listarDoUsuario(string $usuarioId)
+    {
+        return Venda::with(['usuario', 'cliente', 'itens', 'estornadaPor', 'estornadaAutorizadaPor'])
+            ->where('usuario_id', $usuarioId)
+            ->latest('vendido_em')
+            ->get();
     }
 
     public function criar(array $dados, string $usuarioId): Venda
@@ -120,12 +131,32 @@ class VendaService
         });
     }
 
-    public function estornar(string $id, string $usuarioId): Venda
+    public function estornar(string $id, string $solicitanteId, string $codigoAutorizador, string $senhaAutorizador): Venda
     {
-        return DB::transaction(function () use ($id, $usuarioId) {
+        return DB::transaction(function () use ($id, $solicitanteId, $codigoAutorizador, $senhaAutorizador) {
             $venda = Venda::query()->with('itens')->lockForUpdate()->findOrFail($id);
+            if (Auth::user()?->cannot('vendas.ver') && (string) $venda->usuario_id !== $solicitanteId) {
+                abort(404);
+            }
             if (($venda->status ?? 'concluida') !== 'concluida') {
                 throw ValidationException::withMessages(['venda' => ['Somente vendas concluídas podem ser estornadas.']]);
+            }
+
+            $funcionarioAutorizador = Funcionario::query()
+                ->with('user')
+                ->where('codigo_cracha', strtoupper(trim($codigoAutorizador)))
+                ->first();
+            $autorizador = $funcionarioAutorizador?->user;
+            if (
+                ! $autorizador
+                || ! $autorizador->hasRole('gestor')
+                || ! $autorizador->can('vendas.estornar')
+                || ! Hash::check($senhaAutorizador, $autorizador->password)
+                || $autorizador->organization_id !== Auth::user()?->organization_id
+            ) {
+                throw ValidationException::withMessages([
+                    'autorizador' => ['Crachá, senha ou permissão do gestor inválidos.'],
+                ]);
             }
 
             $itens = $venda->itens->sortBy('produto_id')->values();
@@ -149,10 +180,12 @@ class VendaService
             $venda->forceFill([
                 'status' => 'estornada',
                 'estornada_em' => now(),
-                'estornada_por' => $usuarioId,
+                'estornada_por' => $solicitanteId,
+                'estornada_autorizada_por' => $autorizador->id,
+                'estornada_autorizada_nome' => $autorizador->name,
             ])->save();
 
-            return $venda->fresh(['usuario', 'cliente', 'itens', 'estornadaPor']);
+            return $venda->fresh(['usuario', 'cliente', 'itens', 'estornadaPor', 'estornadaAutorizadaPor']);
         });
     }
 }

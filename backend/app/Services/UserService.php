@@ -7,6 +7,7 @@ use App\Models\Funcionario;
 use App\Models\Endereco;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
 
 class UserService
 {
@@ -44,6 +45,8 @@ class UserService
 
     public function criar(array $dados): User
     {
+        $this->validarPermissaoEstorno($dados['role'] ?? '', $dados['permissions'] ?? []);
+
         return DB::transaction(function () use ($dados) {
             $endereco = Endereco::create($dados['endereco']);
 
@@ -90,6 +93,10 @@ class UserService
     {
         return DB::transaction(function () use ($id, $dados) {
             $user = User::findOrFail($id);
+            $this->validarPermissaoEstorno(
+                $dados['role'] ?? $user->getRoleNames()->first() ?? '',
+                $dados['permissions'] ?? [],
+            );
 
             $user->update([
                 'name'  => $dados['name']  ?? $user->name,
@@ -132,5 +139,14 @@ class UserService
             $user->funcionario?->delete();
             $user->delete();
         });
+    }
+
+    private function validarPermissaoEstorno(string $role, array $permissoes): void
+    {
+        if ($role !== 'gestor' && in_array('vendas.estornar', $permissoes, true)) {
+            throw ValidationException::withMessages([
+                'permissions' => ['A permissão de estorno de vendas só pode ser atribuída a um gestor.'],
+            ]);
+        }
     }
 }
